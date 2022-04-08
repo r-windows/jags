@@ -2,11 +2,11 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.63)
 
-AC_INIT([JAGS],[4.3.0],[martyn_plummer@users.sourceforge.net],[JAGS])
+AC_INIT([JAGS],[4.3.1],[martyn_plummer@users.sourceforge.net],[JAGS])
 
 JAGS_MAJOR=4
 JAGS_MINOR=3
-JAGS_PATCH=0
+JAGS_PATCH=1
 
 AC_SUBST(JAGS_MAJOR)
 AC_DEFINE_UNQUOTED([JAGS_MAJOR], [$JAGS_MAJOR], [Major version of JAGS library])
@@ -150,7 +150,6 @@ AC_CONFIG_FILES([
   src/modules/glm/distributions/Makefile
   src/terminal/Makefile
   win/Makefile
-  win/runtime32/Makefile
   win/runtime64/Makefile
   doc/Makefile
   doc/manual/Makefile
