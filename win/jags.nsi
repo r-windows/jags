@@ -16,10 +16,11 @@
 !define MULTIUSER_INSTALLMODE_INSTDIR "${PUBLISHER}\${JAGS_KEYNAME}"
 !define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_KEY "SOFTWARE\${PUBLISHER}\${JAGS_KEYNAME}"
 !define MULTIUSER_INSTDIR_REGISTRY_VALUENAME "InstallDir"
+|define MULTIUSER_USE_PROGRAMFILES64
 
 !addincludedir ${JAGSINC}
 !include AdvUninstLog.nsh
-!include MultiUser64.nsh
+!include "MultiUser.nsh"
 !include "MUI2.nsh"
 !include "Sections.nsh"
 !include "x64.nsh"
