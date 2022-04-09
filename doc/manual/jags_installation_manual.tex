@@ -793,12 +793,12 @@ cd cppunit-1.12.1
 \end{verbatim}
 Then compile and install as follows:
 \begin{verbatim}
-./configure --disable-shared
+./configure --host=x86_64-w64-mingw32.static.posix --disable-shared
 make
 make install
 \end{verbatim}
 
-The configure option \verb+--disable-shared+ prevents the creation of
+The configure option \texttt{--disable-shared} prevents the creation of
 the DLL \file{libccpunit.dll} and builds only the static library
 \file{libcppunit.a}. Without this option, the unit tests will fail.
 One of the major limitations of static linking to the C++ runtime is
@@ -812,21 +812,13 @@ To run the unit tests, run \code{make check} after \code{make
 
 \subsection{Running the examples}
 
-The BUGS classic examples (file \file{classic-bugs.tar.gz} from the JAGS
-Sourceforge site) can be run from the Windows command prompt using
-the \command{make} command provided by Rtools. This requires adding Rtools
-to the Windows search path if it is not currently there.
-\begin{verbatim}
-set PATH=c:\Rtools\bin;%PATH%
-\end{verbatim}
-You must have R installed, along with the packages \code{rjags} and
-\code{coda}, both of which are available from CRAN
-(\url{cran.r-project.org}).
+The BUGS classic examples (file \file{classic-bugs.tar.gz} from the
+JAGS Sourceforge site) can be run from the Windows command prompt
+using the \command{make} command provided by Rtools. You must have R
+installed, along with the packages \code{rjags} and \code{coda}, both
+of which are available from CRAN (\url{cran.r-project.org}).
 
-It is necessary to add R to the search path and to set the variable
-\verb+R_LIBS+. Note that here we are using the 64-bit version of R.
-You may use the 32-bit version by substituting \code{i386} for
-\code{x64}.
+It is necessary to add R to the search path and to set the \textt{R\_LIBS}.
 \begin{verbatim}
 set PATH=c:\Program Files\R\R-3.2.0\bin\x64;%PATH%
 set R_LIBS=c:\Users\username\Documents\R\win-library\3.2
