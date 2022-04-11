@@ -793,7 +793,7 @@ cd cppunit-1.12.1
 \end{verbatim}
 Then compile and install as follows:
 \begin{verbatim}
-./configure --host=x86_64-w64-mingw32.static.posix --disable-shared
+./configure --prefix=/opt --build=x86_64-w64-mingw32.static.posix --disable-shared
 make
 make install
 \end{verbatim}
@@ -807,21 +807,49 @@ test programs against \file{libcppunit.dll} will result in uncaught
 exceptions and apparent failures for some of the tests, so it must be
 disabled.
 
-To run the unit tests, run \code{make check} after \code{make
-  win64-install}.
+JAGS relies on \texttt{pkg-config} to detect \texttt{libcppunit}, but
+\texttt{pkg-config} is not installed automatically with Rtools42. You
+can add it with
+\begin{verbatim}
+pacman -Sy pkg-config
+\end{verbatim}
+
+To run the unit tests, add the option
+\texttt{--with-cppunit-prefix=/opt} when configuring
+JAGS.\footnote{You may wonder why we are using a non-standard prefix
+instead of installing \texttt{libcppunit} into the default
+\texttt{/usr} prefix. At the time of writing, \texttt{pkg-config} does
+not play nicely with the compiler toolchain. The toolchain does not
+look for headers in \texttt{/usr/include} and \texttt{pkg-config} will
+not add this directory to the header search path because it assumes
+that it already includes \texttt{/usr/include}. Hence compilation of
+the unit tests will fail with an error message about missing headers.}
+Then run \code{make check} after \code{make win64-install}.
+
+\subsectino{Installing rjags}
+
+To install the \textsf{rjags} package from source you need to let R know 
+where JAGS is installed. This is done via the \texttt{JAGS\_ROOT} make variable,
+which is set in the file \texttt{.R/Makevars.win}, e.g.
+\begin{verbatim}
+JAGS_ROOT=c:\Progra~1\JAGS\JAGS-4.3.1
+\end{verbatim}
+
+Note that this is a Make variable, not an environment
+variable. Setting \texttt{\JAGS\_ROOT} as an environment variable will
+have no effect.
 
 \subsection{Running the examples}
 
 The BUGS classic examples (file \file{classic-bugs.tar.gz} from the
-JAGS Sourceforge site) can be run from the Windows command prompt
+JAGS Sourceforge site) can be run from the MSYS shell
 using the \command{make} command provided by Rtools. You must have R
 installed, along with the packages \code{rjags} and \code{coda}, both
 of which are available from CRAN (\url{cran.r-project.org}).
 
-It is necessary to add R to the search path and to set the \texttt{R\_LIBS}.
+It is necessary to add R to the search path.
 \begin{verbatim}
-set PATH=c:\Program Files\R\R-3.2.0\bin\x64;%PATH%
-set R_LIBS=c:\Users\username\Documents\R\win-library\3.2
+PATH=$PATH:/c/Program\ Files/R/R-4.2.0/bin
 \end{verbatim}
 where \file{username} is your Windows user name. Then
 \begin{verbatim}
@@ -832,19 +860,5 @@ make Rcheck
 \end{verbatim}
 will check all examples in volume 1 using the \code{rjags} package. Repeat
 for \file{vol2} to complete the checks.
-
-You can also run checks using the command line interface of JAGS. This
-requires adding JAGS to the search path and overriding the default name
-of the JAGS executable.
-\begin{verbatim}
-set PATH=c:\Program Files\JAGS\JAGS-4.3.1\bin\x64;%PATH%
-set JAGS=jags.bat
-\end{verbatim}
-Then
-\begin{verbatim}
-make check
-\end{verbatim}
-in directory \file{vol1} or \file{vol2} will run the checks using the
-command line interface.
 
 \end{document}
