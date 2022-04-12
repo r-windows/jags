@@ -674,11 +674,11 @@ You need to install the following packages
 Rtools is a set of compilers and utilities used for compiling R on
 Windows. Rtools can be downloaded from your nearest CRAN mirror
 (\url{https://cran.r-project.org/bin/windows/Rtools/}). We have to use
-the same compiler for R and JAGS to maintain binary compatibility.
+the same compiler for R and \JAGS\ to maintain binary compatibility.
 For R 4.2.0 and above, the Rtools42 toolchain is used.
 
 Rtools42 comes with its own version of MSYS, a minimal unix shell
-that we will use to build JAGS. At the time of writing, the MSYS
+that we will use to build \JAGS. At the time of writing, the MSYS
 shell does not include the Rtools42 compiler tools on the PATH,
 sot this must be added manually with
 \begin{verbatim}
@@ -705,7 +705,7 @@ installation directory, you will need to copy
 \subsection{Building LAPACK}
 
 Rtools42 contains static libraries for BLAS and LAPACK. In order
-to use these with JAGS we need to build dynamic libraries for them.
+to use these with \JAGS\ we need to build dynamic libraries for them.
 
 First identify the location of the static libraries
 \begin{verbatim}
@@ -740,12 +740,12 @@ liblapack.def $TLIB/liblapack.a  -L. -lblas
 
 \subsection{Compiling \JAGS}
 
-Unpack the JAGS source
+Unpack the \JAGS\ source
 \begin{verbatim}
 tar xfvz JAGS-4.3.1.tar.gz
 cd JAGS-4.3.1
 \end{verbatim}
-and configure JAGS 
+and configure \JAGS 
 \begin{verbatim}
 ./configure --host=x86_64-w64-mingw32.static.posix \
 --with-blas="-L$SHAREDLB -lblas" --with-lapack="-L$SHAREDLB -llapack"
@@ -755,7 +755,7 @@ After the configure step, type
 \begin{verbatim}
 make win64-install
 \end{verbatim}
-This will install JAGS into the subdirectory \file{win/inst64}.  Note
+This will install \JAGS\ into the subdirectory \file{win/inst64}.  Note
 that you must go straight from the configure step to \texttt{make
   win64-install} without the usual step of typing \texttt{make} on its
 own.  The \texttt{win64-install} target resets the installation
@@ -763,7 +763,7 @@ prefix, and this will cause an error if the source is already
 compiled.
 
 You can now create the installer.  Normally you will want to
-distribute the BLAS and LAPACK libraries with JAGS.  In this case, put
+distribute the BLAS and LAPACK libraries with \JAGS.  In this case, put
 the DLLs and import libraries in the sub-directory
 \file{win/runtime64}. They will be detected and included with the
 distribution.
@@ -807,23 +807,27 @@ test programs against \file{libcppunit.dll} will result in uncaught
 exceptions and apparent failures for some of the tests, so it must be
 disabled.
 
-JAGS relies on \texttt{pkg-config} to detect \texttt{libcppunit}, but
+\JAGS\ relies on \texttt{pkg-config} to detect \texttt{libcppunit}, but
 \texttt{pkg-config} is not installed automatically with Rtools42. You
-can add it with
+can install it with
 \begin{verbatim}
 pacman -Sy pkg-config
 \end{verbatim}
 
-To run the unit tests, add the option
-\texttt{--with-cppunit-prefix=/opt} when configuring
-JAGS.\footnote{You may wonder why we are using a non-standard prefix
-instead of installing \texttt{libcppunit} into the default
-\texttt{/usr} prefix. At the time of writing, \texttt{pkg-config} does
-not play nicely with the compiler toolchain. The toolchain does not
-look for headers in \texttt{/usr/include} and \texttt{pkg-config} will
-not add this directory to the header search path because it assumes
-that it already includes \texttt{/usr/include}. Hence compilation of
-the unit tests will fail with an error message about missing headers.}
+Before configuring \JAGS, set the environment variable
+\texttt{PKG\_CONFIG\_PATH} so that \texttt{pkg-config} can find the
+configuration information for \texttt{libcppunit}.\footnote{You may
+wonder why we are using a non-standard prefix instead of installing
+\texttt{libcppunit} into the default prefix \texttt{/usr}. At the time
+of writing, \texttt{pkg-config} does not play nicely with the compiler
+toolchain. The toolchain does not look for headers in
+\texttt{/usr/include} and \texttt{pkg-config} will not add this
+directory to the header search path because it assumes that it is
+already there by default. Hence compilation of the unit tests will
+fail with an error message about missing headers.}
+\begin{verbatim}
+PKG_CONFIG_PATH=/opt/lib/pkgconfig
+\end{verbatim}
 Then run \code{make check} after \code{make win64-install}.
 
 \subsection{Installing rjags}
@@ -836,7 +840,7 @@ JAGS_ROOT=c:\Progra~1\JAGS\JAGS-4.3.1
 \end{verbatim}
 
 Note that this is a Make variable, not an environment
-variable. Setting \texttt{\JAGS\_ROOT} as an environment variable will
+variable. Setting \texttt{JAGS\_ROOT} as an environment variable will
 have no effect.
 
 \subsection{Running the examples}
