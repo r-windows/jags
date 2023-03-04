@@ -26,7 +26,6 @@
 
 using std::map;
 using std::pair;
-using std::binary_function;
 using std::sort;
 using std::vector;
 using std::list;

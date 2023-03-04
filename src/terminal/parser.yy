@@ -94,7 +94,7 @@
     %}
 
 %defines
-%name-prefix "zz"
+%define api.prefix {zz}
 %union
 {
   int intval;

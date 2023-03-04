@@ -6,15 +6,15 @@
 #include <algorithm>
 
 using std::string;
-using std::binary_function;
 using std::find_if;
+using std::bind;
 
 namespace jags {
 
 typedef std::list<FunctionPtr> FuncList;
 
 // Adaptable binary predicate for find_if algorithm 
-struct isFuncName: public binary_function<FunctionPtr, string, bool> 
+struct isFuncName
 {
     bool operator()(FunctionPtr const &func, string const &name) const
     {
@@ -33,7 +33,7 @@ struct isFuncName: public binary_function<FunctionPtr, string, bool>
 
 
 // Adaptable binary predicate for find_if algorithm 
-struct isFuncAlias: public binary_function<FunctionPtr, string, bool> 
+struct isFuncAlias
 {
     bool operator()(FunctionPtr const &func, string const &name) const
     {
@@ -51,7 +51,7 @@ struct isFuncAlias: public binary_function<FunctionPtr, string, bool>
 };
 
 // Adaptable binary predicate for find_if algorithm
-struct isLinkName: public binary_function<FunctionPtr, string, bool> 
+struct isLinkName
 {
     bool operator()(FunctionPtr const &func, string const &name) const
     {
@@ -66,37 +66,37 @@ struct isLinkName: public binary_function<FunctionPtr, string, bool>
     //with -std=c++11
   }
 
-void FuncTab::insert (FunctionPtr const &func)
-{
+  void FuncTab::insert (FunctionPtr const &func)
+  {
     FuncList::const_iterator p = std::find(_flist.begin(), _flist.end(), func);
     if (p == _flist.end())
-	_flist.push_front(func);
-}
-
-FunctionPtr const &FuncTab::find(string const &name) const
-{
+      _flist.push_front(func);
+  }
+  
+  FunctionPtr const &FuncTab::find(string const &name) const
+  {
     FuncList::const_iterator p = 
-	find_if(_flist.begin(), _flist.end(), bind2nd(isFuncName(), name));
-
+      find_if(_flist.begin(), _flist.end(), bind(isFuncName(), std::placeholders::_1, name));
+    
     if (p == _flist.end()) {
-	p = find_if(_flist.begin(), _flist.end(), bind2nd(isFuncAlias(), name));
+      p = find_if(_flist.begin(), _flist.end(), bind(isFuncAlias(), std::placeholders::_1, name));
     }
-
+    
     return (p == _flist.end()) ? _nullfun : *p;
-}
-
-LinkFunction const * FuncTab::findLink (string const &name) const
-{
+  }
+  
+  LinkFunction const * FuncTab::findLink (string const &name) const
+  {
     FuncList::const_iterator p =
-	find_if(_flist.begin(), _flist.end(), bind2nd(isLinkName(), name));
-
+      find_if(_flist.begin(), _flist.end(), bind(isLinkName(), std::placeholders::_1, name));
+    
     return (p == _flist.end()) ? 0 : LINK(*p);
-}
-
-void FuncTab::erase(FunctionPtr const &func)
-{
+  }
+  
+  void FuncTab::erase(FunctionPtr const &func)
+  {
     _flist.remove(func);
-
-}
+    
+  }
 
 } //namespace jags

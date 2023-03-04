@@ -5,15 +5,15 @@
 #include <algorithm>
 
 using std::string;
-using std::binary_function;
 using std::find_if;
+using std::bind;
 
 namespace jags {
 
 typedef std::list<DistPtr> DistList;
 
 // Adaptable binary predicate for find_if algorithm 
-struct isDistName: public binary_function<DistPtr, string, bool> 
+struct isDistName
 {
     bool operator()(DistPtr const &dist, string const &name) const
     {
@@ -28,7 +28,7 @@ struct isDistName: public binary_function<DistPtr, string, bool>
 };
 
 // Adaptable binary predicate for find_if algorithm 
-struct isDistAlias: public binary_function<DistPtr, string, bool> 
+struct isDistAlias
 {
     bool operator()(DistPtr const &dist, string const &name) const
     {
@@ -53,28 +53,28 @@ struct isDistAlias: public binary_function<DistPtr, string, bool>
     //with -std=c++11
   }
 
-void DistTab::insert (DistPtr const &dist)
-{
+  void DistTab::insert (DistPtr const &dist)
+  {
     DistList::const_iterator p = std::find(_dlist.begin(), _dlist.end(), dist);
     if (p == _dlist.end())
-	_dlist.push_front(dist);
-}
-
-DistPtr const &DistTab::find(string const &name) const
-{
+      _dlist.push_front(dist);
+  }
+  
+  DistPtr const &DistTab::find(string const &name) const
+  {
     DistList::const_iterator p = 
-	find_if(_dlist.begin(), _dlist.end(), bind2nd(isDistName(), name));
-
+      find_if(_dlist.begin(), _dlist.end(), bind(isDistName(), std::placeholders::_1, name));
+    
     if (p == _dlist.end()) {
-	p = find_if(_dlist.begin(), _dlist.end(), bind2nd(isDistAlias(), name));
+      p = find_if(_dlist.begin(), _dlist.end(), bind(isDistAlias(), std::placeholders::_1, name));
     }
-
+    
     return (p == _dlist.end()) ? _nulldist : *p;
-}
-
-void DistTab::erase(DistPtr const &dist)
-{
+  }
+  
+  void DistTab::erase(DistPtr const &dist)
+  {
     _dlist.remove(dist);
-}
-
+  }
+  
 } //namespace jags
