@@ -41,6 +41,7 @@ class BugsDistTest : public CppUnit::TestFixture, public JAGSFixture
     jags::VectorDist *_dinterval;    
     jags::RScalarDist *_dlnorm;
     jags::RScalarDist *_dlogis;
+    jags::ScalarDist *_dloglik;
     jags::ArrayDist *_dmnorm;
     jags::ArrayDist *_dmnormvc;
     jags::ArrayDist *_dmt;

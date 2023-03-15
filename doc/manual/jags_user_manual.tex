@@ -2220,7 +2220,6 @@ array arguments with conforming dimensions.
 %Cross-reference to language chapter on functions
 
 
-
 \begin{table}
 \begin{center}
 \begin{tabular}{llll}
@@ -3225,6 +3224,83 @@ independent. For $k=m$ the Wishart prior puts most weight on the
 extreme values $\rho_{ij} = 1$ and $\rho_{ij} = -1$. This is not
 recommended unless, of course, you have prior information that the
 correlations are strong.
+
+\subsection{Pseudo-likelihoods}
+\label{section:bugs:dloglik}
+
+The \texttt{dloglik} function is a special distribution in the bugs
+module that can be used to represent likelihoods when JAGS does not
+provide a corresponding distribution. It can also be used to represent
+pseudo-likelihoods that do not correspond to the probability density
+of any existing distribution.
+
+The usage of the \texttt{dloglik} distribution is as follows:
+\begin{verbatim}
+y ~ dloglik(LL)
+\end{verbatim}
+where \texttt{LL} is a scalar expression that gives the required
+log-likelihood. During MCMC sampling, the node \texttt{y} will return
+this log-likelihood for all of its stochastic parents.
+
+It is important to note that \texttt{dloglik} is not a true
+distribution in the sense that you cannot generate a new value for
+\texttt{y} by forward sampling. If the node \texttt{y} is unobserved,
+then a runtime error will be generated as the \texttt{dloglik}
+distribution will refuse to initialize the value of \texttt{y} by
+forward sampling.
+
+To use the \texttt{dloglik} distribution, the variable on the left
+hand side of the stochastic relation must be observed. It does not
+matter what the value is, \texttt{dloglik} will return the likelihood
+based on the parameter (\texttt{LL}) ignoring the value of the node
+(\texttt{y}).
+
+As an example, consider a normal location-scale model for a set of
+independent, identically distributed observations $x_1, \ldots x_N$.
+
+\begin{verbatim}
+model {
+   for (i in 1:N) {
+      x[i] ~ dnorm(mu, tau)
+   }
+   tau <- 1/sigma^2
+   mu ~ dnorm(0, 1.0E-4)
+   sigma ~ dunif(0, 10)
+}
+\end{verbatim}
+
+Suppose that we want to recreate this model without using the
+\texttt{dnorm} distribution. We can do this using the following model:
+
+\begin{verbatim}
+data {
+   for (i in 1:N) {
+      dummy[i] <- 0
+   }
+}
+model {
+   for (i in 1:N) {
+      dummy[i] ~ dloglik(LL[i])
+      LL[i] <- - 0.5 * ((x[i] - mu) / sigma)^2 - log(sigma)
+   }
+   mu ~ dnorm(0, 1.0E-4)
+   sigma ~ dunif(0, 10)
+}
+\end{verbatim}
+
+The data block creates observed variables \texttt{dummy[1]} up to
+\texttt{dummy[N]} with value 0. They can be assigned any value; the
+only important thing is that they are observed. The expression for
+\texttt{LL[i]} gives the normal log likelihood for \texttt{x[i]} in
+terms of the parameters \texttt{mu} and \texttt{sigma} and is used
+whenever these parameters are updated during sampling.
+
+In general, \texttt{dloglik} will be less efficient than using a
+proper probability model, as JAGS will not be able to identify
+opportunities for efficient sampling. For example, in the example
+above JAGS recognizes that \texttt{mu} has a conjugate prior
+distribution when \texttt{dnorm} is used, but not when
+\texttt{dloglik} is used.
 
 \subsection{Observable functions in the bugs module}
 \label{section:bugs:obfun}

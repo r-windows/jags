@@ -15,6 +15,7 @@
 #include "DInterval.h"
 #include "DLnorm.h"
 #include "DLogis.h"
+#include "DLogLik.h"
 #include "DMNorm.h"
 #include "DMNormVC.h"
 #include "DMT.h"
@@ -33,6 +34,7 @@
 #include "DUnif.h"
 #include "DWeib.h"
 #include "DWish.h"
+#include "SumDist.h"
 
 #include <MersenneTwisterRNG.h>
 #include <JRmath.h>
@@ -76,6 +78,7 @@ void BugsDistTest::setUp() {
     _dhyper = new jags::bugs::DHyper();
     _dinterval = new jags::bugs::DInterval();    
     _dlnorm = new jags::bugs::DLnorm();
+    _dloglik = new jags::bugs::DLogLik();
     _dlogis = new jags::bugs::DLogis();
     _dmnorm = new jags::bugs::DMNorm();
     _dmnormvc = new jags::bugs::DMNormVC();
@@ -95,7 +98,6 @@ void BugsDistTest::setUp() {
     _dunif = new jags::bugs::DUnif();
     _dweib = new jags::bugs::DWeib();
     _dwish = new jags::bugs::DWish();
-
 }
 
 void BugsDistTest::tearDown() {
@@ -117,6 +119,7 @@ void BugsDistTest::tearDown() {
     delete _dinterval;    
     delete _dlnorm;
     delete _dlogis;
+    delete _dloglik;
     delete _dmnorm;
     delete _dmnormvc;
     delete _dmt;
@@ -156,6 +159,7 @@ void BugsDistTest::npar()
     CPPUNIT_ASSERT_EQUAL(_dinterval->npar(), 2UL);    
     CPPUNIT_ASSERT_EQUAL(_dlnorm->npar(), 2UL);
     CPPUNIT_ASSERT_EQUAL(_dlogis->npar(), 2UL);
+    CPPUNIT_ASSERT_EQUAL(_dloglik->npar(), 1UL);
     CPPUNIT_ASSERT_EQUAL(_dmnorm->npar(), 2UL);
     CPPUNIT_ASSERT_EQUAL(_dmnormvc->npar(), 2UL);
     CPPUNIT_ASSERT_EQUAL(_dmt->npar(), 3UL);
@@ -174,7 +178,6 @@ void BugsDistTest::npar()
     CPPUNIT_ASSERT_EQUAL(_dunif->npar(), 2UL);
     CPPUNIT_ASSERT_EQUAL(_dweib->npar(), 2UL);
     CPPUNIT_ASSERT_EQUAL(_dwish->npar(), 2UL);
-
 }
 
 void BugsDistTest::name()
@@ -194,6 +197,7 @@ void BugsDistTest::name()
     CPPUNIT_ASSERT_EQUAL(string("dinterval"), _dinterval->name());    
     CPPUNIT_ASSERT_EQUAL(string("dlnorm"), _dlnorm->name());
     CPPUNIT_ASSERT_EQUAL(string("dlogis"), _dlogis->name());
+    CPPUNIT_ASSERT_EQUAL(string("dloglik"), _dloglik->name());
     CPPUNIT_ASSERT_EQUAL(string("dmnorm"), _dmnorm->name());
     CPPUNIT_ASSERT_EQUAL(string("dmnorm.vcov"), _dmnormvc->name());
     CPPUNIT_ASSERT_EQUAL(string("dmt"), _dmt->name());
@@ -212,7 +216,6 @@ void BugsDistTest::name()
     CPPUNIT_ASSERT_EQUAL(string("dunif"), _dunif->name());
     CPPUNIT_ASSERT_EQUAL(string("dweib"), _dweib->name());
     CPPUNIT_ASSERT_EQUAL(string("dwish"), _dwish->name());
-
 }
 
 void BugsDistTest::alias()
@@ -232,6 +235,7 @@ void BugsDistTest::alias()
     CPPUNIT_ASSERT_EQUAL(string(""), _dinterval->alias());    
     CPPUNIT_ASSERT_EQUAL(string(""), _dlnorm->alias());
     CPPUNIT_ASSERT_EQUAL(string(""), _dlogis->alias());
+    CPPUNIT_ASSERT_EQUAL(string(""), _dloglik->alias());
     CPPUNIT_ASSERT_EQUAL(string(""), _dmnorm->alias());
     CPPUNIT_ASSERT_EQUAL(string(""), _dmnormvc->alias());
     CPPUNIT_ASSERT_EQUAL(string(""), _dmt->alias());

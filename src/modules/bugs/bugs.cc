@@ -15,6 +15,7 @@
 #include <distributions/DInterval.h>
 #include <distributions/DLnorm.h>
 #include <distributions/DLogis.h>
+#include <distributions/DLogLik.h>
 #include <distributions/DMNorm.h>
 #include <distributions/DMNormVC.h>
 #include <distributions/DMT.h>
@@ -36,6 +37,7 @@
 #include <distributions/DHyper.h>
 #include <distributions/DSum.h>
 #include <distributions/SumDist.h>
+
 
 #include <functions/Abs.h>
 #include <functions/ArcCos.h>
@@ -213,6 +215,7 @@ namespace bugs {
 	insert(new DInterval, new DIntervalFunc);
 	insert(new DRound, new DRoundFunc);
 	insert(new SumDist, new Sum);
+	insert(new DLogLik);
 	
 	//Load sampler factories
 	insert(new MNormalFactory);
