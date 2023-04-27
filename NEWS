@@ -31,6 +31,10 @@ Library changes
   including Node->logDensity() and Node->KL() for all (including fixed)
   nodes.
 
+Changes in JAGS 4.3.1
+
+The Windows installer has been updated to work with the new compiler
+for R >= 4.2.0.
   
 Changes in JAGS 4.3.0
 

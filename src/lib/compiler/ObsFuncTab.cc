@@ -6,15 +6,15 @@
 #include <functional>
 #include <algorithm>
 
-using std::binary_function;
 using std::find_if;
+using std::bind;
 
 namespace jags {
 
 typedef std::pair<DistPtr, FunctionPtr> ObsFunc;
 typedef std::list<ObsFunc> OFList;
 
-struct isDist: public binary_function<ObsFunc, DistPtr, bool> 
+struct isDist
 {
     // Adaptable binary predicate for find_if algorithm 
     bool operator()(ObsFunc const &f, DistPtr const &dist) const
@@ -41,7 +41,7 @@ void ObsFuncTab::insert (DistPtr const &dist, FunctionPtr const &func)
 FunctionPtr const &ObsFuncTab::find(DistPtr const &dist) const
 {
     OFList::const_iterator p = 
-	find_if(_flist.begin(), _flist.end(), bind2nd(isDist(), dist));
+      find_if(_flist.begin(), _flist.end(), bind(isDist(), std::placeholders::_1, dist));
     
     return (p == _flist.end()) ? _nullfun : p->second;
 }

@@ -13,6 +13,7 @@
 #include <graph/ConstantNode.h>
 #include <graph/NodeError.h>
 #include <graph/Node.h>
+#include <util/nainf.h>
 
 #include <fstream>
 #include <sstream>
@@ -24,6 +25,7 @@
 #include <map>
 
 using std::map;
+using std::pair;
 using std::binary_function;
 using std::sort;
 using std::vector;

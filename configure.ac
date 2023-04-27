@@ -165,7 +165,6 @@ AC_CONFIG_FILES([
   src/modules/glm/distributions/Makefile
   src/terminal/Makefile
   win/Makefile
-  win/runtime32/Makefile
   win/runtime64/Makefile
   doc/Makefile
   doc/manual/Makefile
