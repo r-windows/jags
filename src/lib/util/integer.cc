@@ -2,41 +2,34 @@
 
 #include <util/integer.h>
 
-//#include <stdexcept>
 #include <cmath>
-#include <cfloat>
-#include <climits>
-//#include <string>
+#include <limits>
 
 using std::fabs;
 using std::sqrt;
 using std::round;
-
-/*
-  Numerical tolerance for values close to an integer. Following R
-  we use the square root of the machine precision.
-*/
-static const double eps = sqrt(DBL_EPSILON);
-
+using std::numeric_limits;
 
 namespace jags {
 
-    /* 
-       Largest integer that can be represented exactly in a 64-bit
-       double. 1 bit for the sign and 11 bits for the exponent leaves 52
-       bits for the fraction.  Hence up to 2^53-1 can be represented
-       exactly and 2^53 is even so there is no loss of precision from the
-       missing last bit.
-    */
-    const unsigned long JAGS_BIGINT = 9007199254740992UL;
-
+    static const unsigned long JAGS_ULONG_MAX = numeric_limits<unsigned long>::max();
+    
+    static const int JAGS_INT_MIN = numeric_limits<int>::min();
+    static const int JAGS_INT_MAX = numeric_limits<int>::max();
+    
+    /*
+      Numerical tolerance for values close to an integer. Following R
+      we use the square root of the machine precision.
+    */ 
+    static const double JAGS_EPS = sqrt(numeric_limits<double>::epsilon());
+  
     int asInteger(double fval)
     {
-	if (fval < INT_MIN) {
-	    return INT_MIN;
+	if (fval < JAGS_INT_MIN) {
+	    return JAGS_INT_MIN;
 	}
-	else if (fval > INT_MAX) {
-	    return INT_MAX;
+	else if (fval > JAGS_INT_MAX) {
+	    return JAGS_INT_MAX;
 	}
 	else {
 	    return static_cast<int>(round(fval));
@@ -45,7 +38,7 @@ namespace jags {
 
     bool checkInteger(double fval)
     {
-	return fabs(fval - round(fval)) < eps;
+	return fabs(fval - round(fval)) < JAGS_EPS;
     }
     
     unsigned long asULong(double fval)
@@ -53,8 +46,8 @@ namespace jags {
 	if (fval < 0) {
 	    return 0UL;
 	}
-	else if (fval > JAGS_BIGINT) {
-	    return JAGS_BIGINT;
+	else if (fval > JAGS_ULONG_MAX) {
+	    return JAGS_ULONG_MAX;
 	}
 	else {
 	    return static_cast<unsigned long>(round(fval));
