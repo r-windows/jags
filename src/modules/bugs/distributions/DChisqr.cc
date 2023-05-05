@@ -79,14 +79,18 @@ double DChisqr::r(vector<double const *> const &par, RNG *rng) const
 
     bool DChisqr::hasScore(unsigned long i) const
     {
-	return i == 0;
+	return i == 1;
     }
     
     double DChisqr::score(double x, vector<double const *> const &parameters,
 			  unsigned long i) const
     {
-	return (log(x/2) - digamma(DF(parameters)/2))/2;
+	if (i == 1) {
+	    return (log(x/2) - digamma(DF(parameters)/2))/2;
+	}
+	else {
+	    return 0;
+	}
     }
-
 
 }}

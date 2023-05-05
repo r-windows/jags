@@ -108,15 +108,27 @@ double DDexp::r(vector<double const *> const &par, RNG *rng) const
 
     bool DDexp::hasScore(unsigned long i) const
     {
-	//Score exists with respect to scale parameter, but not wrt
-	//location when x == mu.
-	return i == 1;
+	return i >= 0 && i <= 2;
     }
     
     double DDexp::score(double x, vector<double const *> const &parameters,
 			unsigned long i) const
     {
-	return SCALE(parameters) - fabs(x - MU(parameters));
+	const double mu = MU(parameters);
+	const double lambda = RATE(parameters);
+
+	/* Define graident at x==mu by taking right limit */
+
+	switch(i) {
+	case 0:
+	    return x >= mu ? -lambda : lambda;
+	case 1:
+	    return x >= mu ? lambda : -lambda;
+	case 2:
+	    return 1/lambda - fabs(x - mu);
+	default:
+	    return 0;
+	}
     }
 
 }}

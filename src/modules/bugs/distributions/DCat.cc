@@ -153,7 +153,7 @@ unsigned long DCat::length(vector<unsigned long> const &) const
 
     bool DCat::hasScore(unsigned long i) const
     {
-	return true;
+	return i == 1;
     }
     
     void DCat::score(double *s, double const *x,
@@ -161,15 +161,18 @@ unsigned long DCat::length(vector<unsigned long> const &) const
 		     vector<unsigned long> const &lengths,
 		     unsigned long i) const
     {
-	double const *prob = PROB(par);
-	unsigned long N = NCAT(lengths);
-	
-	double S = accumulate(prob, prob + N, 0.0);
-	fill(s, s+N, -1/S);
-
-	unsigned long y = static_cast<unsigned long>(*x) - 1;
-	s[y] += 1/prob[y];
+	if (i == 1) {
+	    double const *prob = PROB(par);
+	    unsigned long N = NCAT(lengths);
+	    
+	    double ipsum = 1.0/accumulate(prob, prob + N, 0.0);
+	    for (unsigned long i = 0; i < N; ++i) {
+		s[i] -= ipsum;
+	    }
+	    
+	    unsigned long y = static_cast<unsigned long>(*x) - 1;
+	    s[y] += 1/prob[y];
+	}
     }
-
-
+    
 }}

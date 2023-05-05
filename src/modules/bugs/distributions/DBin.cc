@@ -84,10 +84,10 @@ bool DBin::isSupportFixed(vector<bool> const &fixmask) const
 double DBin::KL(vector<double const *> const &par0,
 		vector<double const *> const &par1) const
 {
-    double N0 = SIZE(par0);
-    double N1 = SIZE(par1);
-    double p0 = PROB(par0);
-    double p1 = PROB(par1);
+    const double N0 = SIZE(par0);
+    const double N1 = SIZE(par1);
+    const double p0 = PROB(par0);
+    const double p1 = PROB(par1);
 
     //FIXME: If N0 < N1 then we can still calculate finite KL
     if (N0 != N1) {
@@ -100,22 +100,27 @@ double DBin::KL(vector<double const *> const &par0,
 	return - N0 * log(p1);
     }
     else {
-	return (N0 * p0 * (log(p0) - log(p1)) +
-		N0 * (1 - p0) * (log(1 - p0) - log(1 - p1)));
+	return N0 * p0 * (log(p0) - log(p1)) +
+	    N0 * (1 - p0) * (log(1 - p0) - log(1 - p1));
     }
 }
 
     bool DBin::hasScore(unsigned long i) const
     {
-	return i == 0;
+	return i == 1;
     }
     
     double DBin::score(double x, vector<double const *> const &parameters,
 		       unsigned long i) const
     {
-	double N = SIZE(parameters);
-	double p = PROB(parameters);
-	return x/p - (N - x)/(1 - p);
+	if (i == 1) {
+	    const double N = SIZE(parameters);
+	    const double p = PROB(parameters);
+	    return x/p - (N - x)/(1 - p);
+	}
+	else {
+	    return 0;
+	}
     }
 
 }}

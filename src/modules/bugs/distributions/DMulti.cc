@@ -250,25 +250,28 @@ double DMulti::logDensity(double const *x, PDFType type,
 
     bool DMulti::hasScore(unsigned long i) const
     {
-	return i == 0;
+	return i == 1;
     }
 
-void DMulti::score(double *s, double const *x,
-		   vector<double const *> const &parameters,
-		   vector<unsigned long> const &lengths,
-		   unsigned long i) const
-{
-
-    unsigned long N = length(lengths);
-    double const * prob = PROB(parameters);
-    double size = SIZE(parameters);
+    void DMulti::score(double *grad, double const *x,
+		       vector<double const *> const &parameters,
+		       vector<unsigned long> const &lengths,
+		       unsigned long i) const
+    {
+	if (i == 1) {
     
-    double sumprob = accumulate(prob, prob + N, 0);
-
-    for (unsigned long i = 0; i < N; i++) {
-	s[i] = x[i]/prob[i] - size/sumprob;
+	    unsigned long N = length(lengths);
+	    double const * prob = PROB(parameters);
+	    double size = SIZE(parameters);
+	    
+	    double sumprob = accumulate(prob, prob + N, 0);
+	    
+	    for (unsigned long i = 0; i < N; i++) {
+		grad[i] += x[i]/prob[i] - size/sumprob;
+	    }
+	}
+	
     }
-}
     
 
 }}

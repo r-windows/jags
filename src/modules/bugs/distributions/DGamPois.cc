@@ -16,126 +16,126 @@ using std::string;
 #define SHAPE(par) (*par[1])
 
 namespace jags {
-namespace bugs {
+    namespace bugs {
 
-DGamPois::DGamPois()
-    : RScalarDist("dgampois", 2, DIST_POSITIVE, true)
-{}
+	DGamPois::DGamPois()
+	    : RScalarDist("dgampois", 2, DIST_POSITIVE, true)
+	{}
 
-bool 
-DGamPois::checkParameterValue (vector<double const *> const &par) const
-{
-    double m = MEAN(par);
-    double s = SHAPE(par);
-    double prob = s / (s + m);
-    return (s >= 0 && prob > 0 && prob <= 1);
-}
-
-double
-DGamPois::d(double x, PDFType ,
-	    vector<double const *> const &par, bool give_log) 
-    const
-{
-    if (SHAPE(par) == 0) {
-	if (give_log) {
-	    return (x == 0) ? 0 : JAGS_NEGINF;
+	bool 
+	DGamPois::checkParameterValue (vector<double const *> const &par) const
+	{
+	    double m = MEAN(par);
+	    double s = SHAPE(par);
+	    double prob = s / (s + m);
+	    return (s >= 0 && prob > 0 && prob <= 1);
 	}
-	else {
-	    return (x == 0) ? 1 : 0;
-	}
-    }
-    else {
-	double m = MEAN(par);
-	double s = SHAPE(par);
-	double prob = s / (s + m);
-	return dnbinom(x, s, prob, give_log);
-    }
-}
 
-double
-DGamPois::p(double q, vector<double const *> const &par, bool lower, 
-	    bool give_log) const
-{
-    if (SHAPE(par) == 0) {
-	return give_log ? 0 : 1;
-    }
-    else {
+	double
+	DGamPois::d(double x, PDFType ,
+		    vector<double const *> const &par, bool give_log) 
+	    const
+	{
+	    if (SHAPE(par) == 0) {
+		if (give_log) {
+		    return (x == 0) ? 0 : JAGS_NEGINF;
+		}
+		else {
+		    return (x == 0) ? 1 : 0;
+		}
+	    }
+	    else {
 		double m = MEAN(par);
 		double s = SHAPE(par);
-	    double prob = s / (s + m);
+		double prob = s / (s + m);
+		return dnbinom(x, s, prob, give_log);
+	    }
+	}
+
+	double
+	DGamPois::p(double q, vector<double const *> const &par, bool lower, 
+		    bool give_log) const
+	{
+	    if (SHAPE(par) == 0) {
+		return give_log ? 0 : 1;
+	    }
+	    else {
+		double m = MEAN(par);
+		double s = SHAPE(par);
+		double prob = s / (s + m);
 		return pnbinom(q, s, prob, lower, give_log);
-    }
-}
+	    }
+	}
 
-double 
-DGamPois::q(double p, vector<double const *> const &par, bool lower, 
-	   bool log_p) const
-{
-    if (SHAPE(par) == 0) {
-	return 0;
-    }
-    else {
-	double m = MEAN(par);
-	double s = SHAPE(par);
-	double prob = s / (s + m);
-	return qnbinom(p, s, prob, lower, log_p);
-    }
-}
+	double 
+	DGamPois::q(double p, vector<double const *> const &par, bool lower, 
+		    bool log_p) const
+	{
+	    if (SHAPE(par) == 0) {
+		return 0;
+	    }
+	    else {
+		double m = MEAN(par);
+		double s = SHAPE(par);
+		double prob = s / (s + m);
+		return qnbinom(p, s, prob, lower, log_p);
+	    }
+	}
 
-double DGamPois::r(vector<double const *> const &par, RNG *rng) const
-{
-    if (SHAPE(par) == 0) {
-	return 0;
-    }
-    else {
-	double m = MEAN(par);
-	double s = SHAPE(par);
-	double prob = s / (s + m);
-	return rnbinom(s, prob, rng);
-    }
-}
+	double DGamPois::r(vector<double const *> const &par, RNG *rng) const
+	{
+	    if (SHAPE(par) == 0) {
+		return 0;
+	    }
+	    else {
+		double m = MEAN(par);
+		double s = SHAPE(par);
+		double prob = s / (s + m);
+		return rnbinom(s, prob, rng);
+	    }
+	}
 
-double DGamPois::KL(vector<double const *> const &par0,
-		   vector<double const *> const &par1) const
-{
-    double m0 = MEAN(par0);
-    double s0 = SHAPE(par0);
-    double p0 = s0 / (s0 + m0);
-    double m1 = MEAN(par1);
-    double s1 = SHAPE(par1);
-    double p1 = s1 / (s1 + m1);
+	double DGamPois::KL(vector<double const *> const &par0,
+			    vector<double const *> const &par1) const
+	{
+	    double m0 = MEAN(par0);
+	    double s0 = SHAPE(par0);
+	    double p0 = s0 / (s0 + m0);
+	    double m1 = MEAN(par1);
+	    double s1 = SHAPE(par1);
+	    double p1 = s1 / (s1 + m1);
 
-    if (fabs(s0 - s1) > 1e-16) {
-	//We can't calculat Kullback-Leibler divergence in closed form when
-	//s0 and s1 are different
-	return JAGS_NAN;
-    }
+	    if (fabs(s0 - s1) > 1e-16) {
+		//We can't calculat Kullback-Leibler divergence in closed form when
+		//s0 and s1 are different
+		return JAGS_NAN;
+	    }
     
-    return s0 * (log(p0) - log(p1))  + 
-	(1 - p0) * s0 * (log(1 - p0) - log(1 - p1)) / p0;
-}
+	    return s0 * (log(p0) - log(p1))  + 
+		(1 - p0) * s0 * (log(1 - p0) - log(1 - p1)) / p0;
+	}
 
-    bool DGamPois::hasScore(unsigned long i) const
-    {
-	return true;
-    }
+	bool DGamPois::hasScore(unsigned long i) const
+	{
+	    return true;
+	}
 
-    double DGamPois::score(double x, vector<double const *> const &par,
-			   unsigned long i) const
-    {
-	double m = MEAN(par);
-	double s = SHAPE(par);
-	double prob = s / (s + m);
+	double DGamPois::score(double x, vector<double const *> const &par,
+			       unsigned long i) const
+	{
+	    double m = MEAN(par);
+	    double s = SHAPE(par);
+	    double prob = s / (s + m);
 	
-	if (i == 0) {
-	    return prob * (x - m) / m;
+	    if (i == 0) {
+		return prob * (x - m) / m;
+	    }
+	    else if (i == 1) {
+		return digamma(x + s) - digamma(s) + log(prob) - 1 - prob - x/(s+m);
+	    }
+	    else {
+		return 0;
+	    }
 	}
-	else if (i == 1) {
-	    return digamma(x + s) - digamma(s) + log(prob) - 1 - prob - x/(s+m);
-	}
-	else {
-	    return 0;
-	}
-    }
    
-}}
+    }}

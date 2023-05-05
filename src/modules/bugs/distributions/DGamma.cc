@@ -76,22 +76,23 @@ double DGamma::KL(vector<double const *> const &par0,
 
     bool DGamma::hasScore(unsigned long i) const
     {
-	return true;
+	return i >= 0 & i <= 2;
     }
 
     double DGamma::score(double x, vector<double const *> const &par,
-			 unsigned long i) const
+			    unsigned long i) const
     {
 	double b = SHAPE(par);
 	double a = RATE(par);
 
-	if (i == 0) {
-	    return log(a) + log(x) - digamma(b);
-	}
-	else if (i == 1) {
+	switch(i) {
+	case 0:
+	    return (b-1)/x - a;
+	case 1:
+	    return log(x) + log(a) - digamma(b);
+	case 2:
 	    return -x + b/a;
-	}
-	else {
+	default:
 	    return 0;
 	}
     }

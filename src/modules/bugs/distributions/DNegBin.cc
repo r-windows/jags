@@ -95,7 +95,7 @@ double DNegBin::KL(vector<double const *> const &par0,
     double r1 = SIZE(par1);
 
     if (fabs(r0 - r1) > 1e-16) {
-	//We can't calculat Kullback-Leibler divergence in closed form when
+	//We can't calculate Kullback-Leibler divergence in closed form when
 	//r0 and r1 are different
 	return JAGS_NAN;
     }

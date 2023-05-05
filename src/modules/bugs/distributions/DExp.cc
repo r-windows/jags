@@ -63,12 +63,21 @@ double DExp::KL(vector<double const *> const &par0,
 
     bool DExp::hasScore(unsigned long i) const
     {
-	return i == 0;
+	return i == 0 || i == 1;
     }
     
-    double DExp::score(double x, vector<double const *> const &parameters,
+    double DExp::score(double x, vector<double const *> const &par,
 		       unsigned long i) const
     {
-	return SCALE(parameters) - x;
+	const double lambda = *par[0];
+
+	switch(i) {
+	case 0:
+	    return -lambda;
+	case 1:
+	    return 1/lambda - x;
+	default:
+	    return 0;
+	}
     }
 }}
