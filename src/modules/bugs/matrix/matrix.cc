@@ -121,6 +121,21 @@ double det(double const *a, int n)
   return det;
 }
 
+  void cholesky (double *X, double const *A, unsigned long n)
+  {
+    unsigned long N = n*n;
+    copy(A, A + N, X);
+    
+    int info = 0;
+    int ni = asInteger(n);
+    jags_dpotrf ("L", &ni, X, &ni, &info);
+    if (info < 0) {
+      throwLogicError("Illegal argument in cholesky");
+    }
+    else if (info > 0) {
+      throwRuntimeError("Cannot calculate cholesky decomposition: not positive definite");
+    }
+  }
 
 bool inverse_chol (double *X, double const *A, unsigned long n)
 {
