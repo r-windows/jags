@@ -1,4 +1,3 @@
-
 /* Compiler rules for Mixture nodes.
 
    Node * getMixtureNode(ParseTree const * var, Compiler *compiler);
@@ -10,6 +9,7 @@
 #include <compiler/ParseTree.h>
 #include <model/NodeArray.h>
 #include <compiler/Compiler.h>
+#include <graph/Node.h>
 #include <graph/NodeError.h>
 #include <sarray/SimpleRange.h>
 #include <sarray/RangeIterator.h>
@@ -66,36 +66,6 @@ namespace jags {
 	    }
 	    subsets.push_back(pair<vector<unsigned long>, Range>(p, Range(scope)));
 	}
-    }
- 
-    static Node *  getMixtureNode2(NodeArray *array, vector<StochasticIndex> const &limits,
-				   Compiler *compiler)
-    {
-	vector<pair<vector<unsigned long>, Range> > ranges;  
-	getSubsetRanges(ranges, limits, array->range());
-
-	map<vector<unsigned long>, Node const *> mixmap;
-	for (unsigned int i = 0; i < ranges.size(); ++i) {
-	    Node *subset_node =
-		array->getSubset(ranges[i].second, compiler->model());
-	    if (subset_node) {
-		mixmap[ranges[i].first] = subset_node;
-	    }
-	    else {
-		return nullptr;
-	    }
-
-	}
-
-	vector<Node const *> indices;
-	for (unsigned int i = 0; i < limits.size(); ++i) {
-	    if (limits[i].isVariable()) {
-		indices.push_back(limits[i].variableIndex());
-	    }
-	}
-    
-	return compiler->mixtureFactory2().getMixtureNode(indices, mixmap, 
-							  compiler->model());
     }
 
     static int getSubsetIndices(ParseTree const *var, Compiler *compiler,
@@ -199,7 +169,7 @@ namespace jags {
 	    throw logic_error("Trivial mixture node");
 	}
 
-	return getMixtureNode2(array, limits, compiler);
+	return array->getMixture(limits, compiler->model());
     }
 
     /**

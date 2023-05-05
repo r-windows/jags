@@ -10,13 +10,6 @@ namespace jags {
     class Node;
     class MixTab;
 
-    /** 
-     * A MixMap is an STL map that associates an index value (a vector
-     * of long integers) with a node.  
-     */
-    typedef std::map<std::vector<unsigned long>, Node const *> MixMap;
-
-
 /**
  * @short Node for mixture models.
  *
@@ -33,7 +26,7 @@ namespace jags {
  * x[1], ... x[M].
  */
 class MixtureNode : public DeterministicNode {
-    MixTab const *_table;
+    MixTab const &_table;
     unsigned long _nindex;
     bool _discrete;
     std::vector<Node const *> _active_parents;
@@ -42,17 +35,16 @@ public:
     /**
      * Constructs a MixtureNode. 
      *
-     * @param index Vector of index nodes. These must be discrete-valued,
-     *  scalar, and unobserved.
+     * @param index Vector of index nodes. These must be
+     *  discrete-valued, scalar, and unobserved.
      *
      * @param nchain Number of chains
      *
-     * @param mixmap a MixMap object which associates each possible value
-     * of the index nodes with a single parent. 
+     * @param mixtab a MixTab object which associates each possible
+     * value of the index nodes with a single parent.
      */
     MixtureNode(std::vector<Node const *> const &index,
-		unsigned int nchain, MixMap const &mixmap);
-    ~MixtureNode() override;
+		unsigned int nchain, MixTab const &mixtab);
     /**
      * Copies the value of the active parent
      */
@@ -77,7 +69,7 @@ public:
     bool isDiscreteValued() const override;
     /**
      * A MixtureNode preserves all closed classes if none of its index
-     * nodes are descendants of X. It is never fixed
+     * nodes are descendants of X. It is never fixed.
      */
     bool isClosed(std::set<Node const *> const &ancestors, 
 		  ClosedFuncClass fc, bool fixed) const override;

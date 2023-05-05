@@ -1542,6 +1542,7 @@ ObsFuncTab &Compiler::obsFuncTab()
     return *_oftab;
 }
 
+/*
 MixtureFactory& Compiler::mixtureFactory1()
 {
    return _mixfactory1;
@@ -1551,6 +1552,7 @@ MixtureFactory& Compiler::mixtureFactory2()
 {
    return _mixfactory2;
 }
+*/
 
 BUGSModel &Compiler::model() const
 {

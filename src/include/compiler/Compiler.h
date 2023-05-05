@@ -2,7 +2,6 @@
 #define COMPILER_H_
 
 #include <compiler/LogicalFactory.h>
-#include <compiler/MixtureFactory.h>
 #include <compiler/CounterTab.h>
 #include <compiler/ObsFuncTab.h>
 #include <distribution/DistTab.h>
@@ -45,8 +44,6 @@ class Compiler {
   int _index_expression;
   std::vector<Node*> _index_nodes;
   LogicalFactory _logicalfactory;
-  MixtureFactory _mixfactory1;
-  MixtureFactory _mixfactory2;
   std::map<std::string, std::vector<unsigned long> > _node_array_bounds;
   std::map<std::pair<std::string, Range>, std::set<unsigned long> > _umap;
   std::set<std::string> _lhs_vars;
@@ -129,8 +126,6 @@ public:
    * a logical node for a stochastic node when required
    */
   static ObsFuncTab &obsFuncTab();
-  MixtureFactory &mixtureFactory1();
-  MixtureFactory &mixtureFactory2();
 };
 
 } /* namespace jags */

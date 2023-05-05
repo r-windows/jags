@@ -296,26 +296,28 @@ namespace jags {
 	}
 
 	//Separate fixed and variable indices
-	vector<vector<unsigned long>> fixed_indices;
+	vector<vector<unsigned long>> fixed_indices, full_indices;
 	vector<Node const *> variable_indices;
 	for (unsigned int i = 0; i < indices.size(); ++i) {
 	    if (!indices[i].isVariable()) {
 		fixed_indices.push_back(indices[i].fixedIndex());
+		full_indices.push_back(indices[i].fixedIndex());
 	    }
 	    else {
 		variable_indices.push_back(indices[i].variableIndex());
+		full_indices.push_back(vector<unsigned long>());
 	    }
 	}
 
 	//All MixtureNodes with the same fixed indices can share the
-	//same MixMap. See if a suitable MixMap exists already.
-	auto q = _mixture_maps.find(fixed_indices);
-	if (q == _mixture_maps.end()) {
-	    //No pre-existing MixMap. So create one
+	//same MixTab. See if a suitable MixTab exists already.
+	auto q = _mix_tabs.find(full_indices);
+	if (q == _mix_tabs.end()) {
+	    //No pre-existing MixTab. So create one
 	    vector<pair<vector<unsigned long>, Range>> subsets;  
 	    getSubsetRanges(subsets, indices, this->range());
-	    
-	    MixMap mixmap;
+
+	    map<vector<unsigned long>, Node const *> mixmap;
 	    for (unsigned int i = 0; i < subsets.size(); ++i) {
 		Node *subset_node =
 		    this->getSubset(subsets[i].second, model);
@@ -329,13 +331,13 @@ namespace jags {
 		    return nullptr;
 		}
 	    }
-	    _mixture_maps[fixed_indices] = mixmap;
-	    q = _mixture_maps.find(fixed_indices);
+	    MixTab table(mixmap);
+	    _mix_tabs.insert(pair<vector<vector<unsigned long>>, MixTab>(full_indices, table));
+	    q = _mix_tabs.find(full_indices);
 	}
 	
 	//Create new MixtureNode and add it to the Model
-	MixtureNode * mixnode = new MixtureNode(variable_indices, _nchain,
-						q->second);
+	MixtureNode * mixnode = new MixtureNode(variable_indices, _nchain, q->second);
 	model.addNode(mixnode);
 	
 	//Insert into map for future calls to getMixture

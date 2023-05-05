@@ -17,10 +17,10 @@ namespace jags {
 	   values in the MixMap.  Also checks for consistency in the
 	   lengths of the index values.
 	*/
-	map<vector<unsigned long>, Node const *>::const_iterator p = mixmap.begin();
+	auto p = mixmap.begin();
 
 	unsigned long N = p->first.size();
-	vector <unsigned long> lower(p->first), upper(p->first);
+	vector<unsigned long> lower(p->first), upper(p->first);
 	
 	for (++p ; p != mixmap.end(); ++p) {
 	    if (p->first.size() != N) {
@@ -36,11 +36,26 @@ namespace jags {
 	return SimpleRange(lower, upper);
     }
 
-    MixTab::MixTab(map<vector<unsigned long>, Node const *> const &mixmap)
-	: _range(mkRange(mixmap)), _nodes(_range.length(), nullptr)
+    static vector<unsigned long> const&
+    mkDim(map<vector<unsigned long>, Node const *> const &mixmap)
     {
-	for (map<vector<unsigned long>, Node const *>::const_iterator p = mixmap.begin();
-	     p != mixmap.end(); ++p)
+	auto p = mixmap.begin();
+	
+	vector<unsigned long> const &dim0 = p->second->dim();
+	
+	for (++p ; p != mixmap.end(); ++p) {
+	    if (p->second->dim() != dim0) {
+		throw logic_error("parent dimension mismatch in MixTab");
+	    }
+	}
+	
+	return dim0;
+    }
+    
+    MixTab::MixTab(map<vector<unsigned long>, Node const *> const &mixmap)
+	: _range(mkRange(mixmap)), _dim(mkDim(mixmap)), _nodes(_range.length(), nullptr)
+    {
+	for (auto p = mixmap.begin(); p != mixmap.end(); ++p)
 	{
 	    _nodes[_range.leftOffset(p->first)] = p->second;
 	}
@@ -54,36 +69,20 @@ namespace jags {
 	return _nodes[offset];
     }
 
-    
-    Range const &MixTab::range() const
+    SimpleRange const &MixTab::range() const
     {
 	return _range;
     }
 
-
-/*
-    double MixTab::density() 
+    vector<unsigned long> const &MixTab::dim() const
     {
-	MixTab::const_iterator p = _map.begin(); 
-	vector <int> lower(p->first), upper(p->first);
-	unsigned int N = p->first.size();
-	
-	// Find a range containing the indices
-	for (++p ; p != _map.end(); ++p) {
-	    for (unsigned int j = 0; j < N; ++j) {
-		int i = p->first[j];
-		if (i < lower[j]) lower[j] = i;
-		if (i > upper[j]) upper[j] = i;
-	    }
-	}
-
-	// Density is the number of indices actually used divided by
-	// the number of possible indices in the enclosing range.
-	double numerator = _map.size();
-	double denominator = Range(lower, upper).length(); 
-	return numerator / denominator;
+	return _dim;
     }
-*/
+    
+    vector<Node const *> const &MixTab::nodes() const
+    {
+	return _nodes;
+    }
 
 }
 

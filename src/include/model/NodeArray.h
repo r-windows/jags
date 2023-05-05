@@ -2,6 +2,7 @@
 #define NODE_ARRAY_H_
 
 #include <graph/Graph.h>
+#include <graph/MixTab.h>
 #include <sarray/SimpleRange.h>
 #include <model/StochasticIndex.h>
 
@@ -37,7 +38,7 @@ class NodeArray {
   std::map<Range, Node *> _mv_nodes;
   std::map<Range, AggNode *> _generated_nodes;
   std::map<std::vector<StochasticIndex>, MixtureNode *, less_stoch_indices> _mixture_nodes;
-  std::map<std::vector<std::vector<unsigned long>>, std::map<std::vector<unsigned long>, Node const *>> _mixture_maps;  
+  std::map<std::vector<std::vector<unsigned long>>, MixTab> _mix_tabs;  
   bool _locked;
   
   /* Grow dynamically */
