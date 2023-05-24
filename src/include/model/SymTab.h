@@ -23,6 +23,9 @@ class SymTab
   Model *_model;
   std::map<std::string, NodeArray*> _varTable;
   std::map<Node const*, std::string> _names;
+  std::string printName(std::vector<StochasticIndex> const &) const;
+  std::string printValue(std::vector<StochasticIndex> const &,
+			 unsigned int) const;
 public:
   /**
    * Constructs an empty symbol table
@@ -103,12 +106,22 @@ public:
    */
   void clear();
   /**
-   * Gets the BUGS language name of the node if it belongs to
-   * any of the NodeArrays in the symbol table. Special rules for nested
-   * indexing also allow the names of Mixture Nodes to be calculated.
-   * If the node name is not found, an empty string is returned
+   * Gets the BUGS language name of the node if it belongs to any of
+   * the NodeArrays in the symbol table.  If the node name is not
+   * found, an empty string is returned
    */
   std::string getName(Node const *node) const;
+  /**
+   * Gets the value of the indices for a MixtureNode if it belongs to any
+   * of the NodeArrays in the symbol table. In the BUGS language,
+   * mixture nodes are defined by nested indexing, with one or more of
+   * the indices being unobserved quantities.
+   *
+   * @param node Mixture node
+   *
+   * @@param chain Chain number
+   */
+  std::string getMixtureIndex(Node const *node, unsigned long chain) const;
   /**
    * Locks all the NodeArrays contained in the SymTab
    */

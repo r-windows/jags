@@ -524,6 +524,16 @@ namespace jags {
 	return p->first;
     }
 
+    vector<StochasticIndex>
+    NodeArray::getStochasticRange(Node const *node) const
+    {
+	for (auto p = _mixture_nodes.begin(); p != _mixture_nodes.end(); ++p) {
+	    if (p->second == node)
+		return p->first;
+	}
+	return vector<StochasticIndex>();
+    }
+
     unsigned int NodeArray::nchain() const
     {
 	return _nchain;
@@ -538,5 +548,6 @@ namespace jags {
     {
 	return _locked;
     }
-	
+
+    
 } //namespace jags

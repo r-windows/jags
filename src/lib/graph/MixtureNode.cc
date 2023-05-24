@@ -2,8 +2,8 @@
 #include <graph/MixtureNode.h>
 #include <graph/GraphMarks.h>
 #include <graph/Graph.h>
-#include <graph/MixTab.h>1
-#include <graph/NodeError.h>
+#include <graph/MixTab.h>
+#include <graph/MixtureNodeError.h>
 
 //Debugging only
 //#include <util/nainf.h>
@@ -109,9 +109,7 @@ void MixtureNode::updateActive(unsigned int chain)
 		std::cout << "(which is  missing)\n";
 	}
 	*/
-	string msg = string("Invalid index ") + printIndex(i) +
-	    " in mixture node";
-	throw NodeError(this, msg);
+	throw MixtureNodeError(this, "Invalid index in mixture node", chain);
     }
 }
 

@@ -112,17 +112,17 @@ namespace jags {
     /**
      * @short Gets a constant reference to a unique dimension 
      *
-     * Vectors of unsigned long integers are frequently repeated objects in
-     * the JAGS library, and are typically used to represent
-     * dimensions of Nodes and NodeArrays. This function creates a
-     * unique constant reference to the requested vector, avoiding
-     * redundant copies of the vector taking up memory.
+     * Vectors of unsigned long integers are frequently repeated
+     * objects in the JAGS library, and are typically used to
+     * represent dimensions of Nodes and NodeArrays. This function
+     * creates a permanent copy of the given vector and returns a
+     * constant reference to the copy. This avoids redundant copies of
+     * the vector taking up memory.
      */
     std::vector<unsigned long> const &
 	getUnique(std::vector<unsigned long> const &dim);
-
     /**
-     * @short Getst a constant reference to a unique vector of dimension
+     * @short Gets a constant reference to a unique vector of dimensions
      *
      * Vectors of vectors of unsigned long integers are frequently repeated
      * objects in the JAGS library (Typically as dimensions of

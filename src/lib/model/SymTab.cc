@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <utility>
 #include <set>
+#include <sstream>
 
 using std::vector;
 using std::map;
@@ -17,6 +18,7 @@ using std::string;
 using std::runtime_error;
 using std::logic_error;
 using std::set;
+using std::ostringstream;
 
 namespace jags {
 
@@ -147,9 +149,17 @@ void SymTab::clear()
 
 string SymTab::getName(Node const *node) const
 {
-    map<string, NodeArray*>::const_iterator p;
-    for (p = _varTable.begin(); p != _varTable.end(); ++p) {
+    for (auto p = _varTable.begin(); p != _varTable.end(); ++p) {
+	// Check for mixture nodes
+	vector<StochasticIndex> srange = p->second->getStochasticRange(node);
+	if (!srange.empty()) {
+	    return p->first + printName(srange);
+	}
+    }
+
+    for (auto p = _varTable.begin(); p != _varTable.end(); ++p) {
 	NodeArray *array = p->second;
+	// Check for inserted nodes and generated aggregated nodes
 	Range node_range = array->getRange(node);
 	if (!isNULL(node_range)) {
 	    if (node_range == array->range()) {
@@ -161,6 +171,7 @@ string SymTab::getName(Node const *node) const
 	}
     }
 
+    
     //Name not in symbol table: calculate name from parents
     vector<Node const *> const &parents = node->parents();
     vector<string> parnames(parents.size());
@@ -178,5 +189,98 @@ string SymTab::getName(Node const *node) const
 
 
     }
+
+    string
+    SymTab::getMixtureIndex(Node const *node, unsigned long chain) const
+    {
+	for (auto p = _varTable.begin(); p != _varTable.end(); ++p) {
+	    vector<StochasticIndex> srange = p->second->getStochasticRange(node);
+	    if (!srange.empty()) {
+		return printValue(srange, chain);
+	    }
+	}
+	return "";
+    }
+
+    
+    string
+    SymTab::printName(vector<StochasticIndex> const &srange) const
+    {
+	if (srange.empty())
+	    return "";
+	
+	ostringstream ostr;
+	ostr << "[";
+	for (auto p = srange.begin(); p != srange.end(); ++p) {
+	    if (p != srange.begin()) {
+		ostr << ",";
+	    }
+	    if (p->isVariable()) {
+		ostr << getName(p->variableIndex());
+	    }
+	    else {
+		vector<unsigned long> const &index = p->fixedIndex();
+		ostr << index.front();
+		if (index.size() > 1) {
+		    bool simple = true;
+		    for (unsigned long j = 1; j < index.size(); ++j) {
+			if (index[j] != index[j-1] + 1) {
+			    simple = false;
+			    break;
+			}
+		    }
+		    if (simple) {
+			ostr << ":";
+		    }
+		    else {
+			ostr << "...";
+		    }
+		    ostr << index.back();
+		}
+	    }
+	}
+	ostr << "]";
+	return ostr.str();
+    }
+
+    string SymTab::printValue(vector<StochasticIndex> const &srange,
+			      unsigned int chain) const
+    {
+	ostringstream ostr;
+	ostr << "[";
+	for (auto p = srange.begin(); p != srange.end(); ++p) {
+	    if (p != srange.begin()) {
+		ostr << ",";
+	    }
+	    if (p->isVariable()) {
+		Node const *node = p->variableIndex();
+		ostr << node->value(chain)[0];
+	    }
+	    else {
+		vector<unsigned long> const &index = p->fixedIndex();
+		ostr << index.front();
+		if (index.size() > 1) {
+		    bool simple = true;
+		    for (unsigned long j = 1; j < index.size(); ++j) {
+			if (index[j] != index[j-1] + 1) {
+			    simple = false;
+			    break;
+			}
+		    }
+		    if (simple) {
+			ostr << ":";
+		    }
+		    else {
+			ostr << "...";
+		    }
+		    ostr << index.back();
+		}
+	    }
+	}
+	ostr << "]";
+	return ostr.str();
+    }
+
+
     
 } //namespace jags

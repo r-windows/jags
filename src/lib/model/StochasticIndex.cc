@@ -20,8 +20,11 @@ static bool isSimple(vector<unsigned long> const &index)
 
 namespace jags {
 
+    const vector<unsigned long> StochasticIndex::_null_fixed =
+	vector<unsigned long>();
+    
     StochasticIndex::StochasticIndex(Node const *node)
-	: _variable(node), _fixed(getUnique(vector<unsigned long>()))
+	: _variable(node), _fixed(_null_fixed)
     {
 	if (!isValid(node)) throw logic_error("Invalid StochasticIndex");
     }
@@ -128,5 +131,7 @@ namespace jags {
 	}
 	return false;
     }
+
+
 
 }

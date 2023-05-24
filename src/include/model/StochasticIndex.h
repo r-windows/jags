@@ -11,6 +11,7 @@ namespace jags {
     
     class StochasticIndex {
     private:
+	static const std::vector<unsigned long> _null_fixed;
 	Node const *_variable;
 	std::vector<unsigned long> const &_fixed;
     public:
@@ -33,6 +34,9 @@ namespace jags {
 	    return lt(lhs, rhs);
 	}
     };
+
+    std::string printValue(std::vector<StochasticIndex> const &indices,
+			   unsigned long chain);
     
 }
     

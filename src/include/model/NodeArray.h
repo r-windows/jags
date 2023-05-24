@@ -135,6 +135,12 @@ public:
    */
   Range getRange(Node const *node) const;
   /**
+   * Returns the vector of stochastic indices corresponding to the
+   * given node if it is a MixtureNode belonging to the
+   * NodeArray. Otherwise an empty vector is returned.
+   */
+  std::vector<StochasticIndex> getStochasticRange(Node const *node) const;
+  /**
    * Returns the number of chains of the nodes stored in the array
    */
   unsigned int nchain() const;
@@ -147,7 +153,6 @@ public:
    * Returns true if the NodeArray is locked
    */
   bool isLocked() const;
-
 };
 
 } /* namespace jags */
