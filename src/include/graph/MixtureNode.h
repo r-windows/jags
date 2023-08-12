@@ -2,6 +2,7 @@
 #define MIXTURE_NODE_H_
 
 #include <graph/DeterministicNode.h>
+#include <model/StochasticIndex.h>
 #include <map>
 #include <vector>
 
@@ -26,6 +27,7 @@ namespace jags {
  * x[1], ... x[M].
  */
 class MixtureNode : public DeterministicNode {
+    std::vector<StochasticIndex> const _indices;
     MixTab const &_table;
     unsigned long _nindex;
     bool _discrete;
@@ -43,7 +45,7 @@ public:
      * @param mixtab a MixTab object which associates each possible
      * value of the index nodes with a single parent.
      */
-    MixtureNode(std::vector<Node const *> const &index,
+    MixtureNode(std::vector<StochasticIndex> const &index,
 		unsigned int nchain, MixTab const &mixtab);
     /**
      * Copies the value of the active parent

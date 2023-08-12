@@ -337,7 +337,7 @@ namespace jags {
 	}
 	
 	//Create new MixtureNode and add it to the Model
-	MixtureNode * mixnode = new MixtureNode(variable_indices, _nchain, q->second);
+	MixtureNode * mixnode = new MixtureNode(indices, _nchain, q->second);
 	model.addNode(mixnode);
 	
 	//Insert into map for future calls to getMixture

@@ -23,12 +23,27 @@ using std::pair;
 
 namespace jags {
 
-    static vector<Node const *> 
-    mkParents2(vector<Node const *> const &index, vector<Node const *> const &nodes)
+    static unsigned long countVariable(vector<StochasticIndex> const &index)
     {
-	vector<Node const *> parents = index;
+	unsigned long nindex = 0;
+	for (auto p = index.begin(); p != index.end(); ++p) {
+	    if (p->isVariable()) nindex++;
+	}
+	return nindex;
+    }
+    
+    static vector<Node const *> 
+    mkParents(vector<StochasticIndex> const &index, MixTab const &mixtab)
+    {
+	vector<Node const *> parents;
+	for (auto p = index.begin(); p != index.end(); ++p) {
+	    if (p->isVariable())
+		parents.push_back(p->variableIndex());
+	}
+
 	unsigned long n = 0;
-	for (auto p = nodes.begin(); p != nodes.end(); ++p) {
+	vector<Node const *> const &mixparents = mixtab.nodes();
+	for (auto p = mixparents.begin(); p != mixparents.end(); ++p) {
 	    if (*p != nullptr) {
 		parents.push_back(*p);
 		n++;
@@ -42,23 +57,25 @@ namespace jags {
 	return parents;
     }
 
-    MixtureNode::MixtureNode(vector<Node const *> const &index,
+    MixtureNode::MixtureNode(vector<StochasticIndex> const &index,
 			     unsigned int nchain, MixTab const &mixtab)
-	: DeterministicNode(mixtab.dim(), nchain, mkParents2(index, mixtab.nodes())),
-	  _table(mixtab), _nindex(index.size()), _discrete(true),
-	  _active_parents(nchain)
+	: DeterministicNode(mixtab.dim(), nchain, mkParents(index, mixtab)),
+	  _indices(index), _table(mixtab), _nindex(countVariable(index)),
+	  _discrete(true), _active_parents(nchain)
     {
 	// Check validity of index argument
 
 	if (index.empty())
 	    throw invalid_argument("NULL index in MixtureNode constructor");
 
+	// FIXME: This should be built into StochasticIndex class
 	for (auto i = index.begin(); i != index.end(); ++i) {
-	    Node const *node = *i;
-	    if (node->length() != 1 || !node->isDiscreteValued() ||
-		node->isFixed()) 
-	    {
-		throw invalid_argument("Invalid index in MixtureNode constructor");
+	    if (i->isVariable()) {
+		Node const *node = i->variableIndex();
+		if (node->length() != 1 || !node->isDiscreteValued() || node->isFixed()) 
+		{
+		    throw invalid_argument("Invalid index in MixtureNode constructor");
+		}
 	    }
 	}
 
@@ -81,6 +98,7 @@ namespace jags {
 		_discrete = false;
 		break;
 	    }
+
 	}
     }
 
