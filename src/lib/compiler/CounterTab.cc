@@ -2,10 +2,12 @@
 #include <compiler/CounterTab.h>
 
 #include <string>
+#include <stdexcept>
 
 using std::vector;
 using std::pair;
 using std::string;
+using std::runtime_error;
 
 namespace jags {
 
@@ -23,6 +25,14 @@ namespace jags {
 
     Counter * CounterTab::pushCounter(string const &name, vector<unsigned long> const &index_range)
     {
+	/* Check for duplicated counters */
+	for (auto p = _table.begin(); p != _table.end(); ++p) {
+	    if (p->first == name) {
+		string msg = "Nested for loops with the same counter: " + name;
+		throw runtime_error(msg);
+	    }
+	}
+	
 	Counter *counter = new Counter(index_range);
 	pair<string, Counter*> cpair(name, counter);
 	_table.push_back(cpair);
