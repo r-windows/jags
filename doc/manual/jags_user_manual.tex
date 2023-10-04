@@ -1885,46 +1885,57 @@ distribution.
 \label{section:truncation}
 
 Some scalar-valued distributions in \JAGS\ can be truncated.
-Truncation is represented in \JAGS\ using the \texttt{T(,)}
-construct on the right hand side of a stochastic relation. If
+Truncation is represented in \JAGS\ using the \texttt{T()}
+distribution modifier on the right hand side of a stochastic
+relation. If
 \begin{verbatim}
 X ~ dfoo(theta) T(L,U)
 \end{verbatim}
-then {\em a priori} $X$ is known to lie between $L$ and $U$. This
-generates a likelihood
+then {\em a priori} $X$ is known to lie between $L$ and $U$.
+
+JAGS also supports an alternative truncation syntax from NIMBLE, in
+which \texttt{T()} is a wrapper around the distribution that adds
+additional arguments for the lower and upper bound:
+\begin{verbatim}
+X ~ T(dfoo(theta), L, U)
+\end{verbatim}
+
+A truncated distribution generates a likelihood
 \[
 \frac{p(x \mid \theta)}{P(L \leq X \leq U \mid \theta)}
 \]
 if $L \leq X \leq U$ and zero otherwise, where $p(x \mid \theta)$ is
-the density of $X$ given $\theta$ according to the distribution
-\texttt{foo}. Note that calculation of the denominator may be
-computationally expensive.
+the density of $X$ given $\theta$. Note that calculation of the
+denominator may be computationally expensive.
 
-The \texttt{T(,)} construct may also be used with one argument
-dropped.  For example \texttt{T(L,)} means that the distribution is
+The \texttt{T()} distribution modifier may also be used with empty
+arguments.  For example \texttt{T(L,)} means that the distribution is
 truncated below at value $L$ and \texttt{T(,U)} means it is truncated
-above at value $U$.
+above at value $U$. The same applies to NIMBLE-style truncation syntax
+where \texttt{T(dfoo(theta), L, )} means the distribution is
+left-truncated.
 
-A common use of the \texttt{T(,)} construct is to restrict a
-distribution to positive values, e.g.
+A common use of \texttt{T()} is to restrict a prior distribution to
+positive values, e.g.
 \begin{verbatim}
 theta ~ dnorm(0,1.0E-3) T(0,)
 \end{verbatim}
 gives a diffuse-half normal prior to \texttt{theta} on positive values
 only.
 
-{\bf Important note}: The \texttt{T(,)} construct must not be used for
-censoring. Censoring and truncation are two closely related issues
-that frequently cause confusion in the \BUGS\ language. If you have a
-variable $X$ in your model such that $X > C$ but you are not sure
-whether $X$ is censored or truncated then ask yourself: What should
-happen if you generate a new data set by sampling from the prior
-distribution? 
+{\bf Important note}: The \texttt{T()} distribution modifier must not
+be used for censoring. Censoring and truncation are two closely
+related issues that frequently cause confusion in the
+\BUGS\ language. If you have a variable $X$ in your model such that $X
+> C$ but you are not sure whether $X$ is censored or truncated then
+ask yourself: What should happen if you generate a new data set by
+sampling from the prior distribution?
 \begin{itemize}
-\item If it is always true that $X > c$ in any replicate data set,
-  then $X$ is {\em truncated} and you must use the $T(,)$ construct.
-\item If you might have $X \leq c$ in a replicate data set, but you
-  happen to observe $X > c$ in this data set, then $X$ is {\em
+\item If it is always true that $X > C$ in any replicate data set,
+  then $X$ is {\em truncated} and you must use $T()$ to truncate
+  the distribution in your model.
+\item If you might have $X \leq C$ in a replicate data set, but you
+  happen to observe $X > C$ in this data set, then $X$ is {\em
     censored}. Censored observations in \JAGS\ are represented by the
   \texttt{dinterval} distribution (section~\ref{bugs:dinterval}).
 \end{itemize}
@@ -2145,8 +2156,9 @@ than 1, or the beta distribution (page~\pageref{bugs:dbeta}) when
 either parameter is less than 1.  In such cases, the density function
 is not bounded but goes to infinity at the boundary of the support (0
 for the gamma distribution; 0 or 1 for the beta distribution). If this
-occurs, one solution is to use the \texttt{T(,)} construct to keep the
-distribution away from the boundary (See section~\ref{section:truncation})
+occurs, one solution is to use the \texttt{T()} distribution modifier
+to keep the distribution away from the boundary (See
+section~\ref{section:truncation})
 
 \subsection{RNGs in the base module}
 
@@ -3976,27 +3988,33 @@ n1 & n2 & - \\
 
 \section{Censoring and truncation}
 
-For compatibility with OpenBUGS, JAGS permits the use of \texttt{I(,)}
-for truncation when the the parameters of the truncated distribution
-are fixed.  For example, this is permitted:
+For compatibility with OpenBUGS, JAGS permits the use of \texttt{I()}
+as a distribution modifier for interval censoring when the parameters
+of the truncated distribution are fixed.  For example, this is
+permitted:
 \begin{verbatim}
 mu ~ dnorm(0, 1.0E-3) I(0, )
 \end{verbatim}
-because the truncated distribution has fixed parameters (mean 0,
-precision 1.0E-3).  In this case, there is no difference between 
-censoring and truncation.  Conversely, this is not permitted:
+because the distribution has fixed parameters (mean 0, precision
+1.0E-3).  In this case, there is no difference between censoring and
+truncation. JAGS also permits NIMBLE-style syntax in this case:
+\begin{verbatim}
+mu ~ I(dnorm(0, 1.0E-3), 0, )
+\end{verbatim}
+But JAGS does not permit the use of \texttt{I()} when there are unknown
+parameters in the distribution. For example, this is not permitted:
 \begin{verbatim}
 for (i in 1:N) {
    x[i] ~ dnorm(mu, tau) I(0, )
 }
 mu ~ dnorm(0, 1.0E-3)
 tau ~ dgamma(1, 1)
-}
 \end{verbatim}
 because the mean and precision of $x_1 \dots x_N$ are parameters to be
-estimated.  JAGS does not know if the aim is to model truncation or censoring
-and so the compiler will reject the model. Use either \texttt{T(,)} or the
-\texttt{dinterval} distribution to resolve the ambiguity.
+estimated.  JAGS does not know if the aim is to model truncation or
+censoring and so the compiler will reject the model. Use either
+\texttt{T()} or the \texttt{dinterval} distribution to resolve the
+ambiguity.
 
 \section{Data transformations}
 

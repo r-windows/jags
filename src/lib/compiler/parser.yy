@@ -199,9 +199,41 @@ stoch_relation:	var '~' distribution {
     $$ = new ParseTree(jags::P_STOCHREL, yylineno); 
     setParameters($$, $1, $3, $4);
 }
+| var '~' 'T' '(' distribution ',' expression ',' expression ')' {
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
+    setParameters($$, $1, $5, Truncated($7, $9));
+}
+| var '~' 'T' '(' distribution ',' expression ',' ')' {
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
+    setParameters($$, $1, $5, Truncated($7, 0));
+}
+| var '~' 'T' '(' distribution ',' ',' expression ')' {
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
+    setParameters($$, $1, $5, Truncated(0, $8));
+}
+| var '~' 'T' '(' distribution ',' ',' ')' {
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
+    setParameters($$, $1, $5, Truncated(0, 0));
+}
 | var '~' distribution interval {
     $$ = new ParseTree(jags::P_STOCHREL, yylineno);
     setParameters($$, $1, $3, $4);
+}
+| var '~' 'I' '(' distribution ',' expression ',' expression ')' {
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
+    setParameters($$, $1, $5, Interval($7, $9));
+}
+| var '~' 'I' '(' distribution ',' expression ',' ')' {
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
+    setParameters($$, $1, $5, Interval($7, 0));
+}
+| var '~' 'I' '(' distribution ',' ',' expression ')' {
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
+    setParameters($$, $1, $5, Interval(0, $8));
+}
+| var '~' 'I' '(' distribution ',' ',' ')' {
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
+    setParameters($$, $1, $5, Interval(0, 0));
 }
 ;
 
