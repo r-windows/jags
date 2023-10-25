@@ -15,7 +15,8 @@
 %}
 
 %option prefix="zz"
-
+%option nounput
+     
 EXPONENT	[eE][+-][0-9]+
 BRACKET         [ \t]*\(
 

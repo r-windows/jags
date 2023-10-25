@@ -24,10 +24,6 @@ public:
 		    std::vector<double const *> const &parameters,
 		    std::vector<std::vector<unsigned long> > const &dims,
 		    RNG *rng) const override;
-  //FIXME: Can we retire this?
-  static void randomSample(double *x,
-                           double const *R, double k, unsigned long nrow,
-                           RNG *rng);
   /**
    * Checks that R is a square matrix and k is a scalar
    */
@@ -48,6 +44,14 @@ public:
       const override;
   bool isSupportFixed(std::vector<bool> const &fixmask) const override;
   bool fullRank() const override;
+  /**
+   * Utility function for drawing a random sample from a Wishart distribution.
+   * Used by Conjugate Wishart sampler
+   */
+  static void rwishart(double *x,
+                       double const *R, double k, unsigned long nrow,
+                       RNG *rng);
+    
 };
 
 }}

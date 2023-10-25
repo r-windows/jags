@@ -64,9 +64,9 @@ double DWish::logDensity(double const *x, PDFType type,
     return loglik/2;
 }
 
-void DWish::randomSample(double *X,
-			 double const *R, double k, unsigned long nrow,
-			 RNG *rng)
+void DWish::rwishart(double *X,
+		     double const *R, double k, unsigned long nrow,
+		     RNG *rng)
 {
     /* 
        Generate random Wishart variable, using an algorithm proposed
@@ -133,7 +133,7 @@ void DWish::randomSample(double *x,
 			 vector<vector<unsigned long> > const &dims,
 			 RNG *rng) const
 {
-    randomSample(x, SCALE(par), DF(par), NROW(dims), rng);
+    rwishart(x, SCALE(par), DF(par), NROW(dims), rng);
 }
 
 bool DWish::checkParameterDim (vector<vector<unsigned long> > const &dims) const

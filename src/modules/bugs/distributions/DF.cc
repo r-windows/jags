@@ -68,7 +68,6 @@ double DF::r(vector<double const *> const &par, RNG *rng) const
 	const double a = *par[0]/2;
 	const double b = *par[1]/2;
 
-	double grad = 0;
 	if (i == 0) {
 	    return (a-1)/y - (a+b)*a/(b + a*y);
 	}

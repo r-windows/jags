@@ -164,7 +164,7 @@ ConjugateWishart::update(unsigned int chain, RNG *rng) const
 	}
     }
 
-    DWish::randomSample(&xnew[0], &R[0], df, nrow, rng);
+    DWish::rwishart(xnew.data(), R.data(), df, nrow, rng);
     _gv->setValue(xnew, chain);
 }
 

@@ -143,9 +143,9 @@ namespace jags {
 		    //Draw random sample from categorical distribution
 		    partial_sum(prob.begin(), prob.end(), sump.begin());
 		    double p = rng->uniform() * sump.back();
-		    topic = upper_bound(sump.begin(), sump.end(), p) -
-			sump.begin();
-		    if (topic == _nTopic) --topic;
+		    auto ub = upper_bound(sump.begin(), sump.end(), p);
+		    if (ub == sump.end()) --ub;
+		    topic = ub - sump.begin();
 
 		    //Restore current value to tables
 		    thisDocTopics[topic]++;

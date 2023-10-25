@@ -76,7 +76,7 @@ double DGamma::KL(vector<double const *> const &par0,
 
     bool DGamma::hasScore(unsigned long i) const
     {
-	return i >= 0 & i <= 2;
+	return (i >= 0 && i <= 2);
     }
 
     double DGamma::score(double x, vector<double const *> const &par,
