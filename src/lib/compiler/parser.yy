@@ -33,8 +33,8 @@ using jags::ParseTree;
 			    ParseTree *param2);
   static void setParameters(ParseTree *p, ParseTree *param1, ParseTree *param2,
 			    ParseTree *param3);
-  static ParseTree *Truncated (ParseTree *left, ParseTree *right);
-  static ParseTree *Interval(ParseTree *left, ParseTree *right);
+  static ParseTree *Truncated (std::vector<ParseTree *> *bounds);
+  static ParseTree *Interval(std::vector<ParseTree *> *bounds);
   %}
 
 %defines
@@ -68,6 +68,7 @@ using jags::ParseTree;
 %token AND OR
 %token LENGTH 
 %token DIM
+%token PIPE
 
 %token <val> DOUBLE
 %token <val> INT
@@ -84,13 +85,11 @@ using jags::ParseTree;
 %right '^'
 
 %type <ptree> node_dec
-%type <ptree> expression var
+%type <ptree> expression var arg
 %type <ptree> relation for_loop counter
 %type <ptree> determ_relation stoch_relation  
-%type <ptree> range_element
 %type <ptree> distribution truncated interval relations
-%type <pvec> dec_list relation_list expression_list dim_list 
-%type <pvec> range_list 
+%type <pvec> dec_list relation_list expression_list arg_list
 %type <pvec> product sum
 
 %expect 2
@@ -114,14 +113,10 @@ dec_list: node_dec { $$ = new std::vector<ParseTree*>(1, $1); }
 node_dec: NAME {
     $$ = new ParseTree(jags::P_VAR, yylineno); setName($$, $1); 
 }
-| NAME '[' dim_list ']' {
+| NAME '[' expression_list ']' {
     $$ = new ParseTree(jags::P_VAR, yylineno); setName($$, $1);
     setParameters($$, $3);
 }
-;
-
-dim_list: expression { $$ = new std::vector<ParseTree*>(1, $1); }
-| dim_list ',' expression { $$=$1; $$->push_back($3); }
 ;
 
 data_stmt: DATA '{' relation_list '}' {
@@ -161,7 +156,7 @@ for_loop: counter relations {
 }
 ;
 
-counter: FOR '(' NAME IN range_element ')' {
+counter: FOR '(' NAME IN expression ')' {
     $$ = new ParseTree(jags::P_COUNTER, yylineno); setName($$, $3);
     setParameters($$, $5);
 }
@@ -192,48 +187,24 @@ determ_relation: var assignment expression {
 ;
 
 stoch_relation:	var '~' distribution {
-    $$ = new ParseTree(jags::P_STOCHREL, yylineno); 
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
     setParameters($$, $1, $3);
  }
 | var '~' distribution truncated {
     $$ = new ParseTree(jags::P_STOCHREL, yylineno); 
     setParameters($$, $1, $3, $4);
 }
-| var '~' 'T' '(' distribution ',' expression ',' expression ')' {
-    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
-    setParameters($$, $1, $5, Truncated($7, $9));
-}
-| var '~' 'T' '(' distribution ',' expression ',' ')' {
-    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
-    setParameters($$, $1, $5, Truncated($7, 0));
-}
-| var '~' 'T' '(' distribution ',' ',' expression ')' {
-    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
-    setParameters($$, $1, $5, Truncated(0, $8));
-}
-| var '~' 'T' '(' distribution ',' ',' ')' {
-    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
-    setParameters($$, $1, $5, Truncated(0, 0));
-}
 | var '~' distribution interval {
     $$ = new ParseTree(jags::P_STOCHREL, yylineno);
     setParameters($$, $1, $3, $4);
 }
-| var '~' 'I' '(' distribution ',' expression ',' expression ')' {
+| var '~' 'T' '(' distribution ',' arg_list ')' {
     $$ = new ParseTree(jags::P_STOCHREL, yylineno);
-    setParameters($$, $1, $5, Interval($7, $9));
+    setParameters($$, $1, $5, Truncated($7));
 }
-| var '~' 'I' '(' distribution ',' expression ',' ')' {
+| var '~' 'I' '(' distribution ',' arg_list ')' {
     $$ = new ParseTree(jags::P_STOCHREL, yylineno);
-    setParameters($$, $1, $5, Interval($7, 0));
-}
-| var '~' 'I' '(' distribution ',' ',' expression ')' {
-    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
-    setParameters($$, $1, $5, Interval(0, $8));
-}
-| var '~' 'I' '(' distribution ',' ',' ')' {
-    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
-    setParameters($$, $1, $5, Interval(0, 0));
+    setParameters($$, $1, $5, Interval($7));
 }
 ;
 
@@ -347,16 +318,15 @@ expression_list: expression { $$ = new std::vector<ParseTree*>(1, $1); }
 | expression_list ',' expression { $$=$1; $$->push_back($3); }
 ;
 
-range_list: range_element { $$ = new std::vector<ParseTree*>(1, $1); }
-| range_list ',' range_element { $$=$1; $$->push_back($3); }
+arg_list: arg { $$ = new std::vector<ParseTree*>(1, $1); }
+| arg_list ',' arg { $$=$1; $$->push_back($3); }
 ;
 
-range_element: %empty {
-    $$ = new ParseTree(jags::P_RANGE, yylineno);
+arg: %empty {
+    $$ = new ParseTree(jags::P_NULL, yylineno);
 }
 | expression {
-    $$ = new ParseTree(jags::P_RANGE, yylineno); 
-    setParameters($$,$1);
+    $$ = $1;
 }
 ;
 
@@ -372,25 +342,14 @@ distribution: NAME '(' expression_list ')'
 }
 ;
 
-//FIXME: It does not seem like a good idea to have NULL pointers here
-//We should replace these with a new ParseTree object of tclass P_NULL
+truncated: 'T' '(' arg_list ')' { $$ = Truncated($3); };
 
-truncated: 'T' '(' expression ','  expression ')' {$$ = Truncated($3,$5);}
-| 'T' '(' ',' expression ')' {$$ = Truncated(nullptr,$4);}
-| 'T' '(' expression ',' ')' {$$ = Truncated($3,nullptr);}
-| 'T' '(' ',' ')' {$$ = Truncated(nullptr,nullptr);}
-;
-
-interval: 'I' '(' expression ','  expression ')' {$$ = Interval($3,$5);}
-| 'I' '(' ',' expression ')' {$$ = Interval(nullptr,$4);}
-| 'I' '(' expression ',' ')' {$$ = Interval($3,nullptr);}
-| 'I' '(' ',' ')' {$$ = Interval(nullptr,nullptr);}
-;
+interval:  'I' '(' arg_list ')' { $$ = Interval($3); };
 
 var: NAME {
   $$ = new ParseTree(jags::P_VAR, yylineno); setName($$, $1);
 }
-| NAME '[' range_list ']' {
+| NAME '[' arg_list ']' {
   $$ = new ParseTree(jags::P_VAR, yylineno); setName($$, $1);
   setParameters($$, $3);
 }
@@ -411,23 +370,25 @@ void yyerror (const char *s)
     error_buf = msg.str();
 }
 
-static ParseTree *Truncated (ParseTree *left, ParseTree *right)
+static ParseTree *Truncated (std::vector<ParseTree *> *bounds)
 {
     //JAGS-Style truncation notation
     ParseTree *p = new ParseTree(jags::P_BOUNDS, yylineno);
-    setParameters(p, left, right);
+    //p->setName("truncated");
+    setParameters(p, bounds);
     return p;
 }
 
-static ParseTree *Interval (ParseTree *left, ParseTree *right)
+static ParseTree *Interval (std::vector<ParseTree *> *bounds)
 {
     //BUGS-Style interval censoring notation
     ParseTree *p = new ParseTree(jags::P_INTERVAL, yylineno);
-    setParameters(p, left, right);
+    //p->setName("interval");
+    setParameters(p, bounds);
     return p;
 }
 
-void setName(ParseTree *p, std::string *name)
+static void setName(ParseTree *p, std::string *name)
 {
   /* 
      The scanner cannot return a string, because a string cannot be
@@ -440,7 +401,7 @@ void setName(ParseTree *p, std::string *name)
 }
 	
 
-void setParameters(ParseTree *p, std::vector<ParseTree*> *parameters)
+static void setParameters(ParseTree *p, std::vector<ParseTree*> *parameters)
 {
   /* 
      Same as setName (above).  The parser dynamically allocates
@@ -451,7 +412,7 @@ void setParameters(ParseTree *p, std::vector<ParseTree*> *parameters)
   delete parameters; 
 }
 
-void setParameters(ParseTree *p, ParseTree *param1)
+static void setParameters(ParseTree *p, ParseTree *param1)
 {
   /*
     Wrapper function that creates a vector containing param1
@@ -461,7 +422,7 @@ void setParameters(ParseTree *p, ParseTree *param1)
   p->setParameters(parameters);
 }
 
-void setParameters(ParseTree *p, ParseTree *param1, ParseTree *param2)
+static void setParameters(ParseTree *p, ParseTree *param1, ParseTree *param2)
 {
   /*
     Wrapper function that creates a vector containing param1
@@ -473,8 +434,8 @@ void setParameters(ParseTree *p, ParseTree *param1, ParseTree *param2)
   p->setParameters(parameters);
 }
 
-void setParameters(ParseTree *p, ParseTree *param1, ParseTree *param2,
-		   ParseTree *param3)
+static void setParameters(ParseTree *p, ParseTree *param1, ParseTree *param2,
+			  ParseTree *param3)
 {
   /*
     Wrapper function that creates a vector containing param1, param2

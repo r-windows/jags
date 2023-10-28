@@ -81,26 +81,20 @@ namespace jags {
 	int nvi = 0; //Count number of variable indices
 	for (unsigned int i = 0; i < ndim; ++i) {
 	    ParseTree const *range_element = range_list[i];
-	    if (range_element->treeClass() != P_RANGE) {
-		throw runtime_error("Malformed range expression");
-	    }
 	    
-	    ParseTree const *p0;
 	    vector<unsigned long> indices;
-	    switch(range_element->parameters().size()) {
-	    case 0:
+	    if (range_element->treeClass() == P_NULL) {
 		// Index is empty, implying the whole range 
 		limits.push_back(StochasticIndex(default_range.scope()[i]));
-		break;
-	    case 1:
-		p0 = range_element->parameters()[0];
-		if(compiler->indexExpression(p0, indices)) {
+	    }
+	    else {
+		if(compiler->indexExpression(range_element, indices)) {
 		    //Fixed index
 		    limits.push_back(StochasticIndex(indices));
 		}
 		else {
 		    //Variable index
-		    Node *node = compiler->getParameter(p0);
+		    Node *node = compiler->getParameter(range_element);
 		    if (node == nullptr) {
 			return -1;
 		    }
@@ -109,11 +103,7 @@ namespace jags {
 			++nvi;
 		    }
 		}
-		break;
-	    default:
-		throw logic_error("Invalid range expression");
 	    }
-	    
 	    
 	    //Check validity of subset index
 	    StochasticIndex const &ssi = limits.back();

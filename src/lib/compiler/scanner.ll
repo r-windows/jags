@@ -69,6 +69,7 @@ BRACKET		[ \t]*\(
 "**"                    return '^';
 "*"			return '*';
 "/"			return '/';
+"|>"                    return PIPE; 
 
 "T"/{BRACKET}           return 'T';
 "I"/{BRACKET}           return 'I';

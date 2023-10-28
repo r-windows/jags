@@ -266,70 +266,50 @@ bool Compiler::indexExpression(ParseTree const *p, vector<unsigned long> &value)
 Range Compiler::getRange(ParseTree const *p, 
 			 SimpleRange const &default_range)
 {
-  /* 
-     Evaluate a range expression. If successful, it returns the range
-     corresponding to the expression.  If unsuccessful (due to missing
-     values) returns a null range.
+    /* 
+       Evaluate a range expression. If successful, it returns the range
+       corresponding to the expression.  If unsuccessful (due to missing
+       values) returns a null range.
      
-     The default_range argument provides default values if the range
-     expression is blank: e.g. foo[] or bar[,1].  The default range 
-     may be a NULL range, in which case, missing indices will result in
-     failure.
-  */
+       The default_range argument provides default values if the range
+       expression is blank: e.g. foo[] or bar[,1].  The default range 
+       may be a NULL range, in which case, missing indices will result in
+       failure.
+    */
   
     vector<ParseTree*> const &range_list = p->parameters();
-    string const &name = p->name();
-
     if (range_list.empty()) {
 	//An empty range expression implies the default range
 	return default_range;
     }
 
-  // Check size and integrity of range expression
-  unsigned long size = range_list.size();
-  if (!isNULL(default_range) && size != default_range.ndim(false)) {
-      CompileError(p, "Dimension mismatch taking subset of", name);
-  }
-  for (unsigned int i = 0; i < size; ++i) {
-    if (range_list[i]->treeClass() != P_RANGE) {
-      throw logic_error("Malformed parse tree. Expected range expression");
+    // Check size of range expression
+    unsigned long size = range_list.size();
+    if (!isNULL(default_range) && size != default_range.ndim(false)) {
+	CompileError(p, "Dimension mismatch taking subset of", p->name());
     }
-  }
-  
-  // Now step through and evaluate lower and upper index expressions
-  vector<vector<unsigned long> > scope(size);
-  for (unsigned int i = 0; i < size; i++) {
-    switch (range_list[i]->parameters().size()) {
-    case 0:
-      // Empty index implies default range
-      if (isNULL(default_range)) {
-	  return Range();
-      }
-      scope[i] = default_range.scope()[i];
-      break;
-    case 1:
-      if (!indexExpression(range_list[i]->parameters()[0], scope[i])) {
-	  return Range();
-      }
-      if (scope[i].empty()) {
-	  CompileError(p, "Invalid range");
-      }
-      break;
-    default:
-      throw logic_error("Malformed parse tree in index expression");
-    }
-  }
 
-  /*
-  if (!isNULL(default_range)) {
-      // If a default range is given, the subset cannot be outside of it
-      if (!default_range.contains(Range(scope))) {
-	  CompileError(p, "Index out of range taking subset of ", name);
-      }
-  }
-  */
-  
-  return Range(scope);
+    // Now step through and evaluate index expressions
+    vector<vector<unsigned long>> scope(size);
+    for (unsigned int i = 0; i < size; i++) {
+	if (range_list[i]->treeClass() == P_NULL) {
+	    // Empty index implies default range
+	    if (isNULL(default_range)) {
+		return Range();
+	    }
+	    scope[i] = default_range.scope()[i];
+	}
+	else{
+	    if (!indexExpression(range_list[i], scope[i])) {
+		return Range();
+	    }
+	    if (scope[i].empty()) {
+		CompileError(p, "Invalid range");
+	    }
+	}
+    }
+
+    return Range(scope);
 }
 
 SimpleRange Compiler::VariableSubsetRange(ParseTree const *var)
@@ -402,17 +382,8 @@ std::vector<unsigned long> Compiler::CounterRange(ParseTree const *var)
     }
   
     ParseTree const *prange = var->parameters()[0];
-    if (prange->treeClass() != P_RANGE) {
-	throw logic_error("Expecting range expression");
-    }
-
-    unsigned long size = prange->parameters().size();
-    if (size != 1) {
-	throw logic_error(string("Invalid range expression for counter ")
-			  + var->name());
-    }
     vector<unsigned long> indices;
-    if(!indexExpression(prange->parameters()[0], indices)) {
+    if(!indexExpression(prange, indices)) {
 	CompileError(var, "Cannot evaluate range of counter", var->name());
     }
 
@@ -720,9 +691,10 @@ Node * Compiler::getParameter(ParseTree const *t)
 	    }
 	}
 	break;
-    case P_RANGE: case P_BOUNDS:  case P_COUNTER: case P_DENSITY:
+    case P_BOUNDS:  case P_COUNTER: case P_DENSITY:
     case P_STOCHREL: case P_DETRMREL: case P_FOR: case P_RELATIONS:
     case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_INTERVAL:
+    case P_NULL:
 	throw  logic_error("Malformed parse tree.");
     }
 
@@ -766,9 +738,9 @@ bool Compiler::getParameterVector(ParseTree const *t,
 	    return false;
 	}
 	break;
-    case P_VAR: case P_RANGE: case P_BOUNDS:  case P_COUNTER: case P_VALUE:
+    case P_VAR: case P_BOUNDS:  case P_COUNTER: case P_VALUE:
     case P_STOCHREL: case P_DETRMREL: case P_FOR: case P_RELATIONS:
-    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_INTERVAL:
+    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_INTERVAL: case P_NULL:
 	throw logic_error("Invalid Parse Tree.");
     }
     return true;
@@ -794,15 +766,18 @@ Node * Compiler::allocateStochastic(ParseTree const *stoch_relation)
 	{
 	    throw logic_error("Invalid parse tree");
 	}
+	if (truncated->parameters().size() != 2) {
+	    CompileError(truncated, "Incorrect number of parameters for T() or I()");
+	}
 	ParseTree const *ll = truncated->parameters()[0];
 	ParseTree const *ul = truncated->parameters()[1];
-	if (ll) {
+	if (ll && ll->treeClass() != P_NULL) {
 	    lBound = getParameter(ll);
 	    if (!lBound) {
 		return nullptr;
 	    }
 	}
-	if (ul) {
+	if (ul && ul->treeClass() != P_NULL) {
 	    uBound = getParameter(ul);
 	    if (!uBound) {
 		return nullptr;
@@ -939,9 +914,9 @@ Node * Compiler::allocateLogical(ParseTree const *rel)
     case P_VAR: case P_FUNCTION: case P_LINK:
 	node = getParameter(expression);
 	break;
-    case P_RANGE: case P_BOUNDS: case P_DENSITY: case P_COUNTER:
+    case P_BOUNDS: case P_DENSITY: case P_COUNTER:
     case P_STOCHREL: case P_DETRMREL: case P_FOR: case P_RELATIONS:
-    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_INTERVAL:
+    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_INTERVAL: case P_NULL:
 	throw logic_error("Malformed parse tree in Compiler::allocateLogical");
     }
 

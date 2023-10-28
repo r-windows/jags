@@ -18,7 +18,8 @@ using jags::ParseTree;
 using jags::P_VAR;
 using jags::P_VECTOR;
 using jags::P_ARRAY;
-using jags::P_RANGE;
+using jags::P_FUNCTION;
+using jags::P_VALUE;
 
 bool readRData(vector<ParseTree*> const *array_list, 
 	       map<string, SArray> &table,
@@ -86,7 +87,7 @@ bool readRData(vector<ParseTree*> const *array_list,
 	      if (pdim->treeClass() == P_VECTOR) {
 		  ndim = pdim->parameters().size();
 	      }
-	      else if (pdim->treeClass() == P_RANGE) {
+	      else if (pdim->treeClass() == P_FUNCTION && pdim->name() == ":") {
 		  // R dump can store a contiguous integer sequence
 		  // using the ":" notation e.g. c(3,4,5) is written 3:5
 		  double lower = pdim->parameters()[0]->value();
@@ -116,7 +117,7 @@ bool readRData(vector<ParseTree*> const *array_list,
 		      dim[i] = static_cast<unsigned long>(dim_i);
 		  }
 	      }
-	      else if (pdim->treeClass() == P_RANGE) {
+	      else if (pdim->treeClass() == P_FUNCTION && pdim->name() == ":") {
 		  double lower = pdim->parameters()[0]->value();
 		  for (unsigned long i = 0; i < ndim; ++i) {
 		      dim[i] = static_cast<unsigned long>(lower + i);

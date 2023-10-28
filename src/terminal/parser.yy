@@ -430,10 +430,11 @@ range_list: range_element {
 ;
 
 range_element: index {
-  $$ = new jags::ParseTree(jags::P_RANGE); setParameters($$, $1);
+    $$ = $1; 
 }
 | index ':' index {
-  $$ = new jags::ParseTree(jags::P_RANGE); setParameters($$, $1, $3);
+    $$ = new jags::ParseTree(jags::P_FUNCTION); $$->setName(":");
+    setParameters($$, $1, $3);
 }
 ;
 
@@ -806,18 +807,20 @@ static jags::Range getRange(jags::ParseTree const *var)
   std::vector<unsigned long>  ind_lower(size), ind_upper(size);
   for (unsigned int i = 0; i < size; ++i) {
     jags::ParseTree const *range_element = var->parameters()[i];
-    switch(range_element->parameters().size()) {
-    case 1:
-	ind_lower[i] = static_cast<int>(range_element->parameters()[0]->value());
-      ind_upper[i] = ind_lower[i];
-      break;
-    case 2:
+    if (range_element->treeClass() == jags::P_VALUE) {
+	ind_lower[i] = static_cast<int>(range_element->value());
+	ind_upper[i] = ind_lower[i];
+    }
+    else if (range_element->treeClass() == jags::P_FUNCTION &&
+	     range_element->name() == ":")
+    {
 	ind_lower[i] = static_cast<int>(range_element->parameters()[0]->value());
 	ind_upper[i] = static_cast<int>(range_element->parameters()[1]->value());
-      break;
-    default:
-      //Error! FIXME
-      break;
+    }
+    else {
+	std::cerr << "Unable to parse subset expression for " << var->name() << 
+	    ". Taking whole node instead" << std::endl;
+	return jags::Range();
     }
   }
   return jags::SimpleRange(ind_lower, ind_upper);
@@ -1122,7 +1125,7 @@ void dumpNodeNames(std::string const &file, std::string const &type)
 	out.close();
 }
 
-void setParameters(jags::ParseTree *p, std::vector<jags::ParseTree*> *parameters)
+static void setParameters(jags::ParseTree *p, std::vector<jags::ParseTree*> *parameters)
 {
   /* 
      The parser dynamically allocates vectors of (pointers to)
@@ -1133,7 +1136,7 @@ void setParameters(jags::ParseTree *p, std::vector<jags::ParseTree*> *parameters
   delete parameters; 
 }
 
-void setParameters(jags::ParseTree *p, jags::ParseTree *param1)
+static void setParameters(jags::ParseTree *p, jags::ParseTree *param1)
 {
   /*
     Wrapper function that creates a vector containing param1
@@ -1143,7 +1146,7 @@ void setParameters(jags::ParseTree *p, jags::ParseTree *param1)
   p->setParameters(parameters);
 }
 
-void setParameters(jags::ParseTree *p, jags::ParseTree *param1, jags::ParseTree *param2)
+static void setParameters(jags::ParseTree *p, jags::ParseTree *param1, jags::ParseTree *param2)
 {
   /*
     Wrapper function that creates a vector containing param1
