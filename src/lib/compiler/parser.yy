@@ -206,6 +206,14 @@ stoch_relation:	var '~' distribution {
     $$ = new ParseTree(jags::P_STOCHREL, yylineno);
     setParameters($$, $1, $5, Interval($7));
 }
+| var '~' distribution PIPE truncated {
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
+    setParameters($$, $1, $3, $5);
+}
+| var '~' distribution PIPE interval {
+    $$ = new ParseTree(jags::P_STOCHREL, yylineno);
+    setParameters($$, $1, $3, $5);
+}
 ;
 
 product: expression '*' expression {
@@ -373,8 +381,8 @@ void yyerror (const char *s)
 static ParseTree *Truncated (std::vector<ParseTree *> *bounds)
 {
     //JAGS-Style truncation notation
-    ParseTree *p = new ParseTree(jags::P_BOUNDS, yylineno);
-    //p->setName("truncated");
+    ParseTree *p = new ParseTree(jags::P_DISTMOD, yylineno);
+    p->setName("T");
     setParameters(p, bounds);
     return p;
 }
@@ -382,8 +390,8 @@ static ParseTree *Truncated (std::vector<ParseTree *> *bounds)
 static ParseTree *Interval (std::vector<ParseTree *> *bounds)
 {
     //BUGS-Style interval censoring notation
-    ParseTree *p = new ParseTree(jags::P_INTERVAL, yylineno);
-    //p->setName("interval");
+    ParseTree *p = new ParseTree(jags::P_DISTMOD, yylineno);
+    p->setName("I");
     setParameters(p, bounds);
     return p;
 }

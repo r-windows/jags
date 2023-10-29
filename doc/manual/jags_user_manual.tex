@@ -1868,8 +1868,8 @@ think in terms of the scale parameter. A useful strategy is to define
 a prior on the scale parameter and then transform it. For example,
 instead of using a diffuse gamma prior for \texttt{tau} we might use:
 \begin{verbatim}
-sigma ~ dnorm(0, 1) T(0, ) # Half normal prior on standard deviation
-tau <- 1/sigma^2           # Precision as a function of standard deviation
+sigma ~ dnorm(0, 1) |> T(0, ) # Half normal prior on standard deviation
+tau <- 1/sigma^2              # Precision as a function of standard deviation
 \end{verbatim}
 
 In summary, be aware of the different parameterizations of
@@ -1884,21 +1884,34 @@ distribution.
 \section{Truncating distributions}
 \label{section:truncation}
 
-Some scalar-valued distributions in \JAGS\ can be truncated.
-Truncation is represented in \JAGS\ using the \texttt{T()}
-distribution modifier on the right hand side of a stochastic
-relation. If
-\begin{verbatim}
-X ~ dfoo(theta) T(L,U)
-\end{verbatim}
-then {\em a priori} $X$ is known to lie between $L$ and $U$.
+\subsection{Syntax}
 
-JAGS also supports an alternative truncation syntax from NIMBLE, in
-which \texttt{T()} is a wrapper around the distribution that adds
-additional arguments for the lower and upper bound:
+Some scalar-valued distributions in \JAGS\ can be truncated.
+Truncation is represented in \JAGS\ by passing the distribution to the
+\texttt{T()} distribution modifier using the \texttt{|>} ``pipe''
+operator, {\em e.g.}:
+\begin{verbatim}
+X ~ dfoo(theta) |> T(L,U)
+\end{verbatim}
+Then {\em a priori} $X$ is known to lie between $L$ and $U$.
+
+The pipe operator is borrowed from the R language, where it provides
+an alternative way to express nested function calls. In R, the above
+expression is equivalent to
 \begin{verbatim}
 X ~ T(dfoo(theta), L, U)
 \end{verbatim}
+JAGS supports this alternative truncation syntax which is also used by
+NIMBLE to represent truncation.  With this syntax, \texttt{T()} is a
+wrapper around the distribution that adds additional arguments for the
+lower and upper bound.
+
+For compatibility with BUGS, and with earlier versions of JAGS, the pipe
+operator may be omitted. However, the above syntax is preferred since
+JAGS 5.0.0 and may be extended to allow other distribution modifiers
+in future versions.
+
+\subsection{Interpretation}
 
 A truncated distribution generates a likelihood
 \[
@@ -1918,7 +1931,7 @@ left-truncated.
 A common use of \texttt{T()} is to restrict a prior distribution to
 positive values, e.g.
 \begin{verbatim}
-theta ~ dnorm(0,1.0E-3) T(0,)
+theta ~ dnorm(0,1.0E-3) |> T(0,)
 \end{verbatim}
 gives a diffuse-half normal prior to \texttt{theta} on positive values
 only.

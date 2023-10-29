@@ -691,10 +691,9 @@ Node * Compiler::getParameter(ParseTree const *t)
 	    }
 	}
 	break;
-    case P_BOUNDS:  case P_COUNTER: case P_DENSITY:
+    case P_DISTMOD:  case P_COUNTER: case P_DENSITY:
     case P_STOCHREL: case P_DETRMREL: case P_FOR: case P_RELATIONS:
-    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_INTERVAL:
-    case P_NULL:
+    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_NULL:
 	throw  logic_error("Malformed parse tree.");
     }
 
@@ -738,9 +737,9 @@ bool Compiler::getParameterVector(ParseTree const *t,
 	    return false;
 	}
 	break;
-    case P_VAR: case P_BOUNDS:  case P_COUNTER: case P_VALUE:
+    case P_VAR: case P_DISTMOD:  case P_COUNTER: case P_VALUE:
     case P_STOCHREL: case P_DETRMREL: case P_FOR: case P_RELATIONS:
-    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_INTERVAL: case P_NULL:
+    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_NULL:
 	throw logic_error("Invalid Parse Tree.");
     }
     return true;
@@ -760,28 +759,31 @@ Node * Compiler::allocateStochastic(ParseTree const *stoch_relation)
     Node *lBound = nullptr, *uBound = nullptr;
     if (stoch_relation->parameters().size() == 3) {
 	//Truncated distribution
-	ParseTree const *truncated = stoch_relation->parameters()[2];
-	if (truncated->treeClass() != P_BOUNDS &&
-	    truncated->treeClass() != P_INTERVAL)
-	{
+	ParseTree const *modifier = stoch_relation->parameters()[2];
+	if (modifier->treeClass() != P_DISTMOD) {
 	    throw logic_error("Invalid parse tree");
 	}
-	if (truncated->parameters().size() != 2) {
-	    CompileError(truncated, "Incorrect number of parameters for T() or I()");
-	}
-	ParseTree const *ll = truncated->parameters()[0];
-	ParseTree const *ul = truncated->parameters()[1];
-	if (ll && ll->treeClass() != P_NULL) {
-	    lBound = getParameter(ll);
-	    if (!lBound) {
-		return nullptr;
+	if (modifier->name() == "T" || modifier->name() == "I") {
+	    if (modifier->parameters().size() != 2) {
+		CompileError(modifier, "Incorrect number of parameters for T() or I()");
+	    }
+	    ParseTree const *ll = modifier->parameters()[0];
+	    ParseTree const *ul = modifier->parameters()[1];
+	    if (ll && ll->treeClass() != P_NULL) {
+		lBound = getParameter(ll);
+		if (!lBound) {
+		    return nullptr;
+		}
+	    }
+	    if (ul && ul->treeClass() != P_NULL) {
+		uBound = getParameter(ul);
+		if (!uBound) {
+		    return nullptr;
+		}
 	    }
 	}
-	if (ul && ul->treeClass() != P_NULL) {
-	    uBound = getParameter(ul);
-	    if (!uBound) {
-		return nullptr;
-	    }
+	else {
+	    CompileError(modifier, "Unknown modifier", modifier->name());
 	}
     }
 
@@ -858,7 +860,7 @@ Node * Compiler::allocateStochastic(ParseTree const *stoch_relation)
     */
     if (stoch_relation->parameters().size() == 3) {
 	ParseTree const *t = stoch_relation->parameters()[2];
-	if (t->treeClass() == P_INTERVAL) {
+	if (t->name() == "I") {
 	    for (unsigned int i = 0; i < parameters.size(); ++i) {
 		if (!parameters[i]->isFixed()) {
 		    CompileError(stoch_relation,
@@ -914,9 +916,9 @@ Node * Compiler::allocateLogical(ParseTree const *rel)
     case P_VAR: case P_FUNCTION: case P_LINK:
 	node = getParameter(expression);
 	break;
-    case P_BOUNDS: case P_DENSITY: case P_COUNTER:
+    case P_DISTMOD: case P_DENSITY: case P_COUNTER:
     case P_STOCHREL: case P_DETRMREL: case P_FOR: case P_RELATIONS:
-    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_INTERVAL: case P_NULL:
+    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_NULL:
 	throw logic_error("Malformed parse tree in Compiler::allocateLogical");
     }
 
