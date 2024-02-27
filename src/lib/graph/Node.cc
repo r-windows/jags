@@ -78,36 +78,6 @@ list<DeterministicNode*> const *Node::deterministicChildren()
     return _dtrm_children;
 }
 
-//FIXME deprecated
-static bool isInitialized(Node const *node, unsigned int n)
-{
-    double const *value = node->value(n);
-    for (unsigned long i = 0; i < node->length(); ++i) {
-	if (jags_isna(value[i])) 
-	    return false;
-    }
-    return true;
-}
-
-bool Node::initialize(RNG *rng, unsigned int n)
-{
-    // Test whether node is already initialized and, if so, skip it
-    if (isInitialized(this, n)) {
-        return true;
-    }
-
-    // Check that parents are initialized
-    for (unsigned long i = 0; i < _parents.size(); ++i) {
-        if (!isInitialized(_parents[i], n)) {
-	    return false; // Uninitialized parent
-        }
-    }
-
-    randomSample(rng, n);
-
-    return true; 
-}
-    
 unsigned int Node::nchain() const
 {
   return _nchain;

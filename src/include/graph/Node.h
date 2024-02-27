@@ -90,23 +90,6 @@ public:
      */
     std::list<DeterministicNode*> const *deterministicChildren();
     /**
-     * Initializes the node for the given chain. The value array of a
-     * newly constructed Node consists of missing values (denoted by
-     * the special value JAGS_NA).  This function sets the value of
-     * the node by forward sampling from its parents.  If the Node has
-     * previously had its value set, the function will do nothing and
-     * return the value true.  Initialization will fail if any of the
-     * parent nodes is uninitialized, and in this case the return
-     * value is false.
-     *
-     * @param rng RNG to use for random sampling
-     * 
-     * @param chain Index number of chain to initialize.
-     *
-     * @returns a logical value indicating success
-     */
-    bool initialize(RNG *rng, unsigned int chain);
-    /**
      * Returns the BUGS-language representation of the node, based on the 
      * names of its parents
      *

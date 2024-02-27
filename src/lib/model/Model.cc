@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <functional>
 #include <map>
+#include <cmath>
 
 using std::map;
 using std::pair;
@@ -221,10 +222,7 @@ void Model::initializeNodes() {
 		if (!node->checkParentValues(n)) {
 		    throw NodeError(node, "Invalid parent values at model initialization");
 		}
-		//FIXME: No longer required: use randomSample
-		if (!node->initialize(_rng[n], n)) {
-		    throw NodeError(node, "Initialization failure");
-		}
+		node->randomSample(_rng[n], n);
 	    }
 	}
     }
