@@ -16,6 +16,7 @@ using std::string;
 using std::set;
 using std::logic_error;
 using std::floor;
+using std::isfinite;
 
 namespace jags {
 
@@ -55,7 +56,7 @@ mkParams(vector<Node const*> const &parents, unsigned int nchain)
 	_discrete = true;
 	double const *val = value(0);
 	for (unsigned long i = 0; i < _length; ++i) {
-	    if (val[i] != floor(val[i])) {
+	    if (!isfinite(val[i]) || val[i] != floor(val[i])) {
 		_discrete = false;
 		break;
 	    }

@@ -42,6 +42,7 @@ using std::min;
 using std::max;
 using std::reverse;
 using std::find;
+using std::isfinite;
 
 using std::exception_ptr;
 using std::current_exception;
@@ -193,18 +194,38 @@ void Model::initialize(bool datagen)
     _is_initialized = true;
 }
 
-void Model::initializeNodes()
-{
-    vector<Node*>::const_iterator i;
-    for (i = _nodes.begin(); i != _nodes.end(); ++i) {
-	Node *node = *i;
+
+void Model::initializeNodes() {
+
+    for (auto i = _nodes.begin(); i != _nodes.end(); ++i) {
+	Node * const node = *i;
+	const unsigned long length = node->length();
+
 	for (unsigned int n = 0; n < _nchain; ++n) {
-	    if (!node->checkParentValues(n)) {
-		throw NodeError(node, "Invalid parent values at initialization");
+
+	    double const *value = node->value(n);
+	    bool initialized = true;
+	    for (unsigned long i = 0; i < length; ++i) {		
+		if (jags_isna(value[i])) {
+		    initialized = false;
+		}
+		else if (node->isDiscreteValued()) {
+		    if (isfinite(value[i]) && value[i] != floor(value[i])) {
+			throw NodeError(node, "Discrete-valued node has non-integer value at model initialization");
+		    }
+		}
 	    }
-	    if (!node->initialize(_rng[n], n)) {
-		throw NodeError(node, "Initialization failure");
-	    } 
+
+	    if (!initialized) {
+		//Check parent values
+		if (!node->checkParentValues(n)) {
+		    throw NodeError(node, "Invalid parent values at model initialization");
+		}
+		//FIXME: No longer required: use randomSample
+		if (!node->initialize(_rng[n], n)) {
+		    throw NodeError(node, "Initialization failure");
+		}
+	    }
 	}
     }
 }
