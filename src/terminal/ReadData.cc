@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 using std::cout;
 using std::cerr;
@@ -12,6 +13,8 @@ using std::endl;
 using std::map;
 using std::string;
 using std::vector;
+using std::max;
+using std::min;
 
 using jags::SArray;
 using jags::ParseTree;
@@ -90,10 +93,13 @@ bool readRData(vector<ParseTree*> const *array_list,
 	      else if (pdim->treeClass() == P_FUNCTION && pdim->name() == ":") {
 		  // R dump can store a contiguous integer sequence
 		  // using the ":" notation e.g. c(3,4,5) is written 3:5
-		  double lower = pdim->parameters()[0]->value();
-		  double upper = pdim->parameters()[1]->value();
-		  if (lower < 0 || upper <= lower) {
-		      cerr << "Invalid sequence " << name << " = " << lower << ":" << upper << endl;
+		  // R also allows reverse sequences, e.g. 5:2 equivalent to c(5,4,3,2)
+		  double start = pdim->parameters()[0]->value();
+		  double end = pdim->parameters()[1]->value();
+		  double lower = min(start, end);
+		  double upper = max(start, end);
+		  if (lower < 0) {
+		      cerr << "Invalid sequence " << name << " = " << start << ":" << end << endl;
 		      return false;
 		  }
 		  ndim = static_cast<unsigned long>(upper - lower + 1);
@@ -118,9 +124,11 @@ bool readRData(vector<ParseTree*> const *array_list,
 		  }
 	      }
 	      else if (pdim->treeClass() == P_FUNCTION && pdim->name() == ":") {
-		  double lower = pdim->parameters()[0]->value();
+		  double start = pdim->parameters()[0]->value();
+		  double end = pdim->parameters()[1]->value();
+		  double direction = (start <= end) ? 1 : -1;
 		  for (unsigned long i = 0; i < ndim; ++i) {
-		      dim[i] = static_cast<unsigned long>(lower + i);
+		      dim[i] = static_cast<unsigned long>(start + direction * i);
 		  }
 	      }
 	      /* Check that dimension is consistent with length */
