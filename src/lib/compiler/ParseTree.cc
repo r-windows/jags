@@ -34,7 +34,7 @@ void ParseTree::setName(string const &name)
 	break;
     case P_VALUE: case P_STOCHREL: case P_DETRMREL:
     case P_FOR: case  P_RELATIONS: case P_VECTOR: case P_SUBSET:
-    case P_NULL:
+    case P_STRUCT: case P_NULL:
 	throw logic_error("Can't set name of ParseTree object");
     }
 }
@@ -67,7 +67,7 @@ string const &ParseTree::name() const
 	break;
     case P_VALUE: case P_STOCHREL: case P_DETRMREL:
     case P_FOR: case  P_RELATIONS: case P_VECTOR:  case P_SUBSET:
-    case P_NULL:
+    case P_STRUCT: case P_NULL:
 	throw logic_error("Can't get name of ParseTree: invalid treeClass");
     }
     return _name;

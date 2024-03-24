@@ -691,9 +691,11 @@ Node * Compiler::getParameter(ParseTree const *t)
 	    }
 	}
 	break;
+    case P_NULL:
+	return nullptr;
     case P_DISTMOD:  case P_COUNTER: case P_DENSITY:
     case P_STOCHREL: case P_DETRMREL: case P_FOR: case P_RELATIONS:
-    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_NULL:
+    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_STRUCT:
 	throw  logic_error("Malformed parse tree.");
     }
 
@@ -739,7 +741,7 @@ bool Compiler::getParameterVector(ParseTree const *t,
 	break;
     case P_VAR: case P_DISTMOD:  case P_COUNTER: case P_VALUE:
     case P_STOCHREL: case P_DETRMREL: case P_FOR: case P_RELATIONS:
-    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_NULL:
+    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_STRUCT: case P_NULL:
 	throw logic_error("Invalid Parse Tree.");
     }
     return true;
@@ -918,7 +920,7 @@ Node * Compiler::allocateLogical(ParseTree const *rel)
 	break;
     case P_DISTMOD: case P_DENSITY: case P_COUNTER:
     case P_STOCHREL: case P_DETRMREL: case P_FOR: case P_RELATIONS:
-    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_NULL:
+    case P_VECTOR: case P_ARRAY: case P_SUBSET: case P_STRUCT: case P_NULL:
 	throw logic_error("Malformed parse tree in Compiler::allocateLogical");
     }
 
@@ -1405,17 +1407,15 @@ Compiler::Compiler(BUGSModel &model, map<string, SArray> const &data_table)
 
 void Compiler::declareVariables(vector<ParseTree*> const &dec_list)
 {
-  vector<ParseTree*>::const_iterator p;
-  for (p = dec_list.begin() ; p != dec_list.end(); ++p) {
+  for (auto p = dec_list.begin() ; p != dec_list.end(); ++p) {
     if ((*p)->treeClass() != P_VAR) {
       throw invalid_argument("Expected variable expression");
     }
-    
   }
 
   //checkDecNames(dec_list, _data_table);
 
-  for (p = dec_list.begin() ; p != dec_list.end(); ++p) {
+  for (auto p = dec_list.begin() ; p != dec_list.end(); ++p) {
     ParseTree const *node_dec = *p;
     string const &name = node_dec->name();
     unsigned long ndim = node_dec->parameters().size();
@@ -1428,6 +1428,9 @@ void Compiler::declareVariables(vector<ParseTree*> const &dec_list)
 	vector<unsigned long> dim(ndim);
 	for (unsigned int i = 0; i < ndim; ++i) {
 	    vector<unsigned long> dim_i;
+	    if (node_dec->parameters()[i]->treeClass() == P_NULL) {
+		CompileError(node_dec, "Missing dimension in declaration of", name);
+	    }
 	    if (!indexExpression(node_dec->parameters()[i], dim_i)) {
 		CompileError(node_dec, "Unable to calculate dimensions of",
 			     name);

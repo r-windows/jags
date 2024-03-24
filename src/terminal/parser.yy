@@ -1,3 +1,4 @@
+
 /* -*-C++-*- */
 %{
 #include <config.h>
@@ -168,13 +169,13 @@
 %token <intval> RUN
 %token <intval> ENDSCRIPT
 
-%type <ptree> var index 
+%type <ptree> var 
 %type <ptree> r_assignment r_structure
 %type <ptree> range_element r_dim
 %type <ptree> r_attribute_list
-%type <ptree> r_value 
+%type <ptree> r_value r_real_value r_int_value r_na_value 
 %type <pvec>  r_value_list r_assignment_list range_list
-%type <ptree> r_value_collection r_integer_collection r_collection r_data
+%type <ptree> r_value_collection r_integer_collection r_collection r_data r_compact_sequence
 %type <stringptr> file_name;
 %type <stringptr> r_name;
 
@@ -429,17 +430,8 @@ range_list: range_element {
 }
 ;
 
-range_element: index {
-    $$ = $1; 
-}
-| index ':' index {
-    $$ = new jags::ParseTree(jags::P_FUNCTION); $$->setName(":");
-    setParameters($$, $1, $3);
-}
-;
-
-/* FIXME: Use integer value here */
-index: INT {$$ = new jags::ParseTree(jags::P_VALUE); $$->setValue($1);}
+range_element: r_int_value
+| r_compact_sequence
 ;
 
 monitor: monitor_set
@@ -601,6 +593,11 @@ set_seed: SET SEED INT
 
 /* Rules for scanning dumped R datasets */
 
+r_compact_sequence: r_int_value ':' r_int_value {
+    $$ = new jags::ParseTree(jags::P_FUNCTION); $$->setName(":");
+    setParameters($$, $1, $3);
+ }
+
 r_assignment_list: r_assignment {
   $$ = new std::vector<jags::ParseTree*>(1, $1);
 }
@@ -613,18 +610,25 @@ r_assignment_list: r_assignment {
 ;
 
 r_assignment: r_name ARROW r_structure {
-  $$ = $3; setName($$, $1);
-}
+    $$ = new jags::ParseTree(jags::P_ARRAY);
+    setName($$, $1);
+    setParameters($$, $3);
+} 
 | r_name ARROW r_collection {
-  $$ = new jags::ParseTree(jags::P_ARRAY);
-  setName($$, $1);
-  setParameters($$, $3);
+    $$ = new jags::ParseTree(jags::P_ARRAY);
+    setName($$, $1);
+    setParameters($$, $3);
+}
+| r_name ARROW r_compact_sequence {
+    $$ = new jags::ParseTree(jags::P_ARRAY);
+    setName($$, $1);
+    setParameters($$, $3);
 }
 | r_name ARROW STRING {
-  /* Allow this for setting the NAME of the random number generator */
-  $$ = new jags::ParseTree(jags::P_VAR); setName($$, $1);
-  jags::ParseTree *p = new jags::ParseTree(jags::P_VAR); setName(p, $3);
-  setParameters($$, p);
+    /* Allow this for setting the NAME of the random number generator */
+    $$ = new jags::ParseTree(jags::P_ARRAY); setName($$, $1);
+    jags::ParseTree *p = new jags::ParseTree(jags::P_VAR); setName(p, $3);
+    setParameters($$, p);
 }
 ;
 
@@ -641,24 +645,25 @@ r_data: r_collection
 }
 
 r_structure: STRUCTURE '(' r_data ',' r_attribute_list ')' {
-  $$ = new jags::ParseTree(jags::P_ARRAY); 
-  if ($5) 
-    setParameters($$, $3, $5);
-  else
-    setParameters($$, $3);
+    if ($5) {
+	$$ = new jags::ParseTree(jags::P_STRUCT); 
+	setParameters($$, $3, $5);
+    }
+    else {
+	$$ = $3;
+    }
 }
 | STRUCTURE '(' r_data ')' {
-    $$ = new jags::ParseTree(jags::P_ARRAY);
-    setParameters($$, $3);
+    $$ = $3;
 }
 ;
 
-/* The only attribute we are interested in is .Dim. The rest are
-   simply discarded - see below */
+/* The only attribute we are interested in is "dim" or, for older dump
+   files, ".Dim". The rest are simply discarded - see below */
 r_attribute_list: r_dim
 | r_generic_attribute {$$=0;}
-| r_attribute_list ',' r_generic_attribute
 | r_attribute_list ',' r_dim {$$=$3;}
+| r_attribute_list ',' r_generic_attribute
 ;
 
 r_dim: DIM '=' r_collection {
@@ -690,46 +695,60 @@ r_value_list: r_value {$$ = new std::vector<jags::ParseTree*>(1, $1); }
 | r_value_list ',' r_value {$$ = $1; $$->push_back($3);}
 ;
 
-r_value: DOUBLE {$$ = new jags::ParseTree(jags::P_VALUE); $$->setValue($1);}
-| NA {$$ = new jags::ParseTree(jags::P_VALUE); $$->setValue(JAGS_NA);}
+r_value: r_real_value
+| r_int_value
+| r_na_value
+;
+
+r_real_value: DOUBLE {$$ = new jags::ParseTree(jags::P_VALUE); $$->setValue($1);}
+;
+
+r_int_value: INT {$$ = new jags::ParseTree(jags::P_VALUE); $$->setValue($1);}
+;
+
+r_na_value: NA {$$ = new jags::ParseTree(jags::P_VALUE); $$->setValue(JAGS_NA);}
 ;
 
 /* Rules for parsing generic attributes.  We don't want to do anything
    with the results, just have the parser accept them */
 
-r_generic_attribute: NAME '=' r_generic_vector {}
+r_generic_attribute: NAME '=' r_discard_vector {}
 ;
 
-r_generic_list: r_generic_list_element {}
-| r_generic_list ',' r_generic_list_element {}
-;
-
-r_generic_list_element: r_generic_vector {}
-| NAME '=' r_generic_vector {}
-;
-
-r_generic_vector: r_numeric_vector {}
-| ASINTEGER '(' r_numeric_vector ')' {}
-| r_character_vector {}
-| LIST '(' r_generic_list ')' {}
-| STRUCTURE '(' r_generic_list ')' {}
+r_discard_vector: r_discard_numvector {}
+| ASINTEGER '(' r_discard_numvector ')' {}
+| r_discard_charvector {}
+| LIST '(' r_discard_arglist ')' {}
+| STRUCTURE '(' r_discard_arglist ')' {}
 | R_NULL {}
 ;
 
-r_numeric_vector: DOUBLE {}
-| 'c' '(' r_double_list ')'
+r_discard_arglist: r_discard_arglist_element {}
+| r_discard_arglist ',' r_discard_arglist_element {}
 ;
 
-r_double_list: DOUBLE {}
-| r_double_list ',' DOUBLE {}
+r_discard_arglist_element: r_discard_vector {}
+| NAME '=' r_discard_vector {}
 ;
 
-r_character_vector: STRING {}
-| 'c' '(' r_string_list ')' {}
+r_discard_numvector: DOUBLE {}
+| INT {}
+| INT ':' INT {}
+| 'c' '(' r_discard_numeric_arglist ')'
 ;
 
-r_string_list: STRING {}
-| r_string_list ',' STRING {}
+r_discard_numeric_arglist: DOUBLE {}
+| INT {}
+| r_discard_numeric_arglist ',' DOUBLE {}
+| r_discard_numeric_arglist ',' INT {}
+;
+
+r_discard_charvector: STRING {}
+| 'c' '(' r_discard_string_arglist ')' {}
+;
+
+r_discard_string_arglist: STRING {}
+| r_discard_string_arglist ',' STRING {}
 ;
 
 /* Rules for interacting with the operating system */
@@ -955,7 +974,7 @@ void doDump(std::string const &file, jags::ValueType type, unsigned int chain)
 		}
 		writeValue(value[i], out, discrete);
 	    }
-	    out << "), .Dim = c(";
+	    out << "), dim = c(";
 	    for (unsigned int j = 0; j < dim.size(); ++j) {
 		if (j > 0) {
 		    out << ",";

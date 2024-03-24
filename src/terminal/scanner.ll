@@ -119,17 +119,15 @@ run                     zzlval.intval=RUN; return RUN;
 <INITIAL,RDATA>"-"?("."[0-9]+)  {
   zzlval.val = atof(zztext); return DOUBLE;
 }
-<RDATA>"-"?[0-9]+  {
-  zzlval.val = atof(zztext); return DOUBLE;
-}
 <RDATA>"-"?[0-9]+"L" {
-  zzlval.val = atof(zztext); return DOUBLE;
+  zzlval.intval = atoi(zztext); return INT;
 }
-<INITIAL>"-"?[0-9]+	{
+<INITIAL,RDATA>"-"?[0-9]+	{
   zzlval.intval = atoi(zztext); return INT;
 }
 
 <RDATA>".Dim"                   return DIM;
+<RDATA>"dim"                    return DIM;
 <RDATA>".Data"                  return DOTDATA;
 <RDATA>"NA"		        return NA;
 <RDATA>"NULL"		        return R_NULL;
