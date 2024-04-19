@@ -52,7 +52,7 @@ AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX([11], [ext], [mandatory])
 AC_PROG_F77
 AC_PROG_FC
-AM_PROG_LEX
+AC_PROG_LEX([noyywrap])
 AC_PROG_YACC
 
 dnl IEEE 754 arithmetic
