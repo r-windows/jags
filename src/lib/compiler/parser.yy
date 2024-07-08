@@ -85,11 +85,11 @@ using jags::ParseTree;
 %right '^'
 
 %type <ptree> node_dec
-%type <ptree> expression var earg
+%type <ptree> expression var arg
 %type <ptree> relation for_loop counter
 %type <ptree> determ_relation stoch_relation  
 %type <ptree> distribution truncated interval relations
-%type <pvec> dec_list relation_list arg_list earg_list
+%type <pvec> dec_list relation_list arg_list
 %type <pvec> product sum
 
 %expect 2
@@ -198,11 +198,11 @@ stoch_relation:	var '~' distribution {
     $$ = new ParseTree(jags::P_STOCHREL, yylineno);
     setParameters($$, $1, $3, $4);
 }
-| var '~' 'T' '(' distribution ',' earg_list ')' {
+| var '~' 'T' '(' distribution ',' arg_list ')' {
     $$ = new ParseTree(jags::P_STOCHREL, yylineno);
     setParameters($$, $1, $5, Truncated($7));
 }
-| var '~' 'I' '(' distribution ',' earg_list ')' {
+| var '~' 'I' '(' distribution ',' arg_list ')' {
     $$ = new ParseTree(jags::P_STOCHREL, yylineno);
     setParameters($$, $1, $5, Interval($7));
 }
@@ -322,18 +322,18 @@ expression: var
 | '(' expression ')' { $$ = $2; }
 ;
 
-//Argument list
-arg_list: expression { $$ = new std::vector<ParseTree*>(1, $1); }
-| arg_list ',' expression { $$=$1; $$->push_back($3); }
+//Argument list (may be empty)
+arg_list: arg {
+    $$ = new std::vector<ParseTree*>(1, $1);
+}
+| arg_list ',' arg {
+    $$=$1;
+    $$->push_back($3);
+}
 ;
 
-//Argument list that optionally contains empty arguments
-earg_list: earg { $$ = new std::vector<ParseTree*>(1, $1); }
-| earg_list ',' earg { $$=$1; $$->push_back($3); }
-;
-
-//Possibly missing argument
-earg: %empty {
+//Element of argument list
+arg: %empty {
     $$ = new ParseTree(jags::P_NULL, yylineno);
 }
 | expression {
@@ -346,21 +346,16 @@ distribution: NAME '(' arg_list ')'
   $$ = new ParseTree(jags::P_DENSITY, yylineno); setName($$, $1);
   setParameters($$, $3);
 }
-| NAME '(' ')'
-{
-    //BUGS has a dflat() distribution with no parameters
-    $$ = new ParseTree(jags::P_DENSITY, yylineno); setName($$, $1);
-}
 ;
 
-truncated: 'T' '(' earg_list ')' { $$ = Truncated($3); };
+truncated: 'T' '(' arg_list ')' { $$ = Truncated($3); };
 
-interval:  'I' '(' earg_list ')' { $$ = Interval($3); };
+interval:  'I' '(' arg_list ')' { $$ = Interval($3); };
 
 var: NAME {
   $$ = new ParseTree(jags::P_VAR, yylineno); setName($$, $1);
 }
-| NAME '[' earg_list ']' {
+| NAME '[' arg_list ']' {
   $$ = new ParseTree(jags::P_VAR, yylineno); setName($$, $1);
   setParameters($$, $3);
 }

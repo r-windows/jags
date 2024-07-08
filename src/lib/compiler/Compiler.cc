@@ -316,8 +316,9 @@ SimpleRange Compiler::VariableSubsetRange(ParseTree const *var)
 {
     /*
       Get the range of a subset expression of a variable on the LHS of a
-      relation.  This means that the subset expression must be constant
-      and it must be a simple range.
+      relation.  This means that the subset expression must be constant,
+      and it must be a simple range. It can only have missing indices
+      if the array is declared.
     */
     if (var->treeClass() != P_VAR) {
 	throw logic_error("Expecting variable expression");
@@ -329,9 +330,8 @@ SimpleRange Compiler::VariableSubsetRange(ParseTree const *var)
 		     name);
     }
     NodeArray *array = _model.symtab().getVariable(name);
+    vector<ParseTree*> const &range_list = var->parameters();
     if (isLocked(array)) {
-	vector<ParseTree*> const &range_list = var->parameters();
-    
 	if (range_list.empty()) {
 	    //Missing range implies the whole node
 	    return array->range();
@@ -341,14 +341,22 @@ SimpleRange Compiler::VariableSubsetRange(ParseTree const *var)
 			 name);
 	}
     }
+    else {
+	// Check for empty indices
+	for (auto p = range_list.begin(); p != range_list.end(); ++p) {
+	    if ((*p)->treeClass() == P_NULL) {
+		CompileError(*p, "Missing index in subset expression of",
+			     name);
+	    }
+	}
+    }
 
     Range range = getRange(var, rangeLocked(array));
     if (isNULL(range)) {
 	return SimpleRange();
-	//CompileError(var, "Cannot evaluate subset expression for", name);
     }
     
-    //New in 4.1.0: Enforce use of simple ranges on the LHS of a relation
+    //Enforce use of simple ranges on the LHS of a relation
     for (unsigned int i = 0; i < range.ndim(false); ++i) {
 	vector<unsigned long> const &indices = range.scope()[i];
 	unsigned long j = indices[0];
@@ -551,7 +559,7 @@ Node *Compiler::evalBuiltinFunction(ParseTree const *p, SymTab const &symtab)
      * When one of these functions is evaluated by the Compiler a new
      * ConstantNode is generated. It is not appropriate to create a
      * LogicalNode, as this would create redundant parent-child
-     * relationships in the model graph.  Furthermore the results of
+     * relationships in the model graph.  Furthermore, the results of
      * these built-in functions are always fixed, whereas a
      * LogicalNode is only fixed if all parents are fixed. Hence these
      * functions must be built into the compiler and cannot be handled
@@ -566,19 +574,23 @@ Node *Compiler::evalBuiltinFunction(ParseTree const *p, SymTab const &symtab)
     {
 	return nullptr; //Not a built-in function
     }
-    if (p->parameters().size() > 1) {
+    vector<ParseTree *> const &params = p->parameters();
+    if (params.size() > 1) {
 	//All built-in functions take a single parameter
 	CompileError(p, "Too many arguments for", funcname);
     }
-    ParseTree const *arg = p->parameters()[0];
+    else if (params.empty() || params.front()->treeClass() == P_NULL) {
+	CompileError(p, "Empty argument list for", funcname);
+    }
+    ParseTree const *arg = params[0];
     if (arg->treeClass() == P_VAR) {
 	/* 
 	 * If the argument is of the form "name[range]" then we can
 	 * calculate the dimensions directly from the array and the
 	 * expression for the range. When data are supplied to the
-	 * data table an array of appropriate size is created before
+	 * data table, an array of appropriate size is created before
 	 * any nodes are defined. This allows the Compiler to resolve
-	 * these expressions early in the complation process.
+	 * these expressions early in the compilation process.
 	 */
 	NodeArray const *array = symtab.getVariable(arg->name());
 	if (!isLocked(array)) {
@@ -708,6 +720,15 @@ Node * Compiler::getParameter(ParseTree const *t)
     return node;
 }
 
+static bool checkEmptyParameters(vector<ParseTree *> const &params)
+{
+    if (params.empty()) return false;
+    for (auto p = params.begin(); p != params.end(); ++p) {
+	if ((*p)->treeClass() == P_NULL) return false;
+    }
+    return true;
+}
+
 /*
  * Before creating the node y <- foo(a,b), or z ~ dfoo(a,b), the parent
  * nodes must a,b be created. This expression evaluates the vector(a,b)
@@ -723,7 +744,7 @@ bool Compiler::getParameterVector(ParseTree const *t,
     bool ok = true;
     switch (t->treeClass()) {
     case P_FUNCTION: case P_LINK: case P_DENSITY:
-	if (t->parameters().size() == 0)
+	if (!checkEmptyParameters(t->parameters()))
 	    CompileError(t, "Parameter(s) missing for", t->name());
 	for (unsigned int i = 0; i < t->parameters().size(); ++i) {
 	    Node *node = getParameter(t->parameters()[i]);
@@ -1424,7 +1445,7 @@ void Compiler::declareVariables(vector<ParseTree*> const &dec_list)
 	_model.symtab().addVariable(name, vector<unsigned long>(1,1));
     }
     else {
-      // Variable is an array
+	// Variable is an array
 	vector<unsigned long> dim(ndim);
 	for (unsigned int i = 0; i < ndim; ++i) {
 	    vector<unsigned long> dim_i;
