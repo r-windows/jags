@@ -1115,7 +1115,7 @@ void dumpNodeNames(std::string const &file, std::string const &type)
 	
 	    out << "`" << alltypes[i] << "` <-\n";
 	
-		console->dumpNodeNames(node_names, alltypes[i], true);
+		console->dumpNodeNames(node_names, alltypes[i]);
 
 		// If no matching names just write an empty character vector:
 	    if ( node_names.size() == 0 ) {

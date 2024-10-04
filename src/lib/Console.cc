@@ -549,7 +549,7 @@ bool Console::dumpMonitors(map<string,SArray> &data_table,
 }
 
 void Console::dumpNodeNames(vector<string> &node_names,
-	     string const &type, bool flat) const
+			    string const &type) const
 {
     if (_model == nullptr) {
 	_err << "Cannot dump node names.  No model!" << endl;
@@ -557,11 +557,10 @@ void Console::dumpNodeNames(vector<string> &node_names,
     }
 	
     string warn;
-	_model->dumpNodeNames(node_names, type, flat, warn);
+    _model->dumpNodeNames(node_names, type, warn);
     if (!warn.empty()) {
         _err << "WARNING:\n" << warn;
     }	
-	
 }
 		 
 bool Console::coda(string const &prefix, string const &type)

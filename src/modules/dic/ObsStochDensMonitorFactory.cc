@@ -38,7 +38,7 @@ namespace dic {
 		
 		/* This factory is used when monitoring all observed stochastic
 		nodes.  The string _observations_ is not a valid node
-		name so is gauranteed not to clash with a node.
+		name so is guaranteed not to clash with a node.
 		If changing it then see also scanner.ll and NodeDensityMonitorFactory.cc
 		And also parse.varname, waic.samples etc in rjags */
 		if (name != "_observations_"
@@ -185,7 +185,7 @@ namespace dic {
 		else {
 			vector<string> onames;
 			string msg;
-			model->dumpNodeNames(onames, "observations", true, msg);
+			model->dumpNodeNames(onames, "observed", msg);
 			if ( onames.size() != observed_snodes.size() ) {
 				throw std::logic_error("The number of observed stochastic nodes does not match the length of the names");
 			}

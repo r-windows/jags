@@ -175,14 +175,18 @@
    /**
     * Retrieves the names of nodes in the graph matching a given type
     *
-    * If type="observed_stochastic" then these names are guaranteed to
-    * correspond to the values given by deviance monitors in the DIC module
-    * The flat argument isn't yet implemented: must be true
+    * @param node_names Node names will be appended to this vector
+    *
+    * @param type String indicating which type of nodes to select. Possible
+    * values are "constant", "deterministic", "stochastic", "fixed", and "observed".
+    * 
+    * If type="observed" then these names are guaranteed to correspond
+    * to the values given by deviance monitors in the DIC module
     */
    void dumpNodeNames(std::vector<std::string> &node_names,
-  		     std::string const &type, bool flat) const;
+		      std::string const &type) const;
    /**
-    * Dump the contants of monitored node in CODA format
+    * Dump the contents of monitored nodes in CODA format
     *
     * @param nodes Vector of monitored nodes to be dumped, each node
     * is described by the variable name and index range. If the vector

@@ -145,12 +145,19 @@ public:
     /**
      * Retrieves the names of nodes in the graph matching a given type
      *
-     * If type="observed_stochastic" then these names are guaranteed to
+     * @param node_names Node names will be appended to this vector
+     *
+     * @param type String indicating which type of nodes to select. Possible
+     * values are "constant", "deterministic", "stochastic", "fixed", and "observed".
+     *
+     * @param warn String that will contain a warning if the type argument is not
+     * matched with any valid string.
+     * 
+     * If type="observed" then these names are guaranteed to
      * correspond to the values given by deviance monitors in the DIC module
-     * The flat argument isn't yet implemented: must be true
      */
     void dumpNodeNames(std::vector<std::string> &node_names,
-  		     std::string const &type, bool flat, std::string &warn) const;
+		       std::string const &type, std::string &warn) const;
 };
 
 } /* namespace jags */

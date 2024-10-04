@@ -274,9 +274,9 @@ vector<Node const *> const &BUGSModel::observedStochasticNodes()
 
 	_observed_stochastic_nodes.clear();
 	for (unsigned int i = 0; i < snodes.size(); ++i) {
-	    if (snodes[i]->isFixed()) {
-			// Implicit up-cast to Node from StochasticNode:
-			_observed_stochastic_nodes.push_back(snodes[i]);
+	    if (isObserved(snodes[i])) {
+		// Implicit up-cast to Node from StochasticNode:
+		_observed_stochastic_nodes.push_back(snodes[i]);
 	    }
 	}
 	
@@ -284,62 +284,56 @@ vector<Node const *> const &BUGSModel::observedStochasticNodes()
 }
 
 void BUGSModel::dumpNodeNames(vector<string> &node_names,
-	     string const &type, bool flat, string &warn) const
+			      string const &type, string &warn) const
 {
-	
-	// The flat argument isn't implemented:
-	if (!flat) {
-		throw logic_error("Attempt to request dump of non-flat Node Names");
-	}
-	
     warn.clear();
-	node_names.clear();
+    node_names.clear();
 	
-	if( type == "constant" ) {
-		vector<Node *> const allnodes = nodes();
-		for (unsigned int i = 0; i < allnodes.size(); ++i) {
-		    if (allnodes[i]->isConstant()) {
-				node_names.push_back(_symtab.getName(allnodes[i]));
-			}
-		}
+    if( type == "constant" ) {
+	vector<Node *> const allnodes = nodes();
+	for (unsigned int i = 0; i < allnodes.size(); ++i) {
+	    if (allnodes[i]->isConstant()) {
+		node_names.push_back(_symtab.getName(allnodes[i]));
+	    }
 	}
-	else if( type == "deterministic" ) {
-		vector<Node *> const allnodes = nodes();
-		for (unsigned int i = 0; i < allnodes.size(); ++i) {
-		    if (allnodes[i]->isDeterministic()) {
-				node_names.push_back(_symtab.getName(allnodes[i]));
-			}
-		}
+    }
+    else if( type == "deterministic" ) {
+	vector<Node *> const allnodes = nodes();
+	for (unsigned int i = 0; i < allnodes.size(); ++i) {
+	    if (allnodes[i]->isDeterministic()) {
+		node_names.push_back(_symtab.getName(allnodes[i]));
+	    }
 	}
-	else if( type == "stochastic" ) {
-		vector<StochasticNode *> const snodes = stochasticNodes();
-		for (unsigned int i = 0; i < snodes.size(); ++i) {
-			// Implicit up-cast to Node from StochasticNode:
-			node_names.push_back(_symtab.getName(snodes[i]));
-		}
+    }
+    else if( type == "stochastic" ) {
+	vector<StochasticNode *> const snodes = stochasticNodes();
+	for (unsigned int i = 0; i < snodes.size(); ++i) {
+	    // Implicit up-cast to Node from StochasticNode:
+	    node_names.push_back(_symtab.getName(snodes[i]));
 	}
-	else if( type == "fixed" ) {
-		vector<Node *> const allnodes = nodes();
-		for (unsigned int i = 0; i < allnodes.size(); ++i) {
-		    if (allnodes[i]->isFixed()) {
-				node_names.push_back(_symtab.getName(allnodes[i]));
-			}
-		}
+    }
+    else if( type == "fixed" ) {
+	vector<Node *> const allnodes = nodes();
+	for (unsigned int i = 0; i < allnodes.size(); ++i) {
+	    if (allnodes[i]->isFixed()) {
+		node_names.push_back(_symtab.getName(allnodes[i]));
+	    }
 	}
-	else if( type == "observations" ) {
-		vector<StochasticNode *> const snodes = stochasticNodes();
-		for (unsigned int i = 0; i < snodes.size(); ++i) {
-		    if (snodes[i]->isFixed()) {
-				// Implicit up-cast to Node from StochasticNode:
-				node_names.push_back(_symtab.getName(snodes[i]));
-			}
-		}
+    }
+    else if( type == "observed" ) {
+	vector<StochasticNode *> const snodes = stochasticNodes();
+	for (unsigned int i = 0; i < snodes.size(); ++i) {
+	    if (isObserved(snodes[i])) {
+		// Implicit up-cast to Node from StochasticNode:
+		node_names.push_back(_symtab.getName(snodes[i]));
+	    }
 	}
-	else {
-		warn.assign("retrieving node names for requested node type '");
-		warn.append(type);
-		warn.append("' is not implemented\n");
-	}
+    }
+    else {
+	warn.assign("retrieving node names for requested node type '");
+	warn.append(type);
+	warn.append("' is not implemented\n");
+    }
 }
 
 } //namespace jags
