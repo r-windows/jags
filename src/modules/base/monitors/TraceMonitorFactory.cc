@@ -16,10 +16,11 @@ namespace base {
     Monitor *TraceMonitorFactory::getMonitor(string const &name,
 					     Range const &range,
 					     BUGSModel *model,
-					     string const &type,
+					     string const &stat,
+					     string const &summary,
 					     string &msg)
     {
-	if (type != "trace")
+	if (stat != "value" || summary != "trace")
 	    return nullptr;
 
 	NodeArray *array = model->symtab().getVariable(name);
@@ -31,7 +32,7 @@ namespace base {
 	TraceMonitor *m = new TraceMonitor(NodeArraySubset(array, range));
 	
 	//Set name attributes 
-	m->setName(name + printRange(range));
+	//m->setName(name + printRange(range)); FIXME
 	Range node_range = range;
 	if (isNULL(range)) {
 	    //Special syntactic rule: a null range corresponds to the whole

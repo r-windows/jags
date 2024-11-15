@@ -17,17 +17,13 @@ namespace jags {
 	 * Note that this class is used by both NodeDensityMonitorFactory and ObsStochDensMonitorFactory
    	 */
    	class DensityVariance : public Monitor {
-   	    std::vector<Node const *> const _nodes;
-		std::vector<std::vector<double> > _means;
-		std::vector<std::vector<double> > _mms;
-		std::vector<std::vector<double> > _variances;
-		DensityType const _density_type;  // enum is defined in model/Monitor.h
-		std::vector<unsigned long> const _dim;
-		unsigned int const _nchain;
-		unsigned int _n;
-   	  public:
-   	    DensityVariance(std::vector<Node const *> const &nodes, std::vector<unsigned long> const &dim, 
-			    DensityType const density_type, std::string const &monitor_name);
+	    std::vector<std::vector<double> > _means;
+	    std::vector<std::vector<double> > _mms;
+	    std::vector<std::vector<double> > _variances;
+	    DensityType const _density_type;  // enum is defined in model/Monitor.h
+	    unsigned int _n;
+	public:
+   	    DensityVariance(std::vector<Node const *> const &nodes, DensityType const density_type);
    	    void update() override;
    	    std::vector<double> const &value(unsigned int chain) const override;
    	    std::vector<unsigned long> dim() const override;
@@ -35,7 +31,7 @@ namespace jags {
    	    bool poolIterations() const override;
    	};
 	
-}
+    }
 }
 
 #endif /* DENSITY_VARIANCE_H_ */

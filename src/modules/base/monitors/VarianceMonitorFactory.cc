@@ -17,12 +17,16 @@ namespace jags {
 namespace base {
 
     Monitor *VarianceMonitorFactory::getMonitor(string const &name,
-					     Range const &range,
-					     BUGSModel *model,
-					     string const &type,
-					     string &msg)
+						Range const &range,
+						BUGSModel *model,
+						string const &stat,
+						string const &summary,
+						string &msg)
     {
-	if (type != "variance" && type != "poolvariance")
+	if (stat != "value")
+	    return nullptr;
+	
+	if (summary != "variance" && summary != "poolvariance")
 	    return nullptr;
 
 	NodeArray *array = model->symtab().getVariable(name);
@@ -33,22 +37,21 @@ namespace base {
 	
 	Monitor *m = nullptr;
 	
-	if ( type == "variance" ) {
-		m = new VarianceMonitor(NodeArraySubset(array, range));
+	if (summary == "variance" ) {
+	    m = new VarianceMonitor(NodeArraySubset(array, range));
 	}
-	else if ( type == "poolvariance" ) {
-		m = new PoolVarianceMonitor(NodeArraySubset(array, range));
+	else if (summary == "poolvariance" ) {
+	    m = new PoolVarianceMonitor(NodeArraySubset(array, range));
 	}
 	else {
-		throw std::logic_error("Unimplemented MonitorType in VarianceMonitorFactory");
+	    throw std::logic_error("Unimplemented MonitorType in VarianceMonitorFactory");
 	}
 	
 	//Set name attributes 
-	m->setName(name + printRange(range));
+	//m->setName(name + printRange(range)); FIXME
 	Range node_range = range;
 	if (isNULL(range)) {
-	    //Special syntactic rule: a null range corresponds to the whole
-	    //array
+	    //A null range corresponds to the whole array
 	    node_range = array->range();
 	}
 	vector<string> elt_names;

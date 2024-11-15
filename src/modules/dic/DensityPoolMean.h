@@ -20,13 +20,11 @@ namespace jags {
  	  protected:
    	    std::vector<Node const *> const _nodes;
    	    std::vector<double> _values; // density/log density/deviance corresponding to sampled values
-		DensityType const _density_type;  // enum is defined in model/Monitor.h
-		std::vector<unsigned long> const _dim;
-		unsigned int const _nchain;
-		unsigned int _n;
-   	  public:
-   	    DensityPoolMean(std::vector<Node const *> const &nodes, std::vector<unsigned long> const &dim, 
-				DensityType const density_type, std::string const &monitor_name);
+	    DensityType const _density_type;  // enum is defined in model/Monitor.h
+	    unsigned int const _nchain;
+	    unsigned int _n;
+	public:
+   	    DensityPoolMean(std::vector<Node const *> const &nodes, DensityType density_type);
    	    void update() override;
    	    std::vector<double> const &value(unsigned int chain) const override;
    	    std::vector<unsigned long> dim() const override;
@@ -34,7 +32,7 @@ namespace jags {
    	    bool poolIterations() const override;
    	};
 	
-}
+    }
 }
 
 #endif /* DENSITY_POOL_MEAN_H_ */

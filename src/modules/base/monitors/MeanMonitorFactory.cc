@@ -17,12 +17,16 @@ namespace jags {
 namespace base {
 
     Monitor *MeanMonitorFactory::getMonitor(string const &name,
-					     Range const &range,
-					     BUGSModel *model,
-					     string const &type,
-					     string &msg)
+					    Range const &range,
+					    BUGSModel *model,
+					    string const &stat,
+					    string const &summary,
+					    string &msg)
     {
-	if (type != "mean" && type != "poolmean")
+	if (stat != "value")
+	    return nullptr;
+	
+	if (summary != "mean" && summary != "poolmean")
 	    return nullptr;
 
 	NodeArray *array = model->symtab().getVariable(name);
@@ -32,23 +36,21 @@ namespace base {
 	}
 	
 	Monitor *m = nullptr;
-	
-	if ( type == "mean" ) {
-		m = new MeanMonitor(NodeArraySubset(array, range));
+	if (summary == "mean" ) {
+	    m = new MeanMonitor(NodeArraySubset(array, range));
 	}
-	else if ( type == "poolmean" ) {
-		m = new PoolMeanMonitor(NodeArraySubset(array, range));
+	else if (summary == "poolmean" ) {
+	    m = new PoolMeanMonitor(NodeArraySubset(array, range));
 	}
 	else {
-		throw std::logic_error("Unimplemented MonitorType in MeanMonitorFactory");
+	    throw std::logic_error("Unimplemented MonitorType in MeanMonitorFactory");
 	}
 	
 	//Set name attributes 
-	m->setName(name + printRange(range));
+	//m->setName(name + printRange(range)); FIXME
 	Range node_range = range;
 	if (isNULL(range)) {
-	    //Special syntactic rule: a null range corresponds to the whole
-	    //array
+	    //A null range corresponds to the whole array
 	    node_range = array->range();
 	}
 	vector<string> elt_names;

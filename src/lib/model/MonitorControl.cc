@@ -10,8 +10,10 @@ using std::string;
 namespace jags {
 
 MonitorControl::MonitorControl (Monitor *monitor, unsigned int start, 
-				unsigned int thin)
-    : _monitor(monitor), _start(start), _thin(thin), _niter(0)
+				unsigned int thin, string const &name,
+				Range const &range, string const &stat,
+				string const &summary)
+    : _monitor(monitor), _start(start), _thin(thin), _niter(0), _name(name), _range(range), _stat(stat), _summary(summary)
 {
    if (thin == 0) {
 	throw invalid_argument("Illegal thinning interval");
@@ -38,10 +40,30 @@ unsigned int MonitorControl::thin() const
     return _thin;
 }
 
-Monitor const *MonitorControl::monitor() const
+Monitor *MonitorControl::monitor() const
 {
     return _monitor;
 }
+
+    string const &MonitorControl::name() const
+    {
+	return _name;
+    }
+
+    Range const &MonitorControl::range() const
+    {
+	return _range;
+    }
+
+    string const &MonitorControl::stat() const
+    {
+	return _stat;
+    }
+
+    string const &MonitorControl::summary() const
+    {
+	return _summary;
+    }
 
 void MonitorControl::update(unsigned int iteration)
 {
@@ -54,12 +76,5 @@ void MonitorControl::update(unsigned int iteration)
     }
 }
 
-bool MonitorControl::operator==(MonitorControl const &rhs) const
-{
-    return (_monitor == rhs._monitor &&
-	    _start == rhs._start &&
-	    _thin == rhs._thin &&
-	    _niter == rhs._niter);
-}
 
 } //namespace jags

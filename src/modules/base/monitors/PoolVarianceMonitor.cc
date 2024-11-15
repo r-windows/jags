@@ -13,7 +13,7 @@ namespace jags {
 namespace base {
 
     PoolVarianceMonitor::PoolVarianceMonitor(NodeArraySubset const &subset)
-	: Monitor("poolvariance", subset.nodes()), _subset(subset),
+	: Monitor(subset.nodes()), _subset(subset),
 	  _means(subset.length()),
 	  _mms(subset.length()),
 	  _variances(subset.length()),
@@ -23,31 +23,30 @@ namespace base {
     
     void PoolVarianceMonitor::update()
     {
-
-		for (unsigned int ch = 0; ch < _subset.nchain(); ++ch) {
+	for (unsigned int ch = 0; ch < _subset.nchain(); ++ch) {
 		
-			// Each chain counts as an iteration:
-			_n++;
+	    // Each chain counts as an iteration:
+	    _n++;
 		
-		    vector<double> value = _subset.value(ch);
-		    for (unsigned int i = 0; i < value.size(); ++i) {
-				if (jags_isna(value[i])) {
-				    _means[i] = JAGS_NA;
-					_mms[i] = JAGS_NA;
-					_variances[i] = JAGS_NA;
-				}
-				else {
-					double delta = value[i] - _means[i];
-					_means[i] += delta / _n;
-					_mms[i] += delta * (value[i] - _means[i]);
-				}
-			}
+	    vector<double> value = _subset.value(ch);
+	    for (unsigned int i = 0; i < value.size(); ++i) {
+		if (jags_isna(value[i])) {
+		    _means[i] = JAGS_NA;
+		    _mms[i] = JAGS_NA;
+		    _variances[i] = JAGS_NA;
 		}
-		
-		// Variance itself only needs to be calculated once per iteration:
-		for (unsigned int i = 0; i < _variances.size(); ++i) {
-		    _variances[i] = _mms[i] / static_cast<double>(_n - 1);
+		else {
+		    double delta = value[i] - _means[i];
+		    _means[i] += delta / _n;
+		    _mms[i] += delta * (value[i] - _means[i]);
 		}
+	    }
+	}
+		
+	// Variance itself only needs to be calculated once per iteration:
+	for (unsigned int i = 0; i < _variances.size(); ++i) {
+	    _variances[i] = _mms[i] / static_cast<double>(_n - 1);
+	}
 		
     }
 

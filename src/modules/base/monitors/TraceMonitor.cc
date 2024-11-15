@@ -12,7 +12,7 @@ namespace jags {
 namespace base {
 
     TraceMonitor::TraceMonitor(NodeArraySubset const &subset)
-	: Monitor("trace", subset.nodes()), _subset(subset),
+	: Monitor(subset.nodes()), _subset(subset),
 	  _values(subset.nchain())
     {
     }

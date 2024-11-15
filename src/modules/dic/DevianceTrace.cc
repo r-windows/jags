@@ -10,21 +10,17 @@ using std::copy;
 
 namespace jags {
 
-static vector<Node const *> toNode(vector<StochasticNode const *> const &nodes)
+static vector<Node const *> toNodeVec(vector<StochasticNode const *> const &snodes)
 {
-    vector<Node const *> ans(nodes.size());
-    for (unsigned int i = 0; i < nodes.size(); ++i) {
-	ans[i] = nodes[i];
-    }
+    vector<Node const *> ans(snodes.size());
+    copy(snodes.begin(), snodes.end(), ans.begin());
     return ans;
 }
 
 namespace dic {
 
-    DevianceTrace::DevianceTrace(vector<StochasticNode const *> const &
-				     snodes)
-	: Monitor("trace", toNode(snodes)), _values(snodes[0]->nchain()), 
-	  _snodes(snodes)
+    DevianceTrace::DevianceTrace(vector<StochasticNode const *> const &snodes)
+	: Monitor(toNodeVec(snodes)), _values(snodes[0]->nchain()), _snodes(snodes)
     {
     }
 
@@ -37,7 +33,7 @@ namespace dic {
     {
 	return _values[chain];
     }
-
+    
     void DevianceTrace::update()
     {
 	unsigned int nchain = _snodes[0]->nchain();
@@ -49,12 +45,12 @@ namespace dic {
 	    _values[ch].push_back(-2 * loglik);
 	}
     }
-
+    
     bool DevianceTrace::poolChains() const
     {
 	return false;
     }
-
+    
     bool DevianceTrace::poolIterations() const
     {
 	return false;

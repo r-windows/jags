@@ -13,7 +13,7 @@ namespace jags {
 namespace base {
 
     MeanMonitor::MeanMonitor(NodeArraySubset const &subset)
-	: Monitor("mean", subset.nodes()), _subset(subset),
+	: Monitor(subset.nodes()), _subset(subset),
 	  _values(subset.nchain(), vector<double>(subset.length())),
 	  _n(0)
     {

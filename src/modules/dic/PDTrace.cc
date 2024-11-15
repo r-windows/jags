@@ -23,7 +23,7 @@ namespace dic {
 
     PDTrace::PDTrace(vector<StochasticNode const *> const &snodes,
 		     vector<RNG *> const &rngs, unsigned int nrep)
-	: Monitor("trace", toNodeVec(snodes)),
+	: Monitor(toNodeVec(snodes)),
 	  _snodes(snodes), _rngs(rngs), _nrep(nrep),
 	  _nchain(rngs.size()),  _values()
     {

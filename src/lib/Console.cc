@@ -406,15 +406,16 @@ unsigned int Console::iter() const
 }
 
 bool Console::setMonitor(string const &name, Range const &range,
-			 unsigned int thin, string const &type)
+			 unsigned int thin, string const &stat,
+			 string const &summary)
 {
     if (!_model) {
 	_err << "Can't set monitor. No model!" << endl;    
 	return false;
     }
     if (thin == 0) {
-	_err << "Failed to set " << type << " monitor for " <<
-	    name << printRange(range) << endl;
+	_err << "Failed to set " << stat << " " << summary << " monitor for "
+	     <<  name << printRange(range) << endl;
 	_err << "Thinning interval must be > 0" << endl;
 	return false;
     }
@@ -426,10 +427,10 @@ bool Console::setMonitor(string const &name, Range const &range,
 	    _model->adaptOff();
 	}
 	string msg;
-	bool ok = _model->setMonitor(name, range, thin, type, msg);
+	bool ok = _model->setMonitor(name, range, thin, stat, summary, msg);
 	if (!ok) {
-	    _err << "Failed to set " << type << " monitor for " << 
-		name << printRange(range) << endl;
+	    _err << "Failed to set " << stat << " " << summary  <<
+		" monitor for " << name << printRange(range) << endl;
 	    if (!msg.empty()) {
 		_err << msg << endl;
 	    }
@@ -445,7 +446,7 @@ bool Console::setMonitor(string const &name, Range const &range,
 }
 
 bool Console::clearMonitor(string const &name, Range const &range,
-			   string const &type)
+			   string const &stat, string const &summary)
 {
   if (!_model) {
     _err << "Can't clear monitor. No model!" << endl;    
@@ -453,10 +454,10 @@ bool Console::clearMonitor(string const &name, Range const &range,
   }
 
   try {
-      bool ok = _model->deleteMonitor(name, range, type);      
+      bool ok = _model->deleteMonitor(name, range, stat, summary);      
       if (!ok) {
-	  _err << "Failed to clear " << type << " monitor for node " << 
-	      name << printRange(range) << endl;
+	  _err << "Failed to clear " << stat << " " << summary  <<
+	      " monitor for node " << name << printRange(range) << endl;
 	  return false;
       }
   }
@@ -523,7 +524,9 @@ bool Console::dumpState(map<string,SArray> &data_table,
 
 
 bool Console::dumpMonitors(map<string,SArray> &data_table,
-			   string const &type, bool flat) 
+			   string const &stat,
+			   string const &summary,
+			   bool flat) 
 {
     if (_model == nullptr) {
 	_err << "Cannot dump monitors.  No model!" << endl;
@@ -531,11 +534,14 @@ bool Console::dumpMonitors(map<string,SArray> &data_table,
     }
     try {
 	list<MonitorControl> const &monitors = _model->monitors();
-	list<MonitorControl>::const_iterator p;
-	for (p = monitors.begin(); p != monitors.end(); ++p) {
+	for (auto p = monitors.begin(); p != monitors.end(); ++p) {
 	    Monitor const *monitor = p->monitor();
-	    if (p->niter() > 0 && monitor->type() == type) {
-		data_table.insert(pair<string,SArray>(monitor->name(), 
+	    if (p->niter() > 0 &&
+		p->stat() == stat &&
+		p->summary() == summary)
+	    {
+		string name = p->name() + printRange(p->range());
+		data_table.insert(pair<string,SArray>(name, 
 						      monitor->dump(flat)));
 	    }
 	}
@@ -563,7 +569,8 @@ void Console::dumpNodeNames(vector<string> &node_names,
     }	
 }
 		 
-bool Console::coda(string const &prefix, string const &type)
+bool Console::coda(string const &prefix, string const &stat,
+		   string const &summary)
 {
     if (!_model) {
 	_err << "Can't dump CODA output. No model!" << endl;
@@ -572,7 +579,7 @@ bool Console::coda(string const &prefix, string const &type)
 
     try {
         string warn;
-	_model->coda(prefix, warn, type);
+	_model->coda(prefix, warn, stat, summary);
         if (!warn.empty()) {
             _err << "WARNING:\n" << warn;
         }
@@ -586,7 +593,8 @@ bool Console::coda(string const &prefix, string const &type)
 }
 
 bool Console::coda(vector<pair<string, Range> > const &nodes,
-		   string const &prefix, string const &type)
+		   string const &prefix, string const &stat,
+		   string const &summary)
 {
     if (!_model) {
 	_err << "Can't dump CODA output. No model!" << endl;
@@ -595,7 +603,7 @@ bool Console::coda(vector<pair<string, Range> > const &nodes,
 
     try {
         string warn;
-	_model->coda(nodes, prefix, warn, type);
+	_model->coda(nodes, prefix, warn, stat, summary);
         if (!warn.empty()) {
             _err << "WARNINGS:\n" << warn;
         }

@@ -20,7 +20,7 @@ static vector<Node const *> toNodeVec(vector<StochasticNode const *> const &s)
 namespace dic {
 
     DevianceMean::DevianceMean(vector<StochasticNode const *> const &s)
-	: Monitor("mean", toNodeVec(s)), _values(s.size(),0), _snodes(s), _n(0)
+	: Monitor(toNodeVec(s)), _values(s.size(), 0), _snodes(s), _n(0)
     {
     }
 

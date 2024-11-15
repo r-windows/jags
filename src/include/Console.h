@@ -128,19 +128,22 @@
     *
     * @param thin Thinning interval for the monitor
     *
-    * @param type Name of the monitor type.
+    * @param stat Statistic to monitor
+    *
+    * @param summary How to summarize the monitored values.
     *
     */
    bool setMonitor(std::string const &name, Range const &range,
-		   unsigned int thin, std::string const &type); 
+		   unsigned int thin, std::string const &stat,
+		   std::string const &summary); 
    /**
     * @short Clears a monitor. 
     * 
-    * The arguments name, range and type must correspond exactly to
+    * The arguments name, range, stat, and summary must correspond exactly to
     * a previous call to setMonitor.
     */
    bool clearMonitor(std::string const &name, Range const &range,
-		     std::string const &type);
+		     std::string const &stat, std::string const &summary);
    /**
     * @short Dumps the state of the model.
     *
@@ -194,15 +197,22 @@
     * 
     * @param prefix Prefix to be prepended to the output file names
     * 
-    * @param type Name of the monitor type or "*" for all types
+    * @param stat Selects Monitors that match the given stat, or "*"
+    * for all stats
+    *
+    * @param stat Selects Monitors that match the given summary, or "*"
+    * for all summaries
     */
    bool coda(std::vector<std::pair<std::string, Range> > const &nodes,
-	     std::string const &prefix, std::string const &type);
-   bool coda(std::string const &prefix, std::string const &type);
+	     std::string const &prefix, std::string const &stat,
+	     std::string const &summary);
+   bool coda(std::string const &prefix, std::string const &stat,
+	     std::string const &summary);
    BUGSModel const *model();
    unsigned int nchain() const;
    bool dumpMonitors(std::map<std::string,SArray> &data_table,
-		     std::string const &type, bool flat);
+		     std::string const &stat,
+		     std::string const &summary, bool flat);
    bool dumpSamplers(std::vector<std::vector<std::string> > &sampler_list);
    /** Turns off adaptive mode of the model */
    bool adaptOff();

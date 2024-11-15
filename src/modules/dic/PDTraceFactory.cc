@@ -17,19 +17,26 @@ namespace dic {
     Monitor *PDTraceFactory::getMonitor(string const &name,
 					Range const &range,
 					BUGSModel *model,
-					string const &type,
+					string const &stat,
+					string const &summary,
 					string &msg)
     {
 	if (name != "pD") 
 	    return nullptr;
-	if (type != "trace")
-	    return nullptr;
-	if (model->nchain() < 2) {
-	    msg = "at least two chains are required for a pD trace monitor";
-	    return nullptr;
-	}
+
 	if (!isNULL(range)) {
 	    msg = "cannot monitor a subset of pD";
+	    return nullptr;
+	}
+
+	if (stat != "value")
+	    return nullptr;
+	
+	if (summary != "trace")
+	    return nullptr;
+
+	if (model->nchain() < 2) {
+	    msg = "at least two chains are required for a pD trace monitor";
 	    return nullptr;
 	}
 
@@ -56,7 +63,6 @@ namespace dic {
 	}
 
 	Monitor *m  = new PDTrace(observed_nodes, rngs, 10);
-	m->setName("pD");
 	m->setElementNames(vector<string>(1,"pD"));
 	return m;
     }

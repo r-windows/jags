@@ -59,13 +59,13 @@
     bool open_data_buffer(std::string const *name);
     bool open_command_buffer(std::string const *name);
     void return_to_main_buffer();
-    void setMonitor(jags::ParseTree const *var, int thin, std::string const &type);
-    void clearMonitor(jags::ParseTree const *var, std::string const &type);
-    void doCoda (jags::ParseTree const *var, std::string const &stem, std::string const &type);
-    void doAllCoda (std::string const &stem, std::string const &type);
+    void setMonitor(jags::ParseTree const *var, int thin, std::string const &stat, std::string const &summary);
+    void clearMonitor(jags::ParseTree const *var, std::string const &stat, std::string const &summary);
+    void doCoda (jags::ParseTree const *var, std::string const &stem, std::string const &stat, std::string const &summary);
+    void doAllCoda (std::string const &stem, std::string const &stat, std::string const &summary);
     void dumpNodeNames (std::string const &file, std::string const &type);
     void doDump (std::string const &file, jags::ValueType type, unsigned int chain);
-    void dumpMonitors(std::string const &file, std::string const &type);
+    void dumpMonitors(std::string const &file, std::string const &stat, std::string const &summary);
     void doSystem(std::string const *command);
     std::string ExpandFileName(char const *s);
 
@@ -138,6 +138,8 @@
 %token <intval> THIN
 %token <intval> CODA
 %token <intval> STEM
+%token <intval> STAT
+%token <intval> SUMMARY
 %token <intval> EXIT
 %token <intval> NCHAINS
 %token <intval> CHAIN
@@ -439,50 +441,57 @@ monitor: monitor_set
 ;
 
 monitor_set: MONITOR SET var  { 
-    setMonitor($3, 1, "trace"); delete $3;
+    setMonitor($3, 1, "value", "trace"); delete $3;
 }
 | MONITOR SET var ',' THIN '(' INT ')' { 
-    setMonitor($3, $7, "trace"); delete $3;
+    setMonitor($3, $7, "value", "trace"); delete $3;
 }
 | MONITOR var {
-    setMonitor($2, 1, "trace"); delete $2;
+    setMonitor($2, 1, "value", "trace"); delete $2;
 }
 | MONITOR var ',' THIN '(' INT ')' { 
-    setMonitor($2, $6, "trace"); delete $2;
+    setMonitor($2, $6, "value", "trace"); delete $2;
 }
-| MONITOR var ',' TYPE '(' NAME ')' {
-    setMonitor($2, 1, *$6);
+| MONITOR var ','  STAT '(' NAME ')' {
+    setMonitor($2, 1, *$6, "trace");
     delete $6;
 }
-| MONITOR var ',' TYPE '(' NAME ')' THIN '(' INT ')' {
-    setMonitor($2, $10, *$6); 
+| MONITOR var ',' SUMMARY '(' NAME ')' {
+    setMonitor($2, 1, "value", *$6);
     delete $6;
 }
-| MONITOR var ',' THIN '(' INT ')' TYPE '(' NAME ')' {
-    setMonitor($2, $6, *$10); 
+| MONITOR var ',' STAT '(' NAME ')' SUMMARY '(' NAME ')' THIN '(' INT ')' {
+    setMonitor($2, $14, *$6, *$10); 
+    delete $6;
     delete $10;
+}
+| MONITOR var ',' THIN '(' INT ')' STAT '(' NAME ')' SUMMARY '(' NAME ')' {
+    setMonitor($2, $6, *$10, *$14);
+    delete $10;
+    delete $14;
 }
 ;
 
 monitor_clear: MONITOR CLEAR var {
-    clearMonitor($3, "trace"); delete $3;
+    clearMonitor($3, "value", "trace"); delete $3;
 }
-| MONITOR CLEAR var ',' TYPE '(' NAME ')' {
-    clearMonitor($3, *$7);
+| MONITOR CLEAR var ',' STAT '(' NAME ')' {
+    clearMonitor($3, *$7, "trace");
     delete $7;
 }
 ;
 
 monitors_to:  MONITORS TO file_name 
 {
-    dumpMonitors(*$3, "trace");
+    dumpMonitors(*$3, "value", "trace");
     delete $3;
 }
 |
-MONITORS TO file_name ',' TYPE '(' NAME ')' {
-    dumpMonitors(*$3, *$7);
+MONITORS TO file_name ',' STAT '(' NAME ')' SUMMARY '(' NAME ')' {
+    dumpMonitors(*$3, *$7, *$11);
     delete $3;
-    delete $7; 
+    delete $7;
+    delete $11;
 }
 ;
 
@@ -509,22 +518,23 @@ file_name: NAME { $$ = $1;}
 ;
 
 coda: CODA var {
-  doCoda ($2, "CODA", "*"); delete $2;
+    doCoda ($2, "CODA", "*", "*"); delete $2;
 }
 | CODA var ',' STEM '(' file_name ')' {
-  doCoda ($2, *$6, "*"); delete $2; delete $6;
+    doCoda ($2, *$6, "*", "*"); delete $2; delete $6;
 }
-| CODA var ',' STEM '(' file_name ')' TYPE '(' NAME ')' {
-  doCoda ($2, *$6, *$10); delete $2; delete $6; delete $10;
+| CODA var ',' STEM '(' file_name ')' STAT '(' NAME ')' SUMMARY '(' NAME ')' {
+    doCoda ($2, *$6, *$10, *$14);
+    delete $2; delete $6; delete $10; delete $14;
 }
 | CODA '*' {
-  doAllCoda ("CODA", "*"); 
+  doAllCoda ("CODA", "*", "*"); 
 }
 | CODA '*' ',' STEM '(' file_name ')' {
-  doAllCoda (*$6, "*"); delete $6; 
+    doAllCoda (*$6, "*", "*" ); delete $6; 
 }
-| CODA '*' ',' STEM '(' file_name ')' TYPE '(' NAME ')' {
-  doAllCoda (*$6, *$10); delete $6; delete $10;
+| CODA '*' ',' STEM '(' file_name ')' STAT '(' NAME ')' SUMMARY '(' NAME ')' {
+    doAllCoda (*$6, *$10, *$14); delete $6; delete $10; delete $14;
 }
 ;
 
@@ -845,38 +855,38 @@ static jags::Range getRange(jags::ParseTree const *var)
   return jags::SimpleRange(ind_lower, ind_upper);
 }
 
-void setMonitor(jags::ParseTree const *var, int thin, std::string const &type)
+void setMonitor(jags::ParseTree const *var, int thin, std::string const &stat, std::string const &summary)
 {
     std::string const &name = var->name();
     if (var->parameters().empty()) {
 	/* Requesting the whole node */
-	console->setMonitor(name, jags::Range(), thin, type);
+	console->setMonitor(name, jags::Range(), thin, stat, summary);
     }
     else {
 	/* Requesting subset of a multivariate node */
-	console->setMonitor(name, getRange(var), thin, type);
+	console->setMonitor(name, getRange(var), thin, stat, summary);
     }
 }
 
-void clearMonitor(jags::ParseTree const *var, std::string const &type)
+void clearMonitor(jags::ParseTree const *var, std::string const &stat, std::string const &summary)
 {
     std::string const &name = var->name();
     if (var->parameters().empty()) {
 	/* Requesting the whole node */
-	console->clearMonitor(name, jags::Range(), type);
+	console->clearMonitor(name, jags::Range(), stat, summary);
     }
     else {
 	/* Requesting subset of a multivariate node */
-	console->clearMonitor(name, getRange(var), type);
+	console->clearMonitor(name, getRange(var), stat, summary);
     }
 }
 
-void doAllCoda (std::string const &stem, std::string const &type)
+void doAllCoda (std::string const &stem, std::string const &stat, std::string const &summary)
 {
-    console->coda(stem, type);
+    console->coda(stem, stat, summary);
 }
 
-void doCoda (jags::ParseTree const *var, std::string const &stem, std::string const &type)
+void doCoda (jags::ParseTree const *var, std::string const &stem, std::string const &stat, std::string const &summary)
 {
     //FIXME: Allow list of several nodes
 
@@ -889,7 +899,7 @@ void doCoda (jags::ParseTree const *var, std::string const &stem, std::string co
 	/* Requesting subset of a multivariate node */
 	dmp.push_back(std::pair<std::string,jags::Range>(var->name(), getRange(var)));
     }
-    console->coda(dmp, stem, type);
+    console->coda(dmp, stem, stat, summary);
 }
 
 /* Helper function for doDump that handles all the special cases
@@ -988,11 +998,12 @@ void doDump(std::string const &file, jags::ValueType type, unsigned int chain)
     out.close();
 }  
 
-void dumpMonitors(std::string const &file, std::string const &type)
+void dumpMonitors(std::string const &file, std::string const &stat,
+		  std::string const &summary)
 {
     std::map<std::string,jags::SArray> data_table;
 
-    if (!console->dumpMonitors(data_table, type, false)) {
+    if (!console->dumpMonitors(data_table, stat, summary, false)) {
 	return;
     }
 
@@ -1003,7 +1014,8 @@ void dumpMonitors(std::string const &file, std::string const &type)
 	return;
     }
 
-    out << "`" << type << "` <-\nstructure(list(";
+    //FIXME: Use recursive list here
+    out << "`" << stat << "_" << summary << "` <-\nstructure(list(";
 
     std::map<std::string, jags::SArray>::const_iterator p;
     for (p = data_table.begin(); p != data_table.end(); ++p) {

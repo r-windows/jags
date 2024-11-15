@@ -89,7 +89,9 @@ public:
    * iteration.  This can only be done if Model#adaptOff has been
    * successfully called. Otherwise, a logic_error is thrown.
    */
-  void addMonitor(Monitor *monitor, unsigned int thin);
+  void addMonitor(Monitor *monitor, unsigned int thin,
+		  std::string const &name, Range const &range,
+		  std::string const &stat, std::string const &summary);
   /**
    * Clears the monitor from the model, so that it will no longer
    * be updated. If the monitor has not previously been added to the

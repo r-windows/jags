@@ -504,20 +504,21 @@ void Model::setSampledExtra()
     }
 }
 
-void Model::addMonitor(Monitor *monitor, unsigned int thin)
+void Model::addMonitor(Monitor *monitor, unsigned int thin,
+		       string const &name, Range const &range,
+		       string const &stat, string const &summary)
 {
     if (_adapt) {
 	throw runtime_error("Turn off adaptive mode before setting monitors");
     }
-    
-    _monitors.push_back(MonitorControl(monitor, _iteration+1, thin));
+
+    _monitors.push_back(MonitorControl(monitor, _iteration+1, thin, name, range, stat, summary));
     setSampledExtra();
 }
 
 void Model::removeMonitor(Monitor *monitor)
 {
-    for(list<MonitorControl>::iterator p = _monitors.begin();
-	p != _monitors.end(); ++p)
+    for(auto p = _monitors.begin(); p != _monitors.end(); ++p)
     {
 	if (p->monitor() == monitor) {
 	    _monitors.erase(p);

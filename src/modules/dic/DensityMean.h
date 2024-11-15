@@ -18,15 +18,11 @@ namespace jags {
    	 */
    	class DensityMean : public Monitor {
  	  protected:
-   	    std::vector<Node const *> const _nodes;
-   	    std::vector<std::vector<double> > _values; // density/log density/deviance corresponding to sampled values
-		DensityType const _density_type;  // enum is defined in model/Monitor.h
-		std::vector<unsigned long> const _dim;
-		unsigned int const _nchain;
-		unsigned int _n;
+   	    std::vector<std::vector<double>> _values; // density/log density/deviance corresponding to sampled values
+	    DensityType const _density_type;  // enum is defined in model/Monitor.h
+	    unsigned int _n;
    	  public:
-   	    DensityMean(std::vector<Node const *> const &nodes, std::vector<unsigned long> const &dim, 
-				DensityType const density_type, std::string const &monitor_name);
+   	    DensityMean(std::vector<Node const *> const &nodes, DensityType const density_type);
    	    void update() override;
    	    std::vector<double> const &value(unsigned int chain) const override;
    	    std::vector<unsigned long> dim() const override;

@@ -13,48 +13,48 @@ namespace jags {
 
 namespace dic {
 
-	// Public constructor:
+    // Public constructor:
     PenaltyPOPTTotal::PenaltyPOPTTotal(vector<Node const *> const &nodes,
-			 string const &monitor_name,
-			 vector<RNG *> const &rngs,
-			 unsigned int nrep)
-	: PenaltyPDTotal(nodes, monitor_name, rngs, nrep, 2.0),
+				       vector<RNG *> const &rngs,
+				       unsigned int nrep)
+	: PenaltyPDTotal(nodes, rngs, nrep, 2.0),
 	  _n(0), _weights(nodes.size(), 0.0)
     {
     }
 	
     void PenaltyPOPTTotal::update()
     {
-		_n++;
+	_n++;
 
-		double popt = 0.0;
+	double popt = 0.0;
 		
-		vector<double> w(_nchain);
-		for (unsigned int k = 0; k < _nodes.size(); ++k) {
+	vector<double> w(_nchain);
+	vector<Node const *> const &nodes = this->nodes();
+	for (unsigned int k = 0; k < nodes.size(); ++k) {
 			
-		    double pdsum = 0;
-		    double wsum = 0;
-		    for (unsigned int i = 0; i < _nchain; ++i) {
-				w[i] = std::exp(- _nodes[k]->logDensity(i, PDF_FULL));
-				for (unsigned int j = 0; j < i; ++j) {
-				    pdsum += w[i] * w[j] * (
-					_nodes[k]->KL(i, j, _rngs[i], _nrep) +
-					_nodes[k]->KL(j, i, _rngs[j], _nrep));
-				    wsum += w[i] * w[j];
-				}
-		    }
-			// Here this is the average weight (is sum for PenaltyPOPT):
-			_weights[k] -= (_weights[k] - wsum) / _n;
-			popt += pdsum / _weights[k];
+	    double pdsum = 0;
+	    double wsum = 0;
+	    for (unsigned int i = 0; i < _nchain; ++i) {
+		w[i] = std::exp(- nodes[k]->logDensity(i, PDF_FULL));
+		for (unsigned int j = 0; j < i; ++j) {
+		    pdsum += w[i] * w[j] * (
+			nodes[k]->KL(i, j, _rngs[i], _nrep) +
+			nodes[k]->KL(j, i, _rngs[j], _nrep));
+		    wsum += w[i] * w[j];
 		}
+	    }
+	    // Here this is the average weight (is sum for PenaltyPOPT):
+	    _weights[k] -= (_weights[k] - wsum) / _n;
+	    popt += pdsum / _weights[k];
+	}
 		
-		popt *= _scale_cst;
-		_values.push_back(popt);				
+	popt *= _scale_cst;
+	_values.push_back(popt);				
     }
 	
-	PenaltyPOPTTotal::~PenaltyPOPTTotal()
-	{
-	}
+    PenaltyPOPTTotal::~PenaltyPOPTTotal()
+    {
+    }
 	
 
 }}

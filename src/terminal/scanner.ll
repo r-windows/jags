@@ -61,6 +61,8 @@ seed                    zzlval.intval=SEED; return SEED;
 
 coda			zzlval.intval=CODA; return CODA;
 stem			zzlval.intval=STEM; return STEM;
+stat			zzlval.intval=STAT; return STAT;
+summary			zzlval.intval=SUMMARY; return SUMMARY;
 
 load                    zzlval.intval=LOAD; return LOAD;
 unload                  zzlval.intval=UNLOAD; return UNLOAD;

@@ -15,59 +15,47 @@ using std::exp;
 using std::logic_error;
 
 namespace jags {
+  
 namespace dic {
 
-    DensityMean::DensityMean(vector<Node const *> const &nodes, vector<unsigned long> const &dim,
-		DensityType const density_type, string const &monitor_name)
-	: Monitor(monitor_name, nodes), _nodes(nodes),
+    DensityMean::DensityMean(vector<Node const *> const &nodes, 
+			     DensityType density_type)
+	: Monitor(nodes),
 	  _values(nodes[0]->nchain(), vector<double>(nodes.size(), 0.0)),
-	  _density_type(density_type), _dim(dim), _nchain(nodes[0]->nchain()), _n(0)
+	  _density_type(density_type), _n(0)
     {
-		// Sanity check that input arguments match to this function:
-		
-		string cdt("nomatch");
-		if ( _density_type == DENSITY ) {
-			cdt.assign("density");			
-		}
-		else if ( _density_type == LOGDENSITY ) {
-			cdt.assign("logdensity");			
-		}
-		else if ( _density_type == DEVIANCE ) {
-			cdt.assign("deviance");			
-		}
-		else {
-			throw logic_error("Unimplemented DensityType in DensityMean");
-		}
-		if ( monitor_name.compare(0, cdt.length(), cdt) != 0 ) {
-			throw logic_error("Incorrect density type reported in monitor_name for DensityMean");
-		}
-		
-		if ( monitor_name.find("_mean") == string::npos) {
-			throw logic_error("Incorrect monitor type reported in monitor_name for DensityMean");
-		}
+	// Sanity check that input arguments match to this function:
+
+	switch(density_type) {
+	case DENSITY:
+	case LOGDENSITY:
+	case DEVIANCE:
+	    break;
+	default:
+	    throw logic_error("Unimplemented DensityType in DensityMean");
+	}
     }
 
     void DensityMean::update()
     {
-		_n++;
-		for (unsigned int ch = 0; ch < _nchain; ++ch) {
-		    vector<double> &rmean  = _values[ch];			
-		    for (unsigned int i = 0; i < _nodes.size(); ++i) {
-				double newval = _nodes[i]->logDensity(ch, PDF_FULL);
-				if (jags_isna(newval)) {
-				    rmean[i] = JAGS_NA;
-				}
-				else {
-					if( _density_type == DENSITY ) {
-						newval = exp(newval);
-					}
-					else if ( _density_type == DEVIANCE ) {
-						newval = -2.0 * newval;
-					}
-				    rmean[i] -= (rmean[i] - newval)/_n;
-				}
-		    }
+	_n++;
+	vector<Node const *> const &nodes = this->nodes();
+	for (unsigned int ch = 0; ch < _values.size(); ++ch) {
+	    vector<double> &rmean  = _values[ch];
+	    for (unsigned long i = 0; i < nodes.size(); ++i) {
+		double newval = nodes[i]->logDensity(ch, PDF_FULL);
+		if (jags_isna(newval)) {
+		    rmean[i] = JAGS_NA;
 		}
+		else if( _density_type == DENSITY ) {
+		    newval = exp(newval);
+		}
+		else if (_density_type == DEVIANCE ) {
+		    newval = -2.0 * newval;
+		}
+		    rmean[i] += (newval - rmean[i])/_n;
+	    }
+	}
     }
 	
     vector<double> const &DensityMean::value(unsigned int chain) const
@@ -77,7 +65,7 @@ namespace dic {
 
     vector<unsigned long> DensityMean::dim() const
     {
-	return _dim;
+	return vector<unsigned long>(1, nodes().size());
     }
 
     bool DensityMean::poolChains() const

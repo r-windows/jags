@@ -13,49 +13,35 @@ using std::copy;
 
 namespace jags {
 
-Monitor::Monitor(string const &type, vector<Node const *> const &nodes)
-    : _type(type), _nodes(nodes)
-{
-}
+    Monitor::Monitor(vector<Node const *> const &nodes)
+	: _nodes(nodes)
+    {
+    }
 
-Monitor::Monitor(string const &type, Node const *node)
-    : _type(type), _nodes(vector<Node const*>(1,node))
-{
-}
+    Monitor::Monitor(Node const *node)
+	: _nodes(vector<Node const*>(1,node))
+    {
+    }
 
-Monitor::~Monitor()
-{}
+    Monitor::~Monitor()
+    {}
 
-string const &Monitor::type() const
-{
-    return _type;
-}
+    vector<Node const*> const &Monitor::nodes() const
+    {
+	return _nodes;
+    }
 
-vector<Node const*> const &Monitor::nodes() const
-{
-    return _nodes;
-}
-
-string const &Monitor::name() const
-{
-    return _name;
-}
-
-void Monitor::setName(string const &name)
-{
-    _name = name;
-}
-
-vector<string> const &Monitor::elementNames() const
-{
-    return _elt_names;
-}
-
-void Monitor::setElementNames(vector<string> const &names)
-{
-    _elt_names = names;
-}
-
+    //FIXME: These should be in monitorinfo
+    vector<string> const &Monitor::elementNames() const
+    {
+	return _elt_names;
+    }
+    
+    void Monitor::setElementNames(vector<string> const &names)
+    {
+	_elt_names = names;
+    }
+    
 SArray Monitor::dump(bool flat) const
 {
     unsigned int nchain = poolChains() ? 1 : nodes()[0]->nchain();
@@ -100,5 +86,6 @@ SArray Monitor::dump(bool flat) const
     }
     return(ans);
 }
+
 
 } //namespace jags

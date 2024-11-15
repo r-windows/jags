@@ -13,8 +13,7 @@ namespace jags {
 namespace base {
 
     PoolMeanMonitor::PoolMeanMonitor(NodeArraySubset const &subset)
-	: Monitor("poolmean", subset.nodes()), _subset(subset),
-	  _values(subset.length()),
+	: Monitor(subset.nodes()), _subset(subset), _values(subset.length()),
 	  _n(0)
     {
 	
@@ -22,22 +21,21 @@ namespace base {
     
     void PoolMeanMonitor::update()
     {
-
-		for (unsigned int ch = 0; ch < _subset.nchain(); ++ch) {
-
-			// Each chain counts as an iteration:
-			_n++;
-
-		    vector<double> value = _subset.value(ch);
-		    for (unsigned int i = 0; i < value.size(); ++i) {
-			        if (jags_isna(value[i])) {
-				    _values[i] = JAGS_NA;
-				}
-				else {
-				    _values[i] -= (_values[i] - value[i])/_n;
-				}
-			}
+	for (unsigned int ch = 0; ch < _subset.nchain(); ++ch) {
+	    
+	    // Each chain counts as an iteration:
+	    _n++;
+	    
+	    vector<double> value = _subset.value(ch);
+	    for (unsigned int i = 0; i < value.size(); ++i) {
+		if (jags_isna(value[i])) {
+		    _values[i] = JAGS_NA;
 		}
+		else {
+		    _values[i] -= (_values[i] - value[i])/_n;
+		}
+	    }
+	}
     }
 
     vector<double> const &PoolMeanMonitor::value(unsigned int) const

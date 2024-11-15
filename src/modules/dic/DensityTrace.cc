@@ -17,54 +17,40 @@ using std::logic_error;
 namespace jags {
 namespace dic {
 
-    DensityTrace::DensityTrace(vector<Node const *> const &nodes, vector<unsigned long> const &dim,
-		DensityType const density_type, string const &monitor_name)
-	: Monitor(monitor_name, nodes), _nodes(nodes), _values(nodes[0]->nchain()),
-	  _density_type(density_type), _dim(dim), _nchain(nodes[0]->nchain())
-
+    DensityTrace::DensityTrace(vector<Node const *> const &nodes,
+			       DensityType const density_type)
+	: Monitor(nodes), _values(nodes[0]->nchain()), _density_type(density_type)
     {
-		// Sanity check that input arguments match to this function:
-		
-		string cdt("nomatch");
-		if ( _density_type == DENSITY ) {
-			cdt.assign("density");			
-		}
-		else if ( _density_type == LOGDENSITY ) {
-			cdt.assign("logdensity");			
-		}
-		else if ( _density_type == DEVIANCE ) {
-			cdt.assign("deviance");			
-		}
-		else {
-			throw logic_error("Unimplemented DensityType in DensityTrace");
-		}
-		if ( monitor_name.compare(0, cdt.length(), cdt) != 0 ) {
-			throw logic_error("Incorrect density type reported in monitor_name for DensityTrace");
-		}
-		
-		if ( monitor_name.find("_trace") == string::npos) {
-			throw logic_error("Incorrect monitor type reported in monitor_name for DensityTrace");
-		}
+	// Sanity check that input arguments match to this function:
+	switch(density_type) {
+	case DENSITY:
+	case LOGDENSITY:
+	case DEVIANCE:
+	    break;
+	default:
+	    throw logic_error("Unimplemented DensityType in DensityTrace");
+	}
     }
 
     void DensityTrace::update()
     {
-		for (unsigned int ch = 0; ch < _nchain; ++ch) {
-		    for (unsigned int i = 0; i < _nodes.size(); ++i) {
-				double newval = _nodes[i]->logDensity(ch, PDF_FULL);
-				if (jags_isna(newval)) {
-				    // Don't try and convert NA to density or deviance
-				}else if( _density_type == DENSITY ) {
-					newval = exp(newval);
-				}
-				else if ( _density_type == DEVIANCE ) {
-					newval = -2.0 * newval;
-				}
-			    _values[ch].push_back(newval);
-		    }
+	vector<Node const *> const &nodes = this->nodes();
+	for (unsigned int ch = 0; ch < _values.size(); ++ch) {
+	    for (unsigned int i = 0; i < nodes.size(); ++i) {
+		double newval = nodes[i]->logDensity(ch, PDF_FULL);
+		if (jags_isna(newval)) {
+		    // Don't try and convert NA to density or deviance
+		}else if( _density_type == DENSITY ) {
+		    newval = exp(newval);
 		}
+		else if ( _density_type == DEVIANCE ) {
+		    newval = -2.0 * newval;
+		}
+		_values[ch].push_back(newval);
+	    }
+	}
     }
-	
+    
     vector<double> const &DensityTrace::value(unsigned int chain) const
     {
 	return _values[chain];
@@ -72,7 +58,7 @@ namespace dic {
 
     vector<unsigned long> DensityTrace::dim() const
     {
-	return _dim;
+	return vector<unsigned long>(1, nodes().size());
     }
 
     bool DensityTrace::poolChains() const

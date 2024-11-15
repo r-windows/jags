@@ -42,13 +42,9 @@ BUGSModel::BUGSModel(unsigned int nchain)
 
 BUGSModel::~BUGSModel()
 {
-    for (list<MonitorInfo>::iterator i = _bugs_monitors.begin();
-	 i != _bugs_monitors.end(); ++i)
-    {
-	Monitor const *monitor = i->monitor();
-	delete monitor; //FIXME: constant pointer
+    for (auto i = monitors().begin(); i != monitors().end(); ++i) {
+	delete i->monitor();
     }
-
 }
 
 SymTab &BUGSModel::symtab()
@@ -56,70 +52,63 @@ SymTab &BUGSModel::symtab()
     return _symtab;
 }
 
+    static string monitorMsg(string const &name,
+			     Range const &range,
+			     string const &stat,
+			     string const &summary)
+    {
+	return string("Monitor ") + name + 
+	    printRange(range) +
+	    " with stat " + stat + 
+	    " and summary " + summary;
+    }
+    
 void BUGSModel::coda(vector<NodeId> const &node_ids, string const &stem,
-		     string &warn, string const &type)
+		     string &warn, string const &stat, string const &summary)
 {
     warn.clear();
 	
-    list<MonitorControl> dump_nodes;
-    for (unsigned int i = 0; i < node_ids.size(); ++i) {
-	string const &name = node_ids[i].first;
-	Range const &range = node_ids[i].second;
-	list<MonitorInfo>::const_iterator p;
-	for (p = _bugs_monitors.begin(); p != _bugs_monitors.end(); ++p) {
+    list<MonitorControl> dump_monitors;
+    for (auto i = node_ids.begin(); i != node_ids.end(); ++i) {
+	string const &name = i->first;
+	Range const &range = i->second;
+	list<MonitorControl>::const_iterator p;
+	for (p = monitors().begin(); p != monitors().end(); ++p) {
 	    if (p->name() == name && p->range() == range
-			&& (type=="*" || p->type() == type)) {
-				// Wildcard * means all types
+		&& (stat == "*" || p->stat() == stat)
+		&& (summary == "*" || p->summary() == summary)) {
+		// Wildcard * matches all stats and all summaries
 		break;
 	    }
 	}
-	if (p == _bugs_monitors.end()) {
-		if ( type == "*" ) {
-		    string msg = string("No Monitor ") + name + 
-			printRange(range) + " found.\n";
-		    warn.append(msg);
-		}
-		else {
-		    string msg = string("No Monitor ") + name + 
-			printRange(range) + " with Type " + type + " found.\n";
-			warn.append(msg);
-		}
+	if (p == monitors().end()) {
+	    string msg = monitorMsg(name, range, stat, summary) + " not found.\n";
+	    warn.append(msg);
 	}
 	else {
-	    list<MonitorControl>::const_iterator q; 
-	    for (q = monitors().begin(); q != monitors().end(); ++q) {
-		if (q->monitor() == p->monitor()) {
-		    dump_nodes.push_back(*q);		    
-		    break;
-		}
-	    }
-	    if (q == monitors().end()) {
-		throw logic_error(string("Monitor ") + name +
-				  printRange(range) +
-				  " with type " + type + " not found");
-	    }
+	    dump_monitors.push_back(*p);
 	}
     }
-
-    if (dump_nodes.empty()) {
+    
+    if (dump_monitors.empty()) {
 	warn.append("There are no matching monitors\n");
 	return;
     }
 	
-	unsigned int nwritten = 0;
-    nwritten += CODA0(dump_nodes, stem, warn, type);    
-    nwritten += CODA(dump_nodes, stem, nchain(), warn, type);
-    nwritten += TABLE0(dump_nodes, stem, warn, type);    
-    nwritten += TABLE(dump_nodes, stem, nchain(), warn, type);
+    unsigned int nwritten = 0;
+    nwritten += CODA0(dump_monitors, stem, warn, stat, summary);    
+    nwritten += CODA(dump_monitors, stem, nchain(), warn, stat, summary);
+    nwritten += TABLE0(dump_monitors, stem, warn, stat, summary);    
+    nwritten += TABLE(dump_monitors, stem, nchain(), warn, stat, summary);
 	
-	if (nwritten==0) {
-		throw logic_error(string("A Monitor with type ") + 
-			type + " was found but could not be written out");
-	}
+    if (nwritten==0) {
+	throw logic_error("Failed to write out monitors in CODA format.");
+    }
 	
 }
 
-void BUGSModel::coda(string const &stem, string &warn, string const &type)
+void BUGSModel::coda(string const &stem, string &warn,
+		     string const &stat, string const &summary)
 {
     warn.clear();
     
@@ -128,21 +117,15 @@ void BUGSModel::coda(string const &stem, string &warn, string const &type)
 	return;
     }
     
-	unsigned int nwritten = 0;
-    nwritten += CODA0(monitors(), stem, warn, type);    
-    nwritten += CODA(monitors(), stem, nchain(), warn, type);
-    nwritten += TABLE0(monitors(), stem, warn, type);    
-    nwritten += TABLE(monitors(), stem, nchain(), warn, type);
+    unsigned int nwritten = 0;
+    nwritten += CODA0(monitors(), stem, warn, stat, summary);    
+    nwritten += CODA(monitors(), stem, nchain(), warn, stat, summary);
+    nwritten += TABLE0(monitors(), stem, warn, stat, summary);    
+    nwritten += TABLE(monitors(), stem, nchain(), warn, stat, summary);
 
-	if ( nwritten == 0 ) {
-		if ( type == "*" ) {
-			throw logic_error("No Monitors written");
-		}
-		else {
-			string msg = string("No Monitor with Type ") + type + " found.\n";
-			warn.append(msg);
-		}
-	}
+    if (nwritten == 0)  {
+	throw logic_error("Failed to write out monitors in CODA format.");
+    }
 }
 
 
@@ -188,52 +171,47 @@ void BUGSModel::setParameters(map<string, SArray> const &param_table,
 
 
 bool BUGSModel::setMonitor(string const &name, Range const &range,
-			   unsigned int thin, string const &type,
+			   unsigned int thin, string const &stat,
+			   string const &summary,
 			   string &msg)
 {
-    for (list<MonitorInfo>::const_iterator i = _bugs_monitors.begin();
-	 i != _bugs_monitors.end(); ++i)
-    {
-	if (i->name() == name && i->range() == range && i->type() == type) {
+    for (auto i = monitors().begin(); i != monitors().end(); ++i) {
+	Monitor const *m = i->monitor();
+	if (i->name() == name && i->range() == range && i->stat() == stat && i->summary() == summary) {
 	    msg = "Monitor already exists and cannot be duplicated";
 	    return false; 
 	}
     }
-
+    
     msg.clear();
     Monitor *monitor = nullptr;
-
+    
     list<MonitorFactory*> const &faclist = monitorFactories();
     for(auto j = faclist.begin(); j != faclist.end(); ++j)
     {
 	if ((*j)->isActive()) {
-	    monitor = (*j)->getMonitor(name, range, this, type, msg);
-	    if (monitor || !msg.empty())
-		break;
+	    monitor = (*j)->getMonitor(name, range, this, stat, summary, msg);
+	    if (monitor) {
+		addMonitor(monitor, thin, name, range, stat, summary);
+		return true;
+	    }
+	    else if (!msg.empty()) {
+		return false;
+	    }
 	}
     }
-
-    if (monitor) {
-	addMonitor(monitor, thin);
-	_bugs_monitors.push_back(MonitorInfo(monitor, name, range, type));
-	return true;
-    }
-    else {
-	return false;
-    }
+    return false;
 }
 
 bool BUGSModel::deleteMonitor(string const &name, Range const &range,
-			      string const &type)
+			      string const &stat, string const &summary)
 {
-    for (list<MonitorInfo>::iterator i = _bugs_monitors.begin();
-	 i != _bugs_monitors.end(); ++i)
+    for (auto i = monitors().begin(); i != monitors().end(); ++i)
     {
-	if (i->name() == name && i->range() == range && i->type() == type) {
-	    Monitor *monitor = i->monitor();
-	    removeMonitor(monitor);
-	    _bugs_monitors.erase(i);
-	    delete monitor; 
+	Monitor *m = i->monitor();
+	if (i->name() == name && i->range() == range && i->stat() == stat && i->summary() == summary) {
+	    removeMonitor(m);
+	    delete m;
 	    return true;
 	}
     }

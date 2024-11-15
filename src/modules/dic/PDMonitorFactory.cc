@@ -18,18 +18,22 @@ namespace dic {
     Monitor *PDMonitorFactory::getMonitor(string const &name,
 					  Range const &range,
 					  BUGSModel *model,
-					  string const &type,
+					  string const &stat,
+					  string const &summary,
 					  string &msg)
     {
-	if (type != "mean")
-	    return nullptr;
-
 	if (name != "pD" && name != "popt")
-	    return nullptr;
-
+	    return nullptr;	
+	
 	if (!isNULL(range)) {
 	    msg = string("Cannot monitor a subset of ") + name;
 	}
+
+	if (stat != "value")
+	    return nullptr;
+	
+	if (summary != "mean")
+	    return nullptr;
 	
 	if (model->nchain() < 2) {
 	    msg = string("At least two parallel chains needed to monitor ")
@@ -69,7 +73,6 @@ namespace dic {
 	    m = new PoptMonitor(observed_nodes, rngs, 10);
 	}
 	if (m) {
-	    m->setName(name);
 	    vector<string> onames(observed_nodes.size());
 	    for (unsigned int i = 0; i < observed_nodes.size(); ++i) {
 		onames[i] = model->symtab().getName(observed_nodes[i]);

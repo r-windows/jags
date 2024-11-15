@@ -20,23 +20,22 @@ namespace jags {
 namespace dic {
 
     class PenaltyPOPTTotalRep : public PenaltyPDTotal {
-		unsigned int _n;
-		std::vector<double> _weights;
-		/* This is a hack to allow the total popt to be adjusted by
-		the running mean weight when requested by const value() */
-		std::vector<double>* _totalpopt;
-		std::vector< std::vector<double> > _nodetrace;
+	unsigned int _n;
+	std::vector<double> _weights;
+	/* This is a hack to allow the total popt to be adjusted by
+	   the running mean weight when requested by const value() */
+	std::vector<double>* _totalpopt;
+	std::vector< std::vector<double> > _nodetrace;
     public:
 	PenaltyPOPTTotalRep(std::vector<Node const *> const &nodes,
-		  std::string const &monitor_name,
-		  std::vector<RNG *> const &rngs,
-		  unsigned int nrep);
-
+			    std::vector<RNG *> const &rngs,
+			    unsigned int nrep);
+	
   	std::vector<double> const &value(unsigned int chain) const override;
 	void update() override;
 	~PenaltyPOPTTotalRep() override;
     };
-
+    
 }}
 
 #endif /* PENALTY_POPT_TOTAL_REP_H */

@@ -17,22 +17,17 @@ namespace dic {
 	std::vector<RNG *> _rngs;
 	unsigned int _nrep;
 	std::vector<double> _values;
-	std::vector<unsigned long> const _dim;
 	double _scale_cst;
 	unsigned long _nchain;
 	unsigned int _n;
 
 	// Protected constructor for use by PenaltyPOPT:
 	PenaltyPD(std::vector<Node const *> const &nodes,
-		  std::vector<unsigned long> const &dim, 
-		  std::string const &monitor_name,
 		  std::vector<RNG *> const &rngs,
 		  unsigned int nrep, double scale);
 	
     public:
 	PenaltyPD(std::vector<Node const *> const &nodes,
-		  std::vector<unsigned long> const &dim, 
-		  std::string const &monitor_name,
 		  std::vector<RNG *> const &rngs,
 		  unsigned int nrep);
 

@@ -25,7 +25,7 @@ namespace dic {
     PDMonitor::PDMonitor(vector<StochasticNode const *> const &snodes,
 			 vector<RNG *> const &rngs,
 			 unsigned int nrep, double scale)
-	: Monitor("mean", toNodeVec(snodes)), _snodes(snodes), _rngs(rngs),
+	: Monitor(toNodeVec(snodes)), _snodes(snodes), _rngs(rngs),
 	  _nrep(nrep),
 	  _values(snodes.size(), 0),  _weights(snodes.size(), 0),
 	  _scale(scale), _nchain(rngs.size())
