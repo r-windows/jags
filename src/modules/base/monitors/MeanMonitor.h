@@ -1,7 +1,7 @@
-#ifndef MEAN_MONITOR_H_
-#define MEAN_MONITOR_H_
+#ifndef VALUE_MEAN_MONITOR_H_
+#define VALUE_MEAN_MONITOR_H_
 
-#include <model/Monitor.h>
+#include <model/MeanMonitor.h>
 #include <model/NodeArraySubset.h>
 
 #include <vector>
@@ -12,19 +12,14 @@ namespace base {
     /**
      * @short Stores running mean of a given Node
      */
-    class MeanMonitor : public Monitor {
+    class ValueMeanMonitor : public MeanMonitor {
 	NodeArraySubset _subset;
-	std::vector<std::vector<double> > _values; // sampled values
-	unsigned int _n;
     public:
-	MeanMonitor(NodeArraySubset const &subset);
-	void update() override;
-	std::vector<double> const &value(unsigned int chain) const override;
+	ValueMeanMonitor(NodeArraySubset const &subset);
 	std::vector<unsigned long> dim() const override;
-	bool poolChains() const override;
-	bool poolIterations() const override;
+	std::vector<double> stat(unsigned int chain) override;
     };
 
 }}
 
-#endif /* MEAN_MONITOR_H_ */
+#endif /* VALUE_MEAN_MONITOR_H_ */

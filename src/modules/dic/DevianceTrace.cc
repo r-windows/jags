@@ -29,21 +29,18 @@ namespace dic {
 	return vector<unsigned long>(1,1);
     }
  
-    vector<double> const &DevianceTrace::value(unsigned int chain) const
+    void DevianceTrace::value(vector<double> &v, unsigned int ch) const
     {
-	return _values[chain];
+	copy(_values[ch].begin(), _values[ch].end(), v.begin());
     }
     
-    void DevianceTrace::update()
+    void DevianceTrace::update(unsigned int ch)
     {
-	unsigned int nchain = _snodes[0]->nchain();
-	for (unsigned int ch = 0; ch < nchain; ++ch) {
-	    double loglik = 0;
-	    for (unsigned long i = 0; i < _snodes.size(); ++i) {
-		loglik += _snodes[i]->logDensity(ch, PDF_FULL);
-	    }
-	    _values[ch].push_back(-2 * loglik);
+	double loglik = 0;
+	for (unsigned long i = 0; i < _snodes.size(); ++i) {
+	    loglik += _snodes[i]->logDensity(ch, PDF_FULL);
 	}
+	_values[ch].push_back(-2 * loglik);
     }
     
     bool DevianceTrace::poolChains() const

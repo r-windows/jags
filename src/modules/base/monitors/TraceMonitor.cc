@@ -1,48 +1,27 @@
 #include <config.h>
 #include <graph/Node.h>
 
-#include <algorithm>
-
 #include "TraceMonitor.h"
 
 using std::vector;
-using std::string;
 
 namespace jags {
-namespace base {
+    namespace base {
 
-    TraceMonitor::TraceMonitor(NodeArraySubset const &subset)
-	: Monitor(subset.nodes()), _subset(subset),
-	  _values(subset.nchain())
-    {
-    }
-    
-    void TraceMonitor::update()
-    {
-	for (unsigned int ch = 0; ch < _values.size(); ++ch) {
-	    vector<double> v = _subset.value(ch);
-	    _values[ch].insert(_values[ch].end(), v.begin(), v.end());
+	ValueTraceMonitor::ValueTraceMonitor(NodeArraySubset const &subset)
+	    : TraceMonitor(subset.nodes()), _subset(subset)
+	{
 	}
-    }
+    
+	vector<unsigned long> ValueTraceMonitor::dim() const
+	{
+	    return _subset.dim();
+	}
 
-    vector<double> const &TraceMonitor::value(unsigned int chain) const
-    {
-	return _values[chain];
-    }
+	vector<double> ValueTraceMonitor::stat(unsigned int ch)
+	{
+	    return _subset.value(ch);
+	}
 
-    vector<unsigned long> TraceMonitor::dim() const
-    {
-	return _subset.dim();
     }
-
-    bool TraceMonitor::poolChains() const
-    {
-	return false;
-    }
-
-    bool TraceMonitor::poolIterations() const
-    {
-	return false;
-    }
-
-}}
+}

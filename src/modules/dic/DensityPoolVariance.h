@@ -27,8 +27,8 @@ namespace jags {
    	  public:
    	    DensityPoolVariance(std::vector<Node const *> const &nodes, 
 				DensityType const density_type);
-   	    void update() override;
-   	    std::vector<double> const &value(unsigned int chain) const override;
+   	    void update(unsigned int chain) override;
+	    void value(std::vector<double> &v, unsigned int chain) const override;
    	    std::vector<unsigned long> dim() const override;
    	    bool poolChains() const override;
    	    bool poolIterations() const override;

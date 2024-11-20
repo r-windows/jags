@@ -30,9 +30,8 @@ namespace dic {
 	PenaltyPOPTTotalRep(std::vector<Node const *> const &nodes,
 			    std::vector<RNG *> const &rngs,
 			    unsigned int nrep);
-	
-  	std::vector<double> const &value(unsigned int chain) const override;
-	void update() override;
+	void value(std::vector<double> &v, unsigned int chain) const override;	
+	void update(unsigned int chain) override;
 	~PenaltyPOPTTotalRep() override;
     };
     

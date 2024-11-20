@@ -13,34 +13,34 @@ namespace jags {
 namespace base {
 
     PoolMeanMonitor::PoolMeanMonitor(NodeArraySubset const &subset)
-	: Monitor(subset.nodes()), _subset(subset), _values(subset.length()),
-	  _n(0)
+	: Monitor(subset.nodes()), _subset(subset), _sums(subset.length(), 0.0)
     {
-	
     }
     
-    void PoolMeanMonitor::update()
+    void PoolMeanMonitor::update(unsigned int)
     {
-	for (unsigned int ch = 0; ch < _subset.nchain(); ++ch) {
-	    
-	    // Each chain counts as an iteration:
-	    _n++;
-	    
+	unsigned long m = nchain();
+	
+	for (unsigned int ch = 0; ch < m; ++ch) {
 	    vector<double> value = _subset.value(ch);
 	    for (unsigned int i = 0; i < value.size(); ++i) {
 		if (jags_isna(value[i])) {
-		    _values[i] = JAGS_NA;
+		    _sums[i] = JAGS_NA;
 		}
 		else {
-		    _values[i] -= (_values[i] - value[i])/_n;
+		    _sums[i] += value[i];
 		}
 	    }
 	}
     }
 
-    vector<double> const &PoolMeanMonitor::value(unsigned int) const
+    void PoolMeanMonitor::value(vector<double> &v, unsigned int) const
     {
-	return _values;
+	unsigned long n = nchain();
+	copy(_sums.begin(), _sums.end(), v.begin());
+	for (unsigned int i = 0; i < v.size(); ++i) {
+	    v[i] /= n;
+	}
     }
 
     vector<unsigned long> PoolMeanMonitor::dim() const

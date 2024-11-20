@@ -14,45 +14,52 @@ namespace base {
 
     PoolVarianceMonitor::PoolVarianceMonitor(NodeArraySubset const &subset)
 	: Monitor(subset.nodes()), _subset(subset),
-	  _means(subset.length()),
-	  _mms(subset.length()),
-	  _variances(subset.length()),
-	  _n(0)
+	  _sums(subset.length(), 0.0),
+	  _sum_of_squares(subset.length(), 0.0)
     {
     }
     
-    void PoolVarianceMonitor::update()
+    void PoolVarianceMonitor::update(unsigned int)
     {
-	for (unsigned int ch = 0; ch < _subset.nchain(); ++ch) {
-		
-	    // Each chain counts as an iteration:
-	    _n++;
-		
+	unsigned long n = niter();
+	unsigned long m = nchain();
+	unsigned long p = _subset.length();
+	
+	vector<double> ysum(p, 0.0); //sum across chains
+	for (unsigned int ch = 0; ch < nchain(); ++ch) {
 	    vector<double> value = _subset.value(ch);
-	    for (unsigned int i = 0; i < value.size(); ++i) {
-		if (jags_isna(value[i])) {
-		    _means[i] = JAGS_NA;
-		    _mms[i] = JAGS_NA;
-		    _variances[i] = JAGS_NA;
-		}
-		else {
-		    double delta = value[i] - _means[i];
-		    _means[i] += delta / _n;
-		    _mms[i] += delta * (value[i] - _means[i]);
-		}
+	    for (unsigned int i = 0; i < p; ++i) {
+		ysum[i] += value[i];
 	    }
 	}
-		
-	// Variance itself only needs to be calculated once per iteration:
-	for (unsigned int i = 0; i < _variances.size(); ++i) {
-	    _variances[i] = _mms[i] / static_cast<double>(_n - 1);
+
+	vector<double> yss(p, 0.0); //sum of squares across chains
+	for (unsigned int ch = 0; ch < nchain(); ++ch) {
+	    vector<double> value = _subset.value(ch);
+	    for (unsigned int i = 0; i < p; ++i) {
+		double delta = value[i] - ysum[i]/m;
+		yss[i] += delta * delta;
+	    }
 	}
-		
+
+	for (unsigned int i = 0; i < p; ++i) {
+	    _sum_of_squares[i] += yss[i];
+	    if (n > 1) {
+		double delta = ysum[i] - _sums[i]/(n - 1);
+		_sum_of_squares[i] += (n -1) * delta * delta / n;
+	    }
+	    _sums[i] += ysum[i];
+	}
     }
 
-    vector<double> const &PoolVarianceMonitor::value(unsigned int) const
+
+    void PoolVarianceMonitor::value(vector<double> &v, unsigned int) const
     {
-	return _variances;
+	unsigned long df = niter() * nchain() - 1;
+	copy(_sum_of_squares.begin(), _sum_of_squares.end(), v.begin());
+	for (unsigned long i = 0; i < v.size(); ++i) {
+	    v[i] /= df;
+	}
     }
     
     vector<unsigned long> PoolVarianceMonitor::dim() const
@@ -60,7 +67,7 @@ namespace base {
 	return _subset.dim();
     }
 
-    bool PoolVarianceMonitor::poolChains() const
+     bool PoolVarianceMonitor::poolChains() const
     {
 	return true;
     }

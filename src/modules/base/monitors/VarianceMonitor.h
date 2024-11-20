@@ -1,33 +1,26 @@
-#ifndef VARIANCE_MONITOR_H_
-#define VARIANCE_MONITOR_H_
+#ifndef VALUE_VAR_MONITOR_H_
+#define VALUE_VAR_MONITOR_H_
 
-#include <model/Monitor.h>
+#include <model/VarMonitor.h>
 #include <model/NodeArraySubset.h>
 
 #include <vector>
 
 namespace jags {
-namespace base {
+    namespace base {
 
-    /**
-     * @short Stores running variance of a given Node
-     */
-    class VarianceMonitor : public Monitor {
-	NodeArraySubset _subset;
-	std::vector<std::vector<double> > _means;
-	std::vector<std::vector<double> > _mms;
-	std::vector<std::vector<double> > _variances;
-	unsigned int _n;
-	
-    public:
-	VarianceMonitor(NodeArraySubset const &subset);
-	void update() override;
-	std::vector<double> const &value(unsigned int chain) const override;
-	std::vector<unsigned long> dim() const override;
-	bool poolChains() const override;
-	bool poolIterations() const override;
+	/**
+	 * @short Stores running variance of a given Node
+	 */
+	class ValueVarMonitor : public VarMonitor {
+	    NodeArraySubset _subset;
+	public:
+	    ValueVarMonitor(NodeArraySubset const &subset);
+	    std::vector<unsigned long> dim() const override;
+	    std::vector<double> stat(unsigned int chain) override;
 	};
+	
+    }
+}
 
-}}
-
-#endif /* VARIANCE_MONITOR_H_ */
+#endif /* VALUE_VAR_MONITOR_H_ */

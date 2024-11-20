@@ -29,7 +29,7 @@ namespace base {
 	    return nullptr;
 	}
 
-	TraceMonitor *m = new TraceMonitor(NodeArraySubset(array, range));
+	ValueTraceMonitor *m = new ValueTraceMonitor(NodeArraySubset(array, range));
 	
 	//Set name attributes 
 	//m->setName(name + printRange(range)); FIXME

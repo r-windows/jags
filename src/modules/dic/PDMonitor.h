@@ -26,10 +26,10 @@ namespace dic {
 		  unsigned int nrep, double scale=1);
 	~PDMonitor() override;
 	std::vector<unsigned long> dim() const override;
-	std::vector<double> const &value(unsigned int chain) const override;
+	void value(std::vector<double> &v, unsigned int chain) const override;
 	bool poolChains() const override;
 	bool poolIterations() const override;
-	void update() override;
+	void update(unsigned int chain) override;
 	virtual double weight(StochasticNode const *snode,
 			      unsigned int ch) const;
     };

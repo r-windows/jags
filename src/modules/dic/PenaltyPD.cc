@@ -46,9 +46,9 @@ namespace dic {
 	return vector<unsigned long>(1, 1UL);
     }
  
-    vector<double> const &PenaltyPD::value(unsigned int ) const
+    void PenaltyPD::value(vector<double> &v, unsigned int ) const
     {
-	return _values;
+	copy(_values.begin(), _values.end(), v.begin());
     }
 
     bool PenaltyPD::poolChains() const
@@ -61,7 +61,7 @@ namespace dic {
 	return true;
     }
 
-    void PenaltyPD::update()
+    void PenaltyPD::update(unsigned int)
     {
 	_n++;
 	for (unsigned int k = 0; k < _values.size(); ++k) {

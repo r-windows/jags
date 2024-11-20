@@ -23,7 +23,7 @@ namespace dic {
 		}
     }
 	
-    void PenaltyPOPT::update()
+    void PenaltyPOPT::update(unsigned int)
     {
 		// Not actually needed for popt (just for pD):
 		// _n++;

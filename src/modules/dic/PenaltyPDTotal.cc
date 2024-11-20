@@ -45,9 +45,9 @@ namespace dic {
 	return vector<unsigned long>(1, 1UL);
     }
     
-    vector<double> const &PenaltyPDTotal::value(unsigned int ) const
+    void PenaltyPDTotal::value(vector<double> &v, unsigned int ) const
     {
-	return _values;
+	copy(_values.begin(), _values.end(), v.begin());
     }
     
     bool PenaltyPDTotal::poolChains() const
@@ -60,7 +60,7 @@ namespace dic {
 	return false;
     }
 
-    void PenaltyPDTotal::update()
+    void PenaltyPDTotal::update(unsigned int)
     {
 	vector<Node const *> const &nodes = this->nodes();
 	double pd = 0;

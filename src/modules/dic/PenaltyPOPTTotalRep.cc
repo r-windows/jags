@@ -24,7 +24,7 @@ namespace dic {
 		_totalpopt = new vector<double>;
     }
 	
-    void PenaltyPOPTTotalRep::update()
+    void PenaltyPOPTTotalRep::update(unsigned int)
     {
 		_n++;
 
@@ -54,7 +54,7 @@ namespace dic {
 		}
     }
 	
-    vector<double> const &PenaltyPOPTTotalRep::value(unsigned int ) const
+    void PenaltyPOPTTotalRep::value(vector<double> &v, unsigned int ) const
     {
 		// Adjust by the running mean weights:
 		(*_totalpopt).resize(_n);
@@ -65,8 +65,8 @@ namespace dic {
 			}
 			(*_totalpopt)[i] *= _scale_cst;
 		}
-		
-		return (*_totalpopt);
+
+		copy(_totalpopt->begin(), _totalpopt->end(), v.begin());
 		
 		// Note: _values isn't actually used anywhere
 		// return _values;

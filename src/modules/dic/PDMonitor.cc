@@ -44,9 +44,9 @@ namespace dic {
 	return vector<unsigned long> (1,_values.size());
     }
  
-    vector<double> const &PDMonitor::value(unsigned int ) const
+    void PDMonitor::value(vector<double> &v, unsigned int ) const
     {
-	return _values;
+	copy(_values.begin(), _values.end(), v.begin());
     }
 
     bool PDMonitor::poolChains() const
@@ -59,7 +59,7 @@ namespace dic {
 	return true;
     }
 
-    void PDMonitor::update()
+    void PDMonitor::update(unsigned int)
     {
 	vector<double> w(_nchain);
 	for (unsigned int k = 0; k < _values.size(); ++k) {

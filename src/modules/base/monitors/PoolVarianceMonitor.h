@@ -14,15 +14,13 @@ namespace base {
      */
     class PoolVarianceMonitor : public Monitor {
 	NodeArraySubset _subset;
-	std::vector<double> _means;
-	std::vector<double> _mms;
-	std::vector<double> _variances;
-	unsigned int _n;
+	std::vector<double> _sums;
+	std::vector<double> _sum_of_squares;
 	
     public:
 	PoolVarianceMonitor(NodeArraySubset const &subset);
-	void update() override;
-	std::vector<double> const &value(unsigned int chain) const override;
+	void update(unsigned int chain) override;
+	void value(std::vector<double> &v, unsigned int chain) const override;
 	std::vector<unsigned long> dim() const override;
 	bool poolChains() const override;
 	bool poolIterations() const override;

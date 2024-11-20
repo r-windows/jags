@@ -14,7 +14,7 @@ DevianceMonitorFactory.cc PDMonitor.cc PoptMonitor.cc			\
 PDMonitorFactory.cc PDTrace.cc PDTraceFactory.cc			\
 NodeDensityMonitorFactory.cc ObsStochDensMonitorFactory.cc   		\
 DensityTrace.cc DensityMean.cc DensityVariance.cc			\
-DensityTotal.cc DensityPoolMean.cc DensityPoolVariance.cc   \
+DensityTotal.cc  \
 DensityEnums.cc PenaltyPD.cc PenaltyPOPT.cc PenaltyPV.cc    \
 PenaltyPDTotal.cc PenaltyPOPTTotal.cc PenaltyPOPTTotalRep.cc
 
@@ -23,7 +23,7 @@ DevianceMonitorFactory.h PDMonitor.h PoptMonitor.h PDMonitorFactory.h	\
 PDTrace.h PDTraceFactory.h						\
 NodeDensityMonitorFactory.h ObsStochDensMonitorFactory.h   \
 DensityTrace.h DensityMean.h DensityVariance.h			\
-DensityTotal.h DensityPoolMean.h DensityPoolVariance.h   \
+DensityTotal.h  \
 DensityEnums.h PenaltyPD.h PenaltyPOPT.h PenaltyPV.h    \
 PenaltyPDTotal.h PenaltyPOPTTotal.h PenaltyPOPTTotalRep.h
 

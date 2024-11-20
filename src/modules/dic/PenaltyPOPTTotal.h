@@ -27,7 +27,7 @@ namespace dic {
 		  std::vector<RNG *> const &rngs,
 		  unsigned int nrep);
 
-	void update() override;
+	void update(unsigned int chain) override;
 	~PenaltyPOPTTotal() override;
     };
 

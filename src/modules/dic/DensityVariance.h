@@ -1,7 +1,7 @@
 #ifndef DENSITY_VARIANCE_H_
 #define DENSITY_VARIANCE_H_
 
-#include <model/Monitor.h>
+#include <model/VarMonitor.h>
 #include <graph/Node.h>
 
 #include <vector>
@@ -16,19 +16,12 @@ namespace jags {
 	 *
 	 * Note that this class is used by both NodeDensityMonitorFactory and ObsStochDensMonitorFactory
    	 */
-   	class DensityVariance : public Monitor {
-	    std::vector<std::vector<double> > _means;
-	    std::vector<std::vector<double> > _mms;
-	    std::vector<std::vector<double> > _variances;
+   	class DensityVariance : public VarMonitor {
 	    DensityType const _density_type;  // enum is defined in model/Monitor.h
-	    unsigned int _n;
 	public:
    	    DensityVariance(std::vector<Node const *> const &nodes, DensityType const density_type);
-   	    void update() override;
-   	    std::vector<double> const &value(unsigned int chain) const override;
    	    std::vector<unsigned long> dim() const override;
-   	    bool poolChains() const override;
-   	    bool poolIterations() const override;
+	    std::vector<double> stat(unsigned int ch);
    	};
 	
     }

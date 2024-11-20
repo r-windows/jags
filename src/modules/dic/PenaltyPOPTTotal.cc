@@ -22,7 +22,7 @@ namespace dic {
     {
     }
 	
-    void PenaltyPOPTTotal::update()
+    void PenaltyPOPTTotal::update(unsigned int)
     {
 	_n++;
 

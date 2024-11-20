@@ -30,10 +30,10 @@ namespace dic {
 		       unsigned int nrep);
 	~PenaltyPDTotal() override;
 	std::vector<unsigned long> dim() const override;
-	std::vector<double> const &value(unsigned int chain) const override;
+	void value(std::vector<double> &v, unsigned int chain) const override;
 	bool poolChains() const override;
 	bool poolIterations() const override;
-	void update() override;
+	void update(unsigned int chain) override;
     };
 
 }}

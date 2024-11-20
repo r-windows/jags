@@ -19,8 +19,7 @@ namespace dic {
 
     DensityTotal::DensityTotal(vector<Node const *> const &nodes, 
 			       DensityType const density_type)
-	: Monitor(nodes), _values(nodes[0]->nchain()),
-	  _density_type(density_type), _nchain(nodes[0]->nchain())
+	: TraceMonitor(nodes), _density_type(density_type)
     {
 	// Sanity check that input arguments match to this function:
 	switch(density_type) {
@@ -42,45 +41,28 @@ namespace dic {
 	*/
     }
 
-    void DensityTotal::update()
+    vector<double> DensityTotal::stat(unsigned int ch)
     {
-	vector<Node const *> const &nodes = this->nodes();
-	for (unsigned int ch = 0; ch < _nchain; ++ch) {
-	    double total = 0.0;
-	    for (auto p = nodes.begin(); p != nodes.end(); ++p) {
-		total += (*p)->logDensity(ch, PDF_FULL);
-	    }
-	    if (jags_isna(total)) {
-		// Don't try and convert NA to density or deviance
-	    }
-	    else if( _density_type == DENSITY ) {
-		total = exp(total);
-	    }
-	    else if ( _density_type == DEVIANCE ) {
-		total = -2.0 * total;
-	    }
-	    _values[ch].push_back(total);
+	double loglik = 0.0;
+	for (auto p = nodes().begin(); p != nodes().end(); ++p) {
+	    loglik += (*p)->logDensity(ch, PDF_FULL);
 	}
+
+	if (jags_isna(loglik)) {
+	    // Don't try and convert NA to density or deviance
+	}
+	else if ( _density_type == DENSITY ) {
+	    loglik = exp(loglik);
+	}
+	else if ( _density_type == DEVIANCE ) {
+	    loglik = -2.0 * loglik;
+	}
+	return vector<double>(1, loglik);
     }
 	
-    vector<double> const &DensityTotal::value(unsigned int chain) const
-    {
-	return _values[chain];
-    }
-
     vector<unsigned long> DensityTotal::dim() const
     {
 	return vector<unsigned long>(1, 1UL);
-    }
-
-    bool DensityTotal::poolChains() const
-    {
-	return false;
-    }
-
-    bool DensityTotal::poolIterations() const
-    {
-	return false;
     }
 
 }}

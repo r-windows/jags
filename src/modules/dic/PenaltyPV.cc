@@ -18,7 +18,7 @@ namespace dic {
     {
     }
 
-    void PenaltyPV::update()
+    void PenaltyPV::update(unsigned int)
     {
 	vector<Node const *> const &nodes = this->nodes();
 	for (unsigned int ch = 0; ch < _nchain; ++ch) {
@@ -50,9 +50,9 @@ namespace dic {
 		
     }
 	
-    vector<double> const &PenaltyPV::value(unsigned int ) const
+    void PenaltyPV::value(vector<double> &v, unsigned int) const
     {
-	return _pv;
+	copy(_pv.begin(), _pv.end(), v.begin());
     }
 
     vector<unsigned long> PenaltyPV::dim() const

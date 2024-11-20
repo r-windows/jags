@@ -20,13 +20,13 @@ static vector<Node const *> toNodeVec(vector<StochasticNode const *> const &s)
 namespace dic {
 
     DevianceMean::DevianceMean(vector<StochasticNode const *> const &s)
-	: Monitor(toNodeVec(s)), _values(s.size(), 0), _snodes(s), _n(0)
+	: Monitor(toNodeVec(s)), _snodes(s), _mdev(s.size(), 0.0)
     {
     }
 
     vector<unsigned long> DevianceMean::dim() const
     {
-	return vector<unsigned long>(1, _values.size());
+	return vector<unsigned long>(1, _mdev.size());
     }
 
     bool DevianceMean::poolChains() const
@@ -39,21 +39,22 @@ namespace dic {
 	return true;
     }
 
-    vector<double> const &DevianceMean::value(unsigned int chain) const
+    void DevianceMean::value(vector<double> &v, unsigned int chain) const
     {
-	return _values;
+	copy(_mdev.begin(), _mdev.end(), v.begin());
     }
 
-    void DevianceMean::update()
+    void DevianceMean::update(unsigned int)
     {
-	_n++;
+	unsigned long n = niter();
+	unsigned long m = nchain();
+	
 	for (unsigned long i = 0; i < _snodes.size(); ++i) {
 	    double loglik = 0;
-	    unsigned int nchain = _snodes[i]->nchain();
-	    for (unsigned int ch = 0; ch < nchain; ++ch) {
-		loglik += _snodes[i]->logDensity(ch, PDF_FULL) / nchain;
+	    for (unsigned int ch = 0; ch < m; ++ch) {
+		loglik += _snodes[i]->logDensity(ch, PDF_FULL);
 	    }
-	    _values[i] += (-2*loglik - _values[i])/_n;
+	    _mdev[i] += (-2*loglik/m - _mdev[i])/n;
 	}
     }
 

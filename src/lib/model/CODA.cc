@@ -55,8 +55,9 @@ static void writeDouble(double x, ostream &out)
 	unsigned long nvalue = product(monitor->dim());
 	
 	vector<bool> ans(nvalue, false);
+	vector<double> y(monitor->size());
 	for (unsigned int ch = 0; ch < nchain; ++ch) {
-	    vector<double> const &y = monitor->value(ch);
+	    monitor->value(y, ch);
 	    for (unsigned int v = 0; v < nvalue; ++v) {
 		if (ans[v]) continue;
 		if (monitor->poolIterations()) {
@@ -110,8 +111,9 @@ static void WriteOutput(MonitorControl const &control, unsigned int chain,
 	return;
     }
     
-    vector<double> const &y = monitor->value(chain);
     unsigned long nvalue = product(monitor->dim());
+    vector<double> y(monitor->size());
+    monitor->value(y, chain);
     for (unsigned int v = 0; v < nvalue; ++v) {
 	if (missing[v]) continue;
 	unsigned int iter = control.start();
@@ -133,7 +135,8 @@ static void WriteTable(MonitorControl const &control, unsigned int chain,
 	return;
     }
 
-    vector<double> const &y = monitor->value(chain);
+    vector<double> y(monitor->size());
+    monitor->value(y, chain);
     vector<string> const &enames = monitor->elementNames(); //FIXME: elementNames should be part of MonitorControl, not Monitor
     
     unsigned long nvalue = product(monitor->dim());

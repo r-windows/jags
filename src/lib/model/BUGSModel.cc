@@ -176,7 +176,6 @@ bool BUGSModel::setMonitor(string const &name, Range const &range,
 			   string &msg)
 {
     for (auto i = monitors().begin(); i != monitors().end(); ++i) {
-	Monitor const *m = i->monitor();
 	if (i->name() == name && i->range() == range && i->stat() == stat && i->summary() == summary) {
 	    msg = "Monitor already exists and cannot be duplicated";
 	    return false; 

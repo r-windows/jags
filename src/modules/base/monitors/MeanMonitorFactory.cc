@@ -1,6 +1,6 @@
 #include "MeanMonitorFactory.h"
 #include "MeanMonitor.h"
-#include "PoolMeanMonitor.h"
+//#include "PoolMeanMonitor.h"
 
 #include <model/BUGSModel.h>
 #include <graph/Graph.h>
@@ -26,7 +26,8 @@ namespace base {
 	if (stat != "value")
 	    return nullptr;
 	
-	if (summary != "mean" && summary != "poolmean")
+	//if (summary != "mean" && summary != "poolmean")
+	if (summary != "mean")
 	    return nullptr;
 
 	NodeArray *array = model->symtab().getVariable(name);
@@ -37,14 +38,16 @@ namespace base {
 	
 	Monitor *m = nullptr;
 	if (summary == "mean" ) {
-	    m = new MeanMonitor(NodeArraySubset(array, range));
+	    m = new ValueMeanMonitor(NodeArraySubset(array, range));
 	}
+	/*
 	else if (summary == "poolmean" ) {
 	    m = new PoolMeanMonitor(NodeArraySubset(array, range));
 	}
 	else {
 	    throw std::logic_error("Unimplemented MonitorType in MeanMonitorFactory");
 	}
+	*/
 	
 	//Set name attributes 
 	//m->setName(name + printRange(range)); FIXME

@@ -25,9 +25,9 @@ namespace dic {
 		     vector<RNG *> const &rngs, unsigned int nrep)
 	: Monitor(toNodeVec(snodes)),
 	  _snodes(snodes), _rngs(rngs), _nrep(nrep),
-	  _nchain(rngs.size()),  _values()
+	  _values()
     {
-	if (_nchain < 2) {
+	if (countChains(nodes()) < 2) {
 	    throwLogicError("PDTrace needs at least 2 chains");
 	}
     }
@@ -38,12 +38,12 @@ namespace dic {
 
     vector<unsigned long> PDTrace::dim() const
     {
-	return vector<unsigned long> (1,1);
+	return vector<unsigned long> (1,1UL);
     }
  
-    vector<double> const &PDTrace::value(unsigned int ) const
+    void PDTrace::value(vector<double> &v, unsigned int ) const
     {
-	return _values;
+	copy(_values.begin(), _values.end(), v.begin());
     }
 
     bool PDTrace::poolChains() const
@@ -56,18 +56,19 @@ namespace dic {
 	return false;
     }
 
-    void PDTrace::update()
+    void PDTrace::update(unsigned int)
     {
+	unsigned int m = nchain();
+	
 	double pd = 0;
 	for (unsigned int k = 0; k < _snodes.size(); ++k) {
-	    for (unsigned int i = 0; i < _nchain; ++i) {
+	    for (unsigned int i = 0; i < m; ++i) {
 		for (unsigned int j = 0; j < i; ++j) {
-		    pd += _snodes[k]->KL(i, j, _rngs[i], _nrep);
-		    pd += _snodes[k]->KL(j, i, _rngs[j], _nrep);
+		    pd += _snodes[k]->KL(i, j, _rngs[i], _nrep) + _snodes[k]->KL(j, i, _rngs[j], _nrep);
 		}
 	    }
 	}
-	pd /= _nchain * (_nchain - 1);
+	pd /= m * (m - 1);
 	_values.push_back(pd);
     }
 

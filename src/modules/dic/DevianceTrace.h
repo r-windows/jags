@@ -15,8 +15,8 @@ namespace dic {
     public:
 	DevianceTrace(std::vector<StochasticNode const *> const &nodes);
 	std::vector<unsigned long> dim() const override;
-	std::vector<double> const &value(unsigned int chain) const override;
-	void update() override;
+	void value(std::vector<double> &v, unsigned int chain) const override;
+	void update(unsigned int chain) override;
 	bool poolChains() const override;
 	bool poolIterations() const override;
     };

@@ -1,7 +1,7 @@
-#ifndef TRACE_MONITOR_H_
-#define TRACE_MONITOR_H_
+#ifndef VALUE_TRACE_MONITOR_H_
+#define VALUE_TRACE_MONITOR_H_
 
-#include <model/Monitor.h>
+#include <model/TraceMonitor.h>
 #include <model/NodeArraySubset.h>
 
 #include <vector>
@@ -12,19 +12,15 @@ namespace jags {
 	/**
 	 * @short Stores sampled values of a given Node
 	 */
-	class TraceMonitor : public Monitor {
+	class ValueTraceMonitor : public TraceMonitor {
 	    NodeArraySubset _subset;
-	    std::vector<std::vector<double> > _values; // sampled values
-	  public:
-	    TraceMonitor(NodeArraySubset const &subset);
-	    void update() override;
-	    std::vector<double> const &value(unsigned int chain) const override;
+	public:
+	    ValueTraceMonitor(NodeArraySubset const &subset);
 	    std::vector<unsigned long> dim() const override;
-	    bool poolChains() const override;
-	    bool poolIterations() const override;
+	    std::vector<double> stat(unsigned int chain) override;
 	};
 	
     }
 }
 
-#endif /* TRACE_MONITOR_H_ */
+#endif /* VALUE_TRACE_MONITOR_H_ */
