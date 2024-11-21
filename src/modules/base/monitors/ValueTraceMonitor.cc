@@ -1,7 +1,7 @@
 #include <config.h>
 #include <graph/Node.h>
 
-#include "TraceMonitor.h"
+#include "ValueTraceMonitor.h"
 
 using std::vector;
 

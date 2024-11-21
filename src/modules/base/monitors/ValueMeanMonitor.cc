@@ -1,7 +1,7 @@
 #include <config.h>
 #include <graph/Node.h>
 
-#include "MeanMonitor.h"
+#include "ValueMeanMonitor.h"
 
 using std::vector;
 

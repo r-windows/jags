@@ -1,5 +1,5 @@
 #include "TraceMonitorFactory.h"
-#include "TraceMonitor.h"
+#include "ValueTraceMonitor.h"
 
 #include <model/BUGSModel.h>
 #include <graph/Graph.h>

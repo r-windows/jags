@@ -1,5 +1,5 @@
 #include "VarianceMonitorFactory.h"
-#include "VarianceMonitor.h"
+#include "ValueVarMonitor.h"
 //#include "PoolVarianceMonitor.h"
 
 #include <model/BUGSModel.h>

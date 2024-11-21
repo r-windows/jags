@@ -1,5 +1,5 @@
 #include "MeanMonitorFactory.h"
-#include "MeanMonitor.h"
+#include "ValueMeanMonitor.h"
 //#include "PoolMeanMonitor.h"
 
 #include <model/BUGSModel.h>

@@ -1,7 +1,7 @@
 #include <config.h>
 #include <graph/Node.h>
 
-#include "VarianceMonitor.h"
+#include "ValueVarMonitor.h"
 
 using std::vector;
 
