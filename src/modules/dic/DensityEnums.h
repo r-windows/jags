@@ -20,7 +20,7 @@ namespace jags {
 	 * This enum is used by some monitors/factories in the DIC module
 	 * to generalise calculation of values related to the 
 	 */
-	enum PenaltyType {PTUNEST, PD, PD_TOTAL, POPT, POPT_TOTAL, POPT_TOTAL_REP, PV};
+	enum PenaltyType {PTUNSET, PD, PD_TOTAL, POPT, POPT_TOTAL, POPT_TOTAL_REP, PV};
 	
 	/**
 	 * @short Summary types for deviance monitors

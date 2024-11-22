@@ -2,6 +2,7 @@
 
 #include "NodeDensityMonitorFactory.h"
 #include "ObsStochDensMonitorFactory.h"
+#include "DevianceMonitorFactory.h"
 
 using std::vector;
 
@@ -21,6 +22,8 @@ namespace dic {
 	insert(new NodeDensityMonitorFactory);
 	// density-related monitors for all observed stochastic nodes:
 	insert(new ObsStochDensMonitorFactory);
+	// deviance monitor - deprecated but keep it in for now
+	insert(new DevianceMonitorFactory);
     }
     
     DICModule::~DICModule() {

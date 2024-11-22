@@ -23,9 +23,7 @@
 //RNGs
 #include <rngs/BaseRNGFactory.h>
 //Monitors
-#include <monitors/TraceMonitorFactory.h>
-#include <monitors/MeanMonitorFactory.h>
-#include <monitors/VarianceMonitorFactory.h>
+#include <monitors/ValueMonitorFactory.h>
 
 using std::vector;
 
@@ -65,9 +63,7 @@ namespace base {
 	
 	insert(new BaseRNGFactory);
 	
-	insert(new TraceMonitorFactory);
-	insert(new MeanMonitorFactory);
-	insert(new VarianceMonitorFactory);
+	insert(new ValueMonitorFactory);
 }
 
     BaseModule::~BaseModule() {

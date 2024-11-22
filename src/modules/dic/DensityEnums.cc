@@ -29,6 +29,28 @@ namespace dic {
 	return DTUNSET;
     }
 
+    PenaltyType getPenaltyType(string const &stat)
+    {
+	if (stat == "pD") {
+	    return PD;
+	}
+	else if (stat == "pD_total") {
+	    return PD_TOTAL;
+	}
+	else if (stat == "popt") {
+	    return POPT;
+	}
+	else if (stat == "popt_total") {
+	    return POPT_TOTAL;
+	}
+	else if (stat == "pV") {
+	    return PV;
+	}
+	else {
+	    return PTUNSET;
+	}
+    }
+    
     bool isPooled(string const &stat) {
 
 	return stat == "density_total" ||

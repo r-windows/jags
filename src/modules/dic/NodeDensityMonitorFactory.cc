@@ -136,9 +136,11 @@ namespace dic {
 	    else if (penalty_type == PV) {
 		m = new PenaltyPV(nodearray.nodes());
 	    }
-	    else {
+	    /*
+	      else {
 		throw std::logic_error("Unimplemented MonitorType in NodeDensityMonitorFactory");
 	    }
+	    */
 	}
 	
 	if (!m) {
