@@ -12,18 +12,14 @@ namespace jags {
     namespace dic {
 	
    	/**
-   	 * @short Stores values of density/log density/deviance corresponding to sampled values of a given Node
-	 *
-	 * Note that this class is used by both NodeDensityMonitorFactory and ObsStochDensMonitorFactory
+   	 * @short Stores values of density/log density/deviance 
    	 */
    	class DensityTrace : public TraceMonitor {
- 	  protected:
-   	    std::vector<std::vector<double>> _values; // density/log density/deviance corresponding to sampled values
-	    DensityType const _density_type;  // enum is defined in model/Monitor.h
+	    DensityType const _density_type;
 	public:
    	    DensityTrace(std::vector<Node const *> const &nodes, DensityType const density_type);
    	    std::vector<unsigned long> dim() const override;
-	    std::vector<double> stat(unsigned int ch);
+	    std::vector<double> stat(unsigned int ch) override;
    	};
 	
 }

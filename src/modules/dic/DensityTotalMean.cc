@@ -4,7 +4,7 @@
 // Required for PDFtype enum
 #include <util/nainf.h>
 
-#include "DensityTotal.h"
+#include "DensityTotalMean.h"
 
 #include <cmath>
 #include <stdexcept>
@@ -17,9 +17,9 @@ using std::exp;
 namespace jags {
 namespace dic {
 
-    DensityTotalTrace::DensityTotalTrace(vector<Node const *> const &nodes, 
-					 DensityType const density_type)
-	: TraceMonitor(nodes), _density_type(density_type)
+    DensityTotalMean::DensityTotalMean(vector<Node const *> const &nodes, 
+				       DensityType const density_type)
+	: MeanMonitor(nodes, nodes.size()), _density_type(density_type)
     {
 	// Sanity check that input arguments match to this function:
 	switch(density_type) {
@@ -30,24 +30,15 @@ namespace dic {
 	default:
 	    throw logic_error("Unimplemented DensityType in DensityTotal");
 	}
-
-	/*
-	// Required for back-compatibility (only from ObsStochDensMonitorFactory):
-	if ( monitor_name == "trace" ) {
-	    if ( _density_type != DEVIANCE ) {
-		throw logic_error("DensityTotal is reporting a non-DEVIANCE type with monitor_name trace");
-	    }
-	}
-	*/
     }
 
-    vector<double> DensityTotalTrace::stat(unsigned int ch)
+    vector<double> DensityTotalMean::stat(unsigned int ch)
     {
 	double loglik = 0.0;
 	for (auto p = nodes().begin(); p != nodes().end(); ++p) {
 	    loglik += (*p)->logDensity(ch, PDF_FULL);
 	}
-
+	
 	if (jags_isna(loglik)) {
 	    // Don't try and convert NA to density or deviance
 	}
@@ -60,7 +51,7 @@ namespace dic {
 	return vector<double>(1, loglik);
     }
 	
-    vector<unsigned long> DensityTotalTrace::dim() const
+    vector<unsigned long> DensityTotalMean::dim() const
     {
 	return vector<unsigned long>(1, 1UL);
     }

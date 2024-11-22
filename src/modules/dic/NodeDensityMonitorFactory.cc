@@ -4,6 +4,8 @@
 #include "DensityMean.h"
 #include "DensityVariance.h"
 #include "DensityTotal.h"
+#include "DensityTotalMean.h"
+#include "DensityTotalVar.h"
 //#include "DensityPoolMean.h"
 //#include "DensityPoolVariance.h"
 #include "PenaltyPD.h"
@@ -36,125 +38,82 @@ namespace dic {
 						   string const &summary,
 						   string &msg)
     {
-	// Should never be true but just in case:
-	if (name == "_observed_" ) {
-	    return nullptr;
+	DensityType density_type = DTUNSET;
+	if (name == "deviance") {
+	    /* For compatibility with JAGS 4.0 we allow the user to
+	     * monitor 'deviance' as if it were a virtual node */
+	    if (stat != "value") return nullptr;
+	    if (!isNULL(range)) return nullptr;
+	    density_type = DEVIANCE;
 	}
-		
-	/* Retrieve the node array  */
-		
-	NodeArray *array = model->symtab().getVariable(name);
-	if (!array) {
-	    msg = string("Variable ") + name + " not found";
-	    return nullptr;
+	else {
+	    density_type = getDensityType(stat);
 	}
-	NodeArraySubset nodearray = NodeArraySubset(array, range);
-	//FIXME: check for closure
-	
-	/* Do some checks and create the RNG vector for pd and popt monitors */
+	if (density_type == DTUNSET) return nullptr;
 
-	vector<RNG*> rngs;
-	if (stat == "pD" || stat == "popt") {
-
-	    //|| stat == "pD_total" || monitor_type == "popt_total" ||
-	    //stat == POPTTOTALREP ) {
-
-	    if (model->nchain() < 2) {
-		msg = "at least two chains are required for a pD or popt monitor";
+	Range node_range = range;
+	vector<Node const *> nodes;
+	if (name == "_observed_" || name == "deviance") {
+	    vector<Node const *> const &observed_snodes = model->observedStochasticNodes();
+	    if (observed_snodes.empty()) {
+		msg = "There are no observed stochastic nodes";
 		return nullptr;
 	    }
-		    
-	    /* 
-	       We could limit pD/popt monitors to observed stochastic nodes only
-	       But it does (maybe?) make sense as long as the parents of a node are unfixed
-	       Otherwise it comes out as 0 anyway - which makes sense (no parents are estimated)
-	       Note that pv can be calculated for any node with a density - which doesn't make sense
-	       if the parents are fixed
-	       TODO: create a node->areParentsFixed method to give an error for pv (and pD/popt??)
-		       
-	       // To limit pD / popt to observed stochastic nodes only (and pv if included above):
-	       vector<Node const *> const &reqnodes = nodearray.allnodes();
-	       for(unsigned int i = 0; i < reqnodes.size(); i++){
-	       if ( !reqnodes[i]->isStochastic() ) {
-	       msg = "non-stochastic nodes cannot be included in an array subset for a pD or popt monitor";
-	       return 0;
-	       }
-	       if ( !reqnodes[i]->isFixed() ) {
-	       msg = "unobserved nodes cannot be included in an array subset for a pD or popt monitor";
-	       return 0;
-	       }
-	       }*/
-			
-	    for (unsigned int i = 0; i < model->nchain(); ++i) {
-		rngs.push_back(model->rng(i));
+	    else {
+		nodes = observed_snodes;
 	    }
+	}
+	else {
+	    NodeArray *array = model->symtab().getVariable(name);
+	    if (!array) {
+		msg = string("Variable ") + name + " not found";
+		return nullptr;
+	    }
+	    if (isNULL(range)) {
+		//A null range corresponds to the whole array
+		node_range = array->range();
+	    }
+	    NodeArraySubset nodearray = NodeArraySubset(array, range);
+	    //FIXME: check for closure
+	    nodes = nodearray.nodes();
 	}
 
 	/* Create the correct subtype of monitor */
 
 	Monitor *m = nullptr;
-
-	DensityType density_type = getDensityType(stat);
-	PenaltyType penalty_type = getPenaltyType(stat);
-	if (density_type != DTUNSET) {
-	    if (density_type == DENSITY ||
-		density_type == LOGDENSITY ||
-		density_type == DEVIANCE)
-	    {
-		if (summary == "trace") {
-		    m = new DensityTrace(nodearray.nodes(), density_type);
-		}
-		else if (summary == "mean") {
-		    m = new DensityMean(nodearray.nodes(), density_type);
-		}
-		else if (summary == "variance") {
-		    m = new DensityVariance(nodearray.nodes(), density_type);
-		}
+	if (density_type == DENSITY ||
+	    density_type == LOGDENSITY ||
+	    density_type == DEVIANCE)
+	{
+	    if (summary == "trace") {
+		m = new DensityTrace(nodes, density_type);
 	    }
-	    else {
-		if (summary == "trace") {
-		    m = new DensityTotal(nodearray.nodes(), density_type);
-		}
+	    else if (summary == "mean") {
+		m = new DensityMean(nodes, density_type);
+	    }
+	    else if (summary == "variance") {
+		m = new DensityVariance(nodes, density_type);
 	    }
 	}
-	else {
-	    if (penalty_type == PD) {
-		m = new PenaltyPD(nodearray.nodes(), rngs, 10);
+	else if (density_type == DENSITY_TOTAL ||
+		 density_type == LOGDENSITY_TOTAL ||
+		 density_type == DEVIANCE_TOTAL)
+	{
+	    if (summary == "trace") {
+		m = new DensityTotalTrace(nodes, density_type);
 	    }
-	    else if (penalty_type == POPT) {
-		m = new PenaltyPOPT(nodearray.nodes(), rngs, 10);
+	    else if (summary == "mean") {
+		m = new DensityTotalMean(nodes, density_type);
 	    }
-	    else if (penalty_type == PD_TOTAL) {
-		m = new PenaltyPDTotal(nodearray.nodes(), rngs, 10);
+	    else if (summary == "variance") {
+		m = new DensityTotalVar(nodes, density_type);
 	    }
-	    else if (penalty_type == POPT_TOTAL) {
-		m = new PenaltyPOPTTotal(nodearray.nodes(), rngs, 10);
-	    }
-	    else if (penalty_type == POPT_TOTAL_REP) {
-		m = new PenaltyPOPTTotalRep(nodearray.nodes(), rngs, 10);
-	    }
-	    else if (penalty_type == PV) {
-		m = new PenaltyPV(nodearray.nodes());
-	    }
-	    /*
-	      else {
-		throw std::logic_error("Unimplemented MonitorType in NodeDensityMonitorFactory");
-	    }
-	    */
 	}
-	
 	if (!m) {
 	    return nullptr;
 	}
 		
 	/* Set name attributes */
-
-	//m->setName(name + printRange(range));
-	Range node_range = range;
-	if (isNULL(range)) {
-	    //A null range corresponds to the whole array
-	    node_range = array->range();
-	}
 
 	/** FIXME: Does not work for multivariate nodes
 	// These types are summarised between variables:

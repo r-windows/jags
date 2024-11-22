@@ -1,5 +1,5 @@
-#ifndef DENSITY_TOTAL_H_
-#define DENSITY_TOTAL_H_
+#ifndef DENSITY_TOTAL_TRACE_H_
+#define DENSITY_TOTAL_TRACE_H_
 
 #include <model/TraceMonitor.h>
 #include <graph/Node.h>
@@ -12,20 +12,19 @@ namespace jags {
     namespace dic {
 	
    	/**
-   	 * @short Stores trace of total (sum or product) of density/log density/deviance for a given set of Nodes
+   	 * @short Stores trace of total density/log density/deviance
 	 *
-	 * Note that this class is used by both NodeDensityMonitorFactory and ObsStochDensMonitorFactory
+	 * Total is defined as the sum for logdensity and deviance, and the product for the density.
    	 */
-   	class DensityTotal : public TraceMonitor {
-   	    std::vector<std::vector<double>> _values; // total density/log density/deviance corresponding to sampled values
-	    DensityType const _density_type;           // enum is defined in model/Monitor.h
+   	class DensityTotalTrace : public TraceMonitor {
+	    DensityType const _density_type;
 	public:
-   	    DensityTotal(std::vector<Node const *> const &nodes, 
-			 DensityType const density_type);
+   	    DensityTotalTrace(std::vector<Node const *> const &nodes, 
+			      DensityType const density_type);
    	    std::vector<unsigned long> dim() const override;
-	    std::vector<double> stat(unsigned int ch);
+	    std::vector<double> stat(unsigned int ch) override;
    	};
     }
 }
 
-#endif /* DENSITY_TOTAL_H_ */
+#endif /* DENSITY_TOTAL_TRACE_H_ */

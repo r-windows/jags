@@ -12,16 +12,14 @@ namespace jags {
     namespace dic {
 	
    	/**
-   	 * @short Stores running variance values of density/log density/deviance for a given Node
-	 *
-	 * Note that this class is used by both NodeDensityMonitorFactory and ObsStochDensMonitorFactory
+   	 * @short Stores running variance of density/log density/deviance
    	 */
    	class DensityVariance : public VarMonitor {
-	    DensityType const _density_type;  // enum is defined in model/Monitor.h
+	    DensityType const _density_type;
 	public:
    	    DensityVariance(std::vector<Node const *> const &nodes, DensityType const density_type);
    	    std::vector<unsigned long> dim() const override;
-	    std::vector<double> stat(unsigned int ch);
+	    std::vector<double> stat(unsigned int ch) override;
    	};
 	
     }

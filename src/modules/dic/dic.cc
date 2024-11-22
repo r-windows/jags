@@ -1,8 +1,8 @@
 #include <module/Module.h>
 
 #include "NodeDensityMonitorFactory.h"
-#include "ObsStochDensMonitorFactory.h"
 #include "DevianceMonitorFactory.h"
+#include "PenaltyMonitorFactory.h"
 
 using std::vector;
 
@@ -18,12 +18,12 @@ namespace dic {
     DICModule::DICModule() 
 	: Module("dic")
     {
-	// density-related monitors for a given node:
+	// density-related monitors
 	insert(new NodeDensityMonitorFactory);
-	// density-related monitors for all observed stochastic nodes:
-	insert(new ObsStochDensMonitorFactory);
 	// deviance monitor - deprecated but keep it in for now
 	insert(new DevianceMonitorFactory);
+	// penalty monitors
+	insert(new PenaltyMonitorFactory);
     }
     
     DICModule::~DICModule() {
