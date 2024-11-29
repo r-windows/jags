@@ -6,7 +6,6 @@
 using std::vector;
 
 namespace jags {
-
     namespace dic {
 
 	PenaltyPD::PenaltyPD(vector<Node const *> const &nodes,

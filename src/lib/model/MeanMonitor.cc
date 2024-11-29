@@ -5,9 +5,9 @@
 #include <algorithm>
 
 #include <model/MeanMonitor.h>
+#include <model/MonitorStat.h>
 
 using std::vector;
-using std::string;
 
 namespace jags {
 

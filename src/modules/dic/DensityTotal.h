@@ -2,9 +2,6 @@
 #define DENSITY_TOTAL_TRACE_H_
 
 #include <model/TraceMonitor.h>
-#include <graph/Node.h>
-
-#include <vector>
 
 #include "DensityEnums.h"
 
@@ -17,12 +14,9 @@ namespace jags {
 	 * Total is defined as the sum for logdensity and deviance, and the product for the density.
    	 */
    	class DensityTotalTrace : public TraceMonitor {
-	    DensityType const _density_type;
 	public:
    	    DensityTotalTrace(std::vector<Node const *> const &nodes, 
 			      DensityType const density_type);
-   	    std::vector<unsigned long> dim() const override;
-	    std::vector<double> stat(unsigned int ch) override;
    	};
     }
 }

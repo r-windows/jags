@@ -2,10 +2,11 @@
 #define MEAN_MONITOR_H_
 
 #include <model/Monitor.h>
-#include <model/MonitorStat.h>
 
 namespace jags {
 
+    class MonitorStat;
+    
     /**
      * @short Stores running mean of a given stat
      */

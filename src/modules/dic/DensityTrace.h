@@ -2,9 +2,6 @@
 #define DENSITY_TRACE_H_
 
 #include <model/TraceMonitor.h>
-#include <graph/Node.h>
-
-#include <vector>
 
 #include "DensityEnums.h"
 
@@ -15,11 +12,8 @@ namespace jags {
    	 * @short Stores values of density/log density/deviance 
    	 */
    	class DensityTrace : public TraceMonitor {
-	    DensityType const _density_type;
 	public:
    	    DensityTrace(std::vector<Node const *> const &nodes, DensityType const density_type);
-   	    std::vector<unsigned long> dim() const override;
-	    std::vector<double> stat(unsigned int ch) override;
    	};
 	
 }
