@@ -2,6 +2,7 @@
 #include "ValueTraceMonitor.h"
 #include "ValueMeanMonitor.h"
 #include "ValueVarMonitor.h"
+#include "ValueStat.h"
 
 #include <model/BUGSModel.h>
 #include <graph/Graph.h>

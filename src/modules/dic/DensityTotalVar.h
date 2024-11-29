@@ -2,9 +2,6 @@
 #define DENSITY_TOTAL_VAR_H_
 
 #include <model/VarMonitor.h>
-#include <graph/Node.h>
-
-#include <vector>
 
 #include "DensityEnums.h"
 
@@ -18,12 +15,9 @@ namespace jags {
 	 * and the product for the density.
    	 */
    	class DensityTotalVar : public VarMonitor {
-	    DensityType const _density_type;
 	public:
    	    DensityTotalVar(std::vector<Node const *> const &nodes, 
-			      DensityType const density_type);
-   	    std::vector<unsigned long> dim() const override;
-	    std::vector<double> stat(unsigned int ch) override;
+			    DensityType const density_type);
    	};
     }
 }

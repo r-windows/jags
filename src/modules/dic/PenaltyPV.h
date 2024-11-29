@@ -2,7 +2,6 @@
 #define PENALTY_PV_H_
 
 #include <model/VarMonitor.h>
-#include <graph/Node.h>
 
 #include <vector>
 
@@ -12,8 +11,6 @@ namespace jags {
    	class PenaltyPV : public VarMonitor {
 	public:
    	    PenaltyPV(std::vector<Node const *> const &nodes);
-	    std::vector<double> stat(unsigned int chain) override;
-   	    std::vector<unsigned long> dim() const override;
    	};
 
     }

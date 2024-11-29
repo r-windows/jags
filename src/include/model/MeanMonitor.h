@@ -3,6 +3,8 @@
 
 #include <model/Monitor.h>
 
+#include <vector>
+
 namespace jags {
 
     class MonitorStat;

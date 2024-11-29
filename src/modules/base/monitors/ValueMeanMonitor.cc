@@ -1,5 +1,5 @@
 #include <config.h>
-#include <graph/Node.h>
+
 #include <model/NodeArraySubset.h>
 
 #include "ValueMeanMonitor.h"

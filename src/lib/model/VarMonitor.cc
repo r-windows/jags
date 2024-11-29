@@ -5,23 +5,28 @@
 #include <algorithm>
 
 #include <model/VarMonitor.h>
+#include <model/MonitorStat.h>
 
 using std::vector;
-using std::string;
 
 namespace jags {
 
     VarMonitor::VarMonitor(vector<Node const *> const &nodes,
-			   unsigned long statlength)
-	: Monitor(nodes), 
-	  _sums(nchain(), vector<double>(statlength, 0.0)),
-	  _sum_of_squares(nchain(), vector<double>(statlength, 0.0))
+			   MonitorStat const *stat)
+	: Monitor(nodes), _stat(stat),
+	  _sums(nchain(), vector<double>(stat->length(), 0.0)),
+	  _sum_of_squares(nchain(), vector<double>(stat->length(), 0.0))
     {
+    }
+
+    VarMonitor::~VarMonitor()
+    {
+	delete _stat;
     }
     
     void VarMonitor::update(unsigned int chain)
     {
-	vector<double> const &value = stat(chain);
+	vector<double> value = _stat->value(chain);
 	vector<double> &S = _sums[chain];
 	vector<double> &SS = _sum_of_squares[chain];		
 	unsigned long n = niter();
@@ -53,5 +58,10 @@ namespace jags {
     {
 	return true;
     }
-	
+    
+    vector<unsigned long> VarMonitor::dim() const
+    {
+	return _stat->dim();
+    }
+
 }
