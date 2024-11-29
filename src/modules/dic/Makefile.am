@@ -18,7 +18,8 @@ DensityTotal.cc  \
 DensityEnums.cc PenaltyPD.cc PenaltyPOPT.cc PenaltyPV.cc    \
 PenaltyPDTotal.cc \
 DensityTotalMean.cc DensityTotalVar.cc \
-PenaltyMonitorFactory.cc
+PenaltyMonitorFactory.cc \
+DensityStat.cc DensityTotalStat.cc PDStat.cc 
 
 noinst_HEADERS = DevianceMean.h DevianceTrace.h				\
 DevianceMonitorFactory.h PDMonitor.h PoptMonitor.h PDMonitorFactory.h	\
@@ -29,4 +30,5 @@ DensityTotal.h  \
 DensityEnums.h PenaltyPD.h PenaltyPOPT.h PenaltyPV.h    \
 PenaltyPDTotal.h \
 DensityTotalMean.h DensityTotalVar.h \
-PenaltyMonitorFactory.h
+PenaltyMonitorFactory.h \
+DensityStat.h DensityTotalStat.h PDStat.h

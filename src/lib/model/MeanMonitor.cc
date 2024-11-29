@@ -12,14 +12,19 @@ using std::string;
 namespace jags {
 
     MeanMonitor::MeanMonitor(vector<Node const *> const &nodes,
-			     unsigned long statlength)
-	: Monitor(nodes), _sums(nchain(), vector<double>(statlength, 0.0))
+			     MonitorStat const *stat)
+	: Monitor(nodes), _stat(stat), _sums(nchain(), vector<double>(stat->length(), 0.0))
     {
+    }
+
+    MeanMonitor::~MeanMonitor()
+    {
+	delete _stat;
     }
     
     void MeanMonitor::update(unsigned int ch)
     {
-	vector<double> const &value = stat(ch);
+	const vector<double> value = _stat->value(ch);
 	for (unsigned int i = 0; i < value.size(); ++i) {
 	    _sums[ch][i] += value[i];
 	}
@@ -43,5 +48,9 @@ namespace jags {
     {
 	return true;
     }
-    
+
+    vector<unsigned long> MeanMonitor::dim() const
+    {
+	return _stat->dim();
+    }
 }

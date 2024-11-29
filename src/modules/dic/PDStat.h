@@ -1,0 +1,31 @@
+#ifndef PD_STAT_H_
+#define PD_STAT_H_
+
+#include <model/MonitorStat.h>
+
+#include <vector>
+
+namespace jags {
+
+    class RNG;
+    class Node;
+    
+    namespace dic {
+	
+	class PDStat : public MonitorStat {
+	    std::vector<Node const *> const _nodes;
+	    std::vector<RNG *> _rngs;
+	    unsigned int _nrep;
+	public:
+	    PDStat(std::vector<Node const *> const &nodes,
+		   std::vector<RNG *> const &rngs,
+		   unsigned int nrep);
+	    std::vector<unsigned long> dim() const override;
+	    std::vector<double> value(unsigned int chain) const override;
+	    unsigned long length() const override;
+	};
+	
+    }
+}
+
+#endif /* PD_STAT_H_ */

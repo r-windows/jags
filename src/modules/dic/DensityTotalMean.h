@@ -2,15 +2,15 @@
 #define DENSITY_TOTAL_MEAN_H_
 
 #include <model/MeanMonitor.h>
-#include <graph/Node.h>
-
-#include <vector>
 
 #include "DensityEnums.h"
 
 namespace jags {
+
+    class Node;
+    
     namespace dic {
-	
+
    	/**
    	 * @short Stores mean of total density/log density/deviance
 	 *
@@ -18,12 +18,9 @@ namespace jags {
 	 * and the product for the density.
    	 */
    	class DensityTotalMean : public MeanMonitor {
-	    DensityType const _density_type;
 	public:
    	    DensityTotalMean(std::vector<Node const *> const &nodes, 
-			      DensityType const density_type);
-   	    std::vector<unsigned long> dim() const override;
-	    std::vector<double> stat(unsigned int ch) override;
+			     DensityType density_type);
    	};
     }
 }
