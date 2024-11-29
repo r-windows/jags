@@ -1,7 +1,7 @@
 #include <config.h>
 
 #include "PenaltyPOPT.h"
-#include <module/ModuleError.h>
+#include <graph/Node.h>
 
 #include <cmath>
 
@@ -9,48 +9,59 @@ using std::vector;
 using std::string;
 
 namespace jags {
-namespace dic {
-
+    namespace dic {
 
 	PenaltyPOPT::PenaltyPOPT(vector<Node const *> const &nodes,
-			 vector<RNG *> const &rngs,
-			 unsigned int nrep)
-		: PenaltyPD(nodes, rngs, nrep, 2.0),
-			 _weights(nodes.size(), 0)
-    {
-		if (_nchain < 2) {
-		    throwLogicError("The popt monitor needs at least 2 chains");
-		}
-    }
-	
-    void PenaltyPOPT::update(unsigned int)
-    {
-		// Not actually needed for popt (just for pD):
-		// _n++;
-		
-		vector<double> w(_nchain);
-		vector<Node const *> const nodes = this->nodes();
-		for (unsigned int k = 0; k < _values.size(); ++k) {
-	    
-		    double pdsum = 0;
-		    double wsum = 0;
-		    for (unsigned int i = 0; i < _nchain; ++i) {
-				w[i] = std::exp(- nodes[k]->logDensity(i, PDF_FULL));
-				for (unsigned int j = 0; j < i; ++j) {
-				    pdsum += w[i] * w[j] * (
-					nodes[k]->KL(i, j, _rngs[i], _nrep) +
-					nodes[k]->KL(j, i, _rngs[j], _nrep));
-				    wsum += w[i] * w[j];
-				}
-		    }
-		
-		    pdsum /= wsum;
-		    pdsum *= _scale_cst;
-
-		    _weights[k] += wsum;
-		    _values[k] += wsum * (pdsum - _values[k])/_weights[k];
-			
-		}
+				 vector<RNG *> const &rngs,
+				 unsigned int nrep)
+	    : WeightedMeanMonitor(nodes, nodes.size()), _rngs(rngs), _nrep(nrep)
+	{
 	}
 
-}}
+	vector<unsigned long> PenaltyPOPT::dim() const
+	{
+	    return vector<unsigned long>(1, nodes().size());
+	}
+
+	vector<double> PenaltyPOPT::stat(unsigned int ch)
+	{
+	    vector<Node const *> const nodes = this->nodes();
+	    unsigned long n = nodes.size();
+	    unsigned long m = nchain();
+	    
+	    vector<double> v(n);
+	    for (unsigned int k = 0; k < n; ++k) {
+		double pdsum = 0;
+		double wsum = 0;
+		for (unsigned int j = 0; j < m; ++j) {
+		    if (j != ch) {
+			double wj = exp(- nodes[k]->logDensity(j, PDF_FULL));
+			pdsum += wj * nodes[k]->KL(ch, j, _rngs[ch], _nrep);
+			wsum += wj;
+		    }
+		}
+		v[k] = pdsum / wsum;
+	    }
+	    return v;
+	}
+
+	vector<double> PenaltyPOPT::weight(unsigned int ch)
+	{
+	    vector<Node const *> const nodes = this->nodes();
+	    unsigned long n = nodes.size();
+	    unsigned long m = nchain();
+	    
+	    vector<double> w(n, 0.0);
+	    for (unsigned int k = 0; k < n; ++k) {
+		for (unsigned int j = 0; j < m; ++j) {
+		    if (j != ch) {
+			w[k] += exp(-nodes[k]->logDensity(j, PDF_FULL));
+		    }
+		}
+		w[k] *= exp(-nodes[k]->logDensity(ch, PDF_FULL));
+	    }
+	    return w;
+	}
+	
+    }
+}

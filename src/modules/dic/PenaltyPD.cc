@@ -1,87 +1,47 @@
 #include <config.h>
 
 #include "PenaltyPD.h"
-#include <module/ModuleError.h>
 
 using std::vector;
 using std::string;
 
 namespace jags {
 
-namespace dic {
+    namespace dic {
 
-    // Public constructor:
-    PenaltyPD::PenaltyPD(vector<Node const *> const &nodes,
-			 vector<RNG *> const &rngs, unsigned int nrep)
-	: Monitor(nodes), _rngs(rngs),
-	  _nrep(nrep), _values(nodes.size(), 0.0), _scale_cst(0.5),
-	  _nchain(rngs.size()), _n(0)
-
-    {
-	if (_nchain < 2) {
-	    throwLogicError("The pD monitor needs at least 2 chains");
+	PenaltyPD::PenaltyPD(vector<Node const *> const &nodes,
+			     vector<RNG *> const &rngs, unsigned int nrep)
+	    : MeanMonitor(nodes, nodes.size()), _rngs(rngs), _nrep(nrep)
+	{
 	}
-    }
 
-    // Protected constructor which PenaltyPOPT uses:
-    PenaltyPD::PenaltyPD(vector<Node const *> const &nodes,
-			 vector<RNG *> const &rngs,
-			 unsigned int nrep, double )
-	: Monitor(nodes), _rngs(rngs),
-	  _nrep(nrep),_values(nodes.size(), 0.0), _scale_cst(1.0),
-	  _nchain(rngs.size()), _n(0)
-
-    {
-	if (_nchain < 2) {
-	    throwLogicError("The popt monitor needs at least 2 chains");
+	PenaltyPD::~PenaltyPD() 
+	{
 	}
-    }
-
-    PenaltyPD::~PenaltyPD() 
-    {
-    }
     
-    vector<unsigned long> PenaltyPD::dim() const
-    {
-	return vector<unsigned long>(1, 1UL);
-    }
- 
-    void PenaltyPD::value(vector<double> &v, unsigned int ) const
-    {
-	copy(_values.begin(), _values.end(), v.begin());
-    }
-
-    bool PenaltyPD::poolChains() const
-    {
-	return true;
-    }
-
-    bool PenaltyPD::poolIterations() const
-    {
-	return true;
-    }
-
-    void PenaltyPD::update(unsigned int)
-    {
-	_n++;
-	for (unsigned int k = 0; k < _values.size(); ++k) {
-	    
-	    double pdsum = 0;
-	    for (unsigned int i = 0; i < _nchain; ++i) {
-		for (unsigned int j = 0; j < i; ++j) {
-		    pdsum += _nodes[k]->KL(i, j, _rngs[i], _nrep);
-		    pdsum += _nodes[k]->KL(j, i, _rngs[j], _nrep);
-		}
-	    }
-	    // Number of combinations of chains * unity weight products:
-	    // pdsum /= (double) _nchain * (_nchain - 1) * 0.5;
-	    // pdsum *= _scale_cst;
-	    // i.e. equivalent to:
-	    pdsum /= (double) _nchain * (_nchain - 1);
-
-	    _values[k] -= (_values[k] - pdsum)/_n;
-		
+	vector<unsigned long> PenaltyPD::dim() const
+	{
+	    return vector<unsigned long>(1, nodes().size());
 	}
-    }
+	
+	vector<double> PenaltyPD::stat(unsigned int ch)
+	{
+	    unsigned long m = nchain();
+	    vector<Node const *> const &nodes = this->nodes();
+	    unsigned long n = nodes.size();
 
-}}
+	    vector<double> v(n);
+	    for (unsigned int k = 0; k < n; ++k) {
+		double pdsum = 0.0;
+		for (unsigned int j = 0; j < m; ++j) {
+		    if (j != ch) {
+			pdsum += nodes[k]->KL(ch, j, _rngs[ch], _nrep);
+		    }
+		}
+		v[k] = pdsum/(n-1);
+	    }
+	    return v;
+	}
+
+    }
+}

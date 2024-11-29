@@ -4,8 +4,8 @@
 #include "PenaltyPOPT.h"
 #include "PenaltyPV.h"
 #include "PenaltyPDTotal.h"
-#include "PenaltyPOPTTotal.h"
-#include "PenaltyPOPTTotalRep.h"
+//#include "PenaltyPOPTTotal.h"
+//#include "PenaltyPOPTTotalRep.h"
 
 #include <model/BUGSModel.h>
 #include <graph/Graph.h>
@@ -113,11 +113,13 @@ namespace jags {
 	    }
 	    else if (summary == "trace") {
 		if (penalty_type == PD_TOTAL) {
-		    m = new PenaltyPDTotal(nodes, rngs, 10);
+		    m = new PDTotalTrace(nodes, rngs, 10);
 		}
+		/*
 		else if (penalty_type == POPT_TOTAL) {
 		    m = new PenaltyPOPTTotal(nodes, rngs, 10);
 		}
+		*/
 	    }
 	    if (!m) {
 		return nullptr;

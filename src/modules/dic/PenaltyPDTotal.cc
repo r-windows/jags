@@ -1,82 +1,44 @@
 #include <config.h>
 
 #include "PenaltyPDTotal.h"
-#include <module/ModuleError.h>
 
 using std::vector;
-using std::string;
 
 namespace jags {
-namespace dic {
-
-    // Public constructor:
-    PenaltyPDTotal::PenaltyPDTotal(vector<Node const *> const &nodes,
-			 vector<RNG *> const &rngs, unsigned int nrep)
-	: Monitor(nodes), _rngs(rngs),
-	  _nrep(nrep), _nchain(rngs.size()), _values(),
-	  _dim(vector<unsigned long> (1,1)), 
-	  _scale_cst(1.0/2.0)
-    {
-	if (_nchain < 2) {
-	    throwLogicError("The pD total monitor needs at least 2 chains");
+    namespace dic {
+	
+	PDTotalTrace::PDTotalTrace(vector<Node const *> const &nodes,
+				   vector<RNG *> const &rngs, unsigned int nrep)
+	    : TraceMonitor(nodes), _rngs(rngs), _nrep(nrep)
+	{
 	}
-    }
 
-    // Protected constructor which PenaltyPOPTTotal uses:
-    PenaltyPDTotal::PenaltyPDTotal(vector<Node const *> const &nodes,
-				   vector<RNG *> const &rngs,
-				   unsigned int nrep, double scale)
-	: Monitor(nodes), _rngs(rngs),
-	  _nrep(nrep), _nchain(rngs.size()), _values(),
-	  _dim(vector<unsigned long> (1,1)), _scale_cst(scale/2.0)
-    {
-	// This monitor pools between variables so ignores the dim it is passed
-	if (_nchain < 2) {
-	    throwLogicError("The popt total monitor needs at least 2 chains");
+	PDTotalTrace::~PDTotalTrace() 
+	{
 	}
-    }
-    
-    PenaltyPDTotal::~PenaltyPDTotal() 
-    {
-    }
-    
-    vector<unsigned long> PenaltyPDTotal::dim() const
-    {
-	return vector<unsigned long>(1, 1UL);
-    }
-    
-    void PenaltyPDTotal::value(vector<double> &v, unsigned int ) const
-    {
-	copy(_values.begin(), _values.end(), v.begin());
-    }
-    
-    bool PenaltyPDTotal::poolChains() const
-    {
-	return true;
-    }
-
-    bool PenaltyPDTotal::poolIterations() const
-    {
-	return false;
-    }
-
-    void PenaltyPDTotal::update(unsigned int)
-    {
-	vector<Node const *> const &nodes = this->nodes();
-	double pd = 0;
-	for (unsigned int k = 0; k < nodes.size(); ++k) {
-	    for (unsigned int i = 0; i < _nchain; ++i) {
-		for (unsigned int j = 0; j < i; ++j) {
-		    pd += nodes[k]->KL(i, j, _rngs[i], _nrep);
-		    pd += nodes[k]->KL(j, i, _rngs[j], _nrep);
+	
+	vector<unsigned long> PDTotalTrace::dim() const
+	{
+	    return vector<unsigned long>(1, 1UL);
+	}
+		
+	vector<double> PDTotalTrace::stat(unsigned int ch)
+	{
+	    vector<Node const *> const &nodes = this->nodes();
+	    unsigned long m = nchain();
+	    unsigned long n = nodes.size();
+	    
+	    double pdsum = 0;
+	    for (unsigned int k = 0; k < n; ++k) {
+		for (unsigned int j = 0; j < m; ++j) {
+		    if (j != ch) {
+			pdsum += nodes[k]->KL(ch, j, _rngs[ch], _nrep);
+		    }
 		}
 	    }
+
+	    return vector<double>(1, pdsum/(m-1));
 	}
 
-	// NB: constant multiplier 2/_scale_cst removed:
-	pd /= _nchain * (_nchain - 1);
-			
-	_values.push_back(pd);
     }
-
-}}
+}

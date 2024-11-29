@@ -1,11 +1,9 @@
 #ifndef PENALTY_POPT_TOTAL_H
 #define PENALTY_POPT_TOTAL_H
 
-#include <model/Monitor.h>
+#include <model/WeightedMeanMonitor.h>
 #include <graph/Node.h>
 #include <rng/RNG.h>
-
-#include "PenaltyPDTotal.h"
 
 #include <vector>
 
@@ -17,20 +15,21 @@
 */
 
 namespace jags {
-namespace dic {
+    namespace dic {
 
-    class PenaltyPOPTTotal : public PenaltyPDTotal {
-		unsigned int _n;
-		std::vector<double> _weights;
-    public:
-	PenaltyPOPTTotal(std::vector<Node const *> const &nodes,
-		  std::vector<RNG *> const &rngs,
-		  unsigned int nrep);
+	class PenaltyPOPTTotal : public WeightedMeanMonitor {
+	    unsigned int _n;
+	    std::vector<double> _weights;
+	public:
+	    PenaltyPOPTTotal(std::vector<Node const *> const &nodes,
+			     std::vector<RNG *> const &rngs,
+			     unsigned int nrep);
 
-	void update(unsigned int chain) override;
-	~PenaltyPOPTTotal() override;
-    };
+	    void update(unsigned int chain) override;
+	    ~PenaltyPOPTTotal() override;
+	};
 
-}}
+    }
+}
 
 #endif /* PENALTY_POPT_TOTAL_H */
