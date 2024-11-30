@@ -6,17 +6,6 @@
 #include "DensityTotal.h"
 #include "DensityTotalMean.h"
 #include "DensityTotalVar.h"
-//#include "DensityPoolMean.h"
-//#include "DensityPoolVariance.h"
-
-/*
-#include "PenaltyPD.h"
-#include "PenaltyPOPT.h"
-#include "PenaltyPV.h"
-#include "PenaltyPDTotal.h"
-#include "PenaltyPOPTTotal.h"
-#include "PenaltyPOPTTotalRep.h"
-*/
 
 #include <model/BUGSModel.h>
 #include <graph/Graph.h>
