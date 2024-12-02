@@ -46,7 +46,7 @@ namespace jags {
 	    else {
 		NodeArray *array = model->symtab().getVariable(name);
 		if (!array) {
-		    msg = string("Variable ") + name + " not found";
+		    //Not an error: name may be a virtual node
 		    return nullptr;
 		}
 		if (isNULL(range)) {
