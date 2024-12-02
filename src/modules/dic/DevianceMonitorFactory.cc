@@ -23,6 +23,10 @@ namespace dic {
     {
 	if (name != "deviance")
 	    return nullptr;
+	if(model->symtab().getVariable("deviance")) {
+	    // Ignore if a variable named "deviance" is defined in the model
+	    return nullptr;
+	}
 	if (!isNULL(range)) {
 	    msg = "cannot monitor a subset of deviance";
 	    return nullptr;
