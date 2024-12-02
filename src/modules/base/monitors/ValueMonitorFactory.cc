@@ -1,21 +1,31 @@
 #include "ValueMonitorFactory.h"
-#include "ValueTraceMonitor.h"
-#include "ValueMeanMonitor.h"
-#include "ValueVarMonitor.h"
 #include "ValueStat.h"
 
 #include <model/BUGSModel.h>
-#include <graph/Graph.h>
-#include <graph/Node.h>
+#include <model/TraceMonitor.h>
+#include <model/MeanMonitor.h>
+#include <model/VarMonitor.h>
 #include <sarray/RangeIterator.h>
 
-using std::set;
 using std::string;
 using std::vector;
 
 namespace jags {
     namespace base {
 
+	/*
+	  Template constructor for monitors that use ValueStat as the
+	  stat object. The common code avoids the need to create a
+	  Monitor subclass for each summary type.
+	*/
+	template <class T>
+	T * newValueMonitor(NodeArray *array, Range const &range)
+	{
+	    NodeArraySubset subset(array, range);
+	    ValueStat *stat = new ValueStat(subset);
+	    return new T(subset.nodes(), stat);
+	}
+	
 	Monitor *ValueMonitorFactory::getMonitor(string const &name,
 						 Range const &range,
 						 BUGSModel *model,
@@ -28,19 +38,27 @@ namespace jags {
 
 	    NodeArray *array = model->symtab().getVariable(name);
 	    if (!array) {
-		msg = string("Variable ") + name + " not found";
+		/* This is not necessarily an error. The name may be a
+		   virtual node (e.g. "deviance") or a collection
+		   (e.g. "_observed_") that is handled by another
+		   Monitor factory. Hence no message.
+		*/
+		return nullptr;
+	    }
+	    if (!isNULL(range) && !array->range().contains(range)) {
+		msg = string("Invalid subset ") + name + printRange(range);
 		return nullptr;
 	    }
 	    
 	    Monitor *m = nullptr;
 	    if (summary == "trace") {
-		m = new ValueTraceMonitor(NodeArraySubset(array, range));
+		m = newValueMonitor<TraceMonitor>(array, range);
 	    }
 	    else if (summary == "mean") {
-		m = new ValueMeanMonitor(NodeArraySubset(array, range));
+		m = newValueMonitor<MeanMonitor>(array, range);
 	    }
 	    else if (summary == "var") {
-		m = new ValueVarMonitor(NodeArraySubset(array, range));
+		m = newValueMonitor<VarMonitor>(array, range);
 	    }
 
 	    if (!m) {
