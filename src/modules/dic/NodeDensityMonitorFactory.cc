@@ -36,7 +36,7 @@ namespace dic {
 	     * monitor 'deviance' as if it were a virtual node */
 	    if (stat != "value") return nullptr;
 	    if (!isNULL(range)) return nullptr;
-	    density_type = DEVIANCE;
+	    density_type = DEVIANCE_TOTAL;
 	}
 	else {
 	    density_type = getDensityType(stat);
@@ -58,13 +58,18 @@ namespace dic {
 	else {
 	    NodeArray *array = model->symtab().getVariable(name);
 	    if (!array) {
-		msg = string("Variable ") + name + " not found";
+		// Not an error: name may refer to a virtual node
 		return nullptr;
 	    }
 	    if (isNULL(range)) {
 		//A null range corresponds to the whole array
 		node_range = array->range();
 	    }
+	    else if (!array->range().contains(range)) {
+		msg = string("Invalid subset ") + name + printRange(range);
+		return nullptr;
+	    }
+
 	    NodeArraySubset nodearray = NodeArraySubset(array, range);
 	    //FIXME: check for closure
 	    nodes = nodearray.nodes();
