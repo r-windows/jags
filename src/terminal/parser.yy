@@ -59,7 +59,7 @@
     bool open_data_buffer(std::string const *name);
     bool open_command_buffer(std::string const *name);
     void return_to_main_buffer();
-    void setMonitor(jags::ParseTree const *var, int thin, std::string const &stat, std::string const &summary);
+    void setMonitor(jags::ParseTree const *var, std::string const &stat, std::string const &summary, int thin);
     void clearMonitor(jags::ParseTree const *var, std::string const &stat, std::string const &summary);
     void doCoda (jags::ParseTree const *var, std::string const &stem, std::string const &stat, std::string const &summary);
     void doAllCoda (std::string const &stem, std::string const &stat, std::string const &summary);
@@ -441,34 +441,42 @@ monitor: monitor_set
 ;
 
 monitor_set: MONITOR SET var  { 
-    setMonitor($3, 1, "value", "trace"); delete $3;
+    setMonitor($3, "value", "trace", 1);
+    delete $3;
 }
 | MONITOR SET var ',' THIN '(' INT ')' { 
-    setMonitor($3, $7, "value", "trace"); delete $3;
+    setMonitor($3, "value", "trace", $7);
+    delete $3;
 }
 | MONITOR var {
-    setMonitor($2, 1, "value", "trace"); delete $2;
+    setMonitor($2, "value", "trace", 1);
+    delete $2;
 }
 | MONITOR var ',' THIN '(' INT ')' { 
-    setMonitor($2, $6, "value", "trace"); delete $2;
+    setMonitor($2, "value", "trace", $6);
+    delete $2;
 }
 | MONITOR var ','  STAT '(' NAME ')' {
-    setMonitor($2, 1, *$6, "trace");
+    setMonitor($2, *$6, "trace", 1);
+    delete $2;
     delete $6;
 }
 | MONITOR var ',' SUMMARY '(' NAME ')' {
-    setMonitor($2, 1, "value", *$6);
+    setMonitor($2, "value", *$6, 1);
+    delete $2;
     delete $6;
+}
+| MONITOR var ',' STAT '(' NAME ')' SUMMARY '(' NAME ')' {
+    setMonitor($2, *$6, *$10, 1); 
+    delete $2;
+    delete $6;
+    delete $10;
 }
 | MONITOR var ',' STAT '(' NAME ')' SUMMARY '(' NAME ')' THIN '(' INT ')' {
-    setMonitor($2, $14, *$6, *$10); 
+    setMonitor($2, *$6, *$10, $14);
+    delete $2;
     delete $6;
     delete $10;
-}
-| MONITOR var ',' THIN '(' INT ')' STAT '(' NAME ')' SUMMARY '(' NAME ')' {
-    setMonitor($2, $6, *$10, *$14);
-    delete $10;
-    delete $14;
 }
 ;
 
@@ -855,7 +863,7 @@ static jags::Range getRange(jags::ParseTree const *var)
   return jags::SimpleRange(ind_lower, ind_upper);
 }
 
-void setMonitor(jags::ParseTree const *var, int thin, std::string const &stat, std::string const &summary)
+void setMonitor(jags::ParseTree const *var, std::string const &stat, std::string const &summary, int thin)
 {
     std::string const &name = var->name();
     if (var->parameters().empty()) {
