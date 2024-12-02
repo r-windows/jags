@@ -77,60 +77,49 @@ namespace dic {
 
 	/* Create the correct subtype of monitor */
 
+	vector<string> elt_names; //Element names
 	Monitor *m = nullptr;
-	if (density_type == DENSITY ||
-	    density_type == LOGDENSITY ||
-	    density_type == DEVIANCE)
-	{
-	    if (summary == "trace") {
-		m = new DensityTrace(nodes, density_type);
-	    }
-	    else if (summary == "mean") {
-		m = new DensityMean(nodes, density_type);
-	    }
-	    else if (summary == "variance") {
-		m = new DensityVariance(nodes, density_type);
-	    }
-	}
-	else if (density_type == DENSITY_TOTAL ||
-		 density_type == LOGDENSITY_TOTAL ||
-		 density_type == DEVIANCE_TOTAL)
-	{
+	switch(density_type) {
+	case DENSITY_TOTAL:
+	case LOGDENSITY_TOTAL:
+	case DEVIANCE_TOTAL:
 	    if (summary == "trace") {
 		m = new DensityTotalTrace(nodes, density_type);
 	    }
 	    else if (summary == "mean") {
 		m = new DensityTotalMean(nodes, density_type);
 	    }
-	    else if (summary == "variance") {
+	    else if (summary == "var") {
 		m = new DensityTotalVar(nodes, density_type);
 	    }
-	}
-	if (!m) {
-	    return nullptr;
-	}
-		
-	/* Set name attributes */
-
-	/** FIXME: Does not work for multivariate nodes
-	// These types are summarised between variables:
-	if (monitor_type == TOTAL || monitor_type == PDTOTAL
-	    || monitor_type == POPTTOTAL || monitor_type == PV) {
-	    m->setElementNames(vector<string>(1, type));
-	}
-	else {
-	    vector<string> elt_names;
-	    if (node_range.length() > 1) {
-		for (RangeIterator i(node_range); !i.atEnd(); i.nextLeft()) {
-		    elt_names.push_back(name + printIndex(i));
-		}
+	    // These stats are summarised between variables:
+	    elt_names.push_back(name + printRange(range));
+	    break;
+	case DENSITY:
+	case LOGDENSITY:
+	case DEVIANCE:
+	    if (summary == "trace") {
+		m = new DensityTrace(nodes, density_type);
 	    }
-	    else {
-		elt_names.push_back(name + printRange(range));
+	    else if (summary == "mean") {
+		m = new DensityMean(nodes, density_type);
 	    }
+	    else if (summary == "var") {
+		m = new DensityVariance(nodes, density_type);
+	    }
+	    // These stats have a single entry for each node
+	    for (auto p = nodes.begin(); p != nodes.end(); ++p) {
+		elt_names.push_back(model->symtab().getName(*p));
+	    }
+	    break;
+	case DTUNSET:
+	    break; //-Wswitch
+	}
+	if (m) {
+	    // Set name attributes
 	    m->setElementNames(elt_names);
 	}
-	*/
+	
 	return m;
 		
     }
