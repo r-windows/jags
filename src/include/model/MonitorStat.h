@@ -11,7 +11,7 @@ namespace jags {
     
     class MonitorStat {
     public:
-	virtual ~MonitorStat();
+	virtual ~MonitorStat() = default;
 	/**
 	 * Returns the dimension of a single monitored value, which may
 	 * be replicated over chains and over iterations
