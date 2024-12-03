@@ -4,22 +4,23 @@
 #include <algorithm>
 
 #include <model/WeightedTraceMonitor.h>
+#include <model/MonitorStat.h>
 
 using std::vector;
 using std::string;
 
 namespace jags {
 
-    WeightedTraceMonitor::WeightedTraceMonitor(vector<Node const *> const &nodes, unsigned long statlength)
-	: Monitor(nodes), _values(nchain()),
-	  _weight_sums(nchain(), vector<double>(statlength, 0.0))
+    WeightedTraceMonitor::WeightedTraceMonitor(vector<Node const *> const &nodes, MonitorStat *stat)
+	: Monitor(nodes, stat), _values(nchain()),
+	  _weight_sums(nchain(), vector<double>(stat->length(), 0.0))
     {
     }
     
     void WeightedTraceMonitor::update(unsigned int ch)
     {
-	vector<double> value = stat(ch);
-	vector<double> wt = weight(ch);
+	vector<double> value = stat()->value(ch);
+	vector<double> wt = stat()->weight(ch);
 	
 	for (unsigned int i = 0; i < value.size(); ++i) {
 	    _values[ch].push_back(wt[i] * value[i]);

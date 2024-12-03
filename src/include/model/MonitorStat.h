@@ -19,6 +19,7 @@ namespace jags {
 	virtual std::vector<unsigned long> dim() const = 0;
 	virtual std::vector<double> value(unsigned int chain) const = 0;
 	virtual unsigned long length() const = 0;
+	virtual std::vector<double> weight(unsigned int chain) const;
     };
 
 }

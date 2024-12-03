@@ -11,20 +11,18 @@ using std::vector;
 
 namespace jags {
 
-    MeanMonitor::MeanMonitor(vector<Node const *> const &nodes,
-			     MonitorStat const *stat)
-	: Monitor(nodes), _stat(stat), _sums(nchain(), vector<double>(stat->length(), 0.0))
+    MeanMonitor::MeanMonitor(vector<Node const *> const &nodes, MonitorStat *stat)
+	: Monitor(nodes, stat), _sums(nchain(), vector<double>(stat->length(), 0.0))
     {
     }
 
     MeanMonitor::~MeanMonitor()
     {
-	delete _stat;
     }
     
     void MeanMonitor::update(unsigned int ch)
     {
-	const vector<double> value = _stat->value(ch);
+	const vector<double> value = stat()->value(ch);
 	for (unsigned int i = 0; i < value.size(); ++i) {
 	    _sums[ch][i] += value[i];
 	}
@@ -49,8 +47,4 @@ namespace jags {
 	return true;
     }
 
-    vector<unsigned long> MeanMonitor::dim() const
-    {
-	return _stat->dim();
-    }
 }

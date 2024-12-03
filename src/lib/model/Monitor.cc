@@ -1,5 +1,6 @@
 #include <config.h>
 #include <model/Monitor.h>
+#include <model/MonitorStat.h>
 #include <graph/StochasticNode.h>
 #include <graph/Node.h>
 #include <util/dim.h>
@@ -13,18 +14,15 @@ using std::copy;
 
 namespace jags {
 
-    Monitor::Monitor(vector<Node const *> const &nodes)
-	: _nodes(nodes), _nchain(countChains(nodes)), _niter(0UL)
-    {
-    }
-
-    Monitor::Monitor(Node const *node)
-	: _nodes(vector<Node const*>(1,node)), _nchain(node->nchain()), _niter(0UL)
+    Monitor::Monitor(vector<Node const *> const &nodes, MonitorStat *stat)
+	: _nodes(nodes), _stat(stat), _nchain(countChains(nodes)), _niter(0UL)
     {
     }
 
     Monitor::~Monitor()
-    {}
+    {
+	delete _stat;
+    }
 
     void Monitor::update()
     {
@@ -56,16 +54,19 @@ namespace jags {
 
     unsigned long Monitor::size() const
     {
-	unsigned long statlength = product(dim());
-	
 	if (poolIterations()) {
-	    return statlength;
+	    return _stat->length();
 	}
 	else {
-	    return statlength * niter();
+	    return _stat->length() * niter();
 	}
     }
 
+    MonitorStat const *Monitor::stat() const
+    {
+	return _stat;
+    }
+    
     //FIXME: These should be in monitorinfo
     vector<string> const &Monitor::elementNames() const
     {
@@ -90,8 +91,8 @@ SArray Monitor::dump(bool flat) const
 	p = copy(x.begin(), x.end(), p);
     }
 
-    vector<unsigned long> vdim = dim();
-    unsigned long vlen = product(vdim);
+    vector<unsigned long> vdim = _stat->dim();
+    unsigned long vlen = _stat->length();
     if (nvalue % vlen != 0) {
 	throw logic_error("Inconsistent dimensions in Monitor");
     }

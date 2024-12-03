@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include <model/WeightedMeanMonitor.h>
+#include <model/MonitorStat.h>
 
 using std::vector;
 using std::string;
@@ -12,17 +13,17 @@ using std::string;
 namespace jags {
 
     WeightedMeanMonitor::WeightedMeanMonitor(vector<Node const *> const &nodes,
-					     unsigned long statlength)
-	: Monitor(nodes),
-	  _value_sums(nchain(), vector<double>(statlength, 0.0)),
-	  _weight_sums(nchain(), vector<double>(statlength, 0.0))
+					     MonitorStat *stat)
+	: Monitor(nodes, stat),
+	  _value_sums(nchain(), vector<double>(stat->length(), 0.0)),
+	  _weight_sums(nchain(), vector<double>(stat->length(), 0.0))
     {
     }
     
     void WeightedMeanMonitor::update(unsigned int ch)
     {
-	vector<double> value = stat(ch);
-	vector<double> wt = weight(ch);
+	vector<double> value = stat()->value(ch);
+	vector<double> wt = stat()->weight(ch);
 	
 	for (unsigned int i = 0; i < value.size(); ++i) {
 	    _value_sums[ch][i] += wt[i] * value[i];

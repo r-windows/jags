@@ -9,9 +9,8 @@ endif
 
 dic_la_LIBADD = $(top_builddir)/src/lib/libjags.la
 
-dic_la_SOURCES = dic.cc DevianceMean.cc DevianceTrace.cc		\
-DevianceMonitorFactory.cc PDMonitor.cc PoptMonitor.cc			\
-PDMonitorFactory.cc PDTrace.cc PDTraceFactory.cc			\
+dic_la_SOURCES = dic.cc 		\
+DevianceMonitorFactory.cc 			\
 NodeDensityMonitorFactory.cc    		\
 DensityTrace.cc DensityMean.cc DensityVariance.cc			\
 DensityTotal.cc  \
@@ -19,11 +18,10 @@ DensityEnums.cc PenaltyPD.cc PenaltyPOPT.cc PenaltyPV.cc    \
 PenaltyPDTotal.cc \
 DensityTotalMean.cc DensityTotalVar.cc \
 PenaltyMonitorFactory.cc \
-DensityStat.cc DensityTotalStat.cc PDStat.cc PDTotalStat.cc		
+DensityStat.cc DensityTotalStat.cc PDStat.cc PDTotalStat.cc POPTStat.cc
 
-noinst_HEADERS = DevianceMean.h DevianceTrace.h				\
-DevianceMonitorFactory.h PDMonitor.h PoptMonitor.h PDMonitorFactory.h	\
-PDTrace.h PDTraceFactory.h						\
+noinst_HEADERS = 		\
+DevianceMonitorFactory.h  	\
 NodeDensityMonitorFactory.h  \
 DensityTrace.h DensityMean.h DensityVariance.h			\
 DensityTotal.h  \
@@ -31,4 +29,4 @@ DensityEnums.h PenaltyPD.h PenaltyPOPT.h PenaltyPV.h    \
 PenaltyPDTotal.h \
 DensityTotalMean.h DensityTotalVar.h \
 PenaltyMonitorFactory.h \
-DensityStat.h DensityTotalStat.h PDStat.h PDTotalStat.h
+DensityStat.h DensityTotalStat.h PDStat.h PDTotalStat.h POPTStat.h

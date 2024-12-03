@@ -12,8 +12,8 @@ using std::vector;
 namespace jags {
 
     VarMonitor::VarMonitor(vector<Node const *> const &nodes,
-			   MonitorStat const *stat)
-	: Monitor(nodes), _stat(stat),
+			   MonitorStat *stat)
+	: Monitor(nodes, stat),
 	  _sums(nchain(), vector<double>(stat->length(), 0.0)),
 	  _sum_of_squares(nchain(), vector<double>(stat->length(), 0.0))
     {
@@ -21,12 +21,11 @@ namespace jags {
 
     VarMonitor::~VarMonitor()
     {
-	delete _stat;
     }
     
     void VarMonitor::update(unsigned int chain)
     {
-	vector<double> value = _stat->value(chain);
+	vector<double> value = stat()->value(chain);
 	vector<double> &S = _sums[chain];
 	vector<double> &SS = _sum_of_squares[chain];		
 	unsigned long n = niter();
@@ -57,11 +56,6 @@ namespace jags {
     bool VarMonitor::poolIterations() const
     {
 	return true;
-    }
-    
-    vector<unsigned long> VarMonitor::dim() const
-    {
-	return _stat->dim();
     }
 
 }

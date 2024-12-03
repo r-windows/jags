@@ -9,8 +9,9 @@
 
 namespace jags {
 
-class Node;
-
+    class Node;
+    class MonitorStat;
+    
 /**
  * @short Analyze sampled values 
  *
@@ -19,17 +20,18 @@ class Node;
  */
 class Monitor {
     std::vector<Node const *> _nodes;
+    MonitorStat *_stat;
     unsigned int _nchain;
     unsigned int _niter;
     std::vector<std::string> _elt_names;
 public:
-    Monitor(std::vector<Node const *> const &nodes);
-    Monitor(Node const *node);
+    Monitor(std::vector<Node const *> const &nodes, MonitorStat *stat);
     virtual ~Monitor();
     /**
      * Updates the monitor. 
      *
-     * This will call the virtual function update for each chain.
+     * This will call the virtual function update for each chain and increment
+     * the iteration count by 1.
      */
     void update();
     /*
@@ -45,7 +47,7 @@ public:
      */
     unsigned long niter() const;
     /**
-     * Number of of chains of the monitored nodes
+     * Number of chains of the monitored nodes
      */
     unsigned int nchain() const;
     /**
@@ -62,11 +64,6 @@ public:
      */
     virtual bool poolIterations() const = 0;
     /**
-     * Returns the dimension of a single monitored value, which may
-     * be replicated over chains and over iterations
-     */
-    virtual std::vector<unsigned long> dim() const = 0;
-    /**
      * Gets the vector of monitored values for the given chain
      *
      * @param value Vector of length given by Monitor#size to which the monitor value
@@ -80,6 +77,10 @@ public:
      * appropriate size of the value vector to pass to Monitor#value.
      */
     unsigned long size() const;
+    /**
+     * Returns a pointer to the stat object used to construct the Monitor.
+     */
+    MonitorStat const *stat() const;
     /**
      * Dumps the monitored values to an SArray. 
      *

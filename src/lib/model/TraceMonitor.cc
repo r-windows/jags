@@ -11,19 +11,18 @@ using std::vector;
 namespace jags {
 
     TraceMonitor::TraceMonitor(vector<Node const *> const &nodes,
-			       MonitorStat const *stat)
-	: Monitor(nodes), _stat(stat), _values(nchain())
+			       MonitorStat *stat)
+	: Monitor(nodes, stat), _values(nchain())
     {
     }
 
     TraceMonitor::~TraceMonitor()
     {
-	delete _stat;
     }
     
     void TraceMonitor::update(unsigned int chain)
     {
-	vector<double> v = _stat->value(chain);
+	vector<double> v = stat()->value(chain);
 	_values[chain].insert(_values[chain].end(), v.begin(), v.end());
     }
 
@@ -41,11 +40,5 @@ namespace jags {
     {
 	return false;
     }
-
-    vector<unsigned long> TraceMonitor::dim() const
-    {
-	return _stat->dim();
-    }
-
 
 }

@@ -14,13 +14,11 @@ namespace jags {
 	std::vector<std::vector<double>> _values; // sampled values
 	std::vector<std::vector<double>> _weight_sums; // sampled values
     public:
-	WeightedTraceMonitor(std::vector<Node const *> const &nodes, unsigned long statlength);
+	WeightedTraceMonitor(std::vector<Node const *> const &nodes, MonitorStat *stat);
 	void update(unsigned int chain) override;
 	void value(std::vector<double> &v, unsigned int chain) const override;
 	bool poolChains() const override;
 	bool poolIterations() const override;
-	virtual std::vector<double> stat(unsigned int chain) = 0;
-	virtual std::vector<double> weight(unsigned int chain) = 0;
     };
     
 }

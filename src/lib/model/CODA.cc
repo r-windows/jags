@@ -2,9 +2,9 @@
 #include "CODA.h"
 
 #include <model/Monitor.h>
+#include <model/MonitorStat.h>
 #include <model/MonitorControl.h>
 #include <util/nainf.h>
-#include <util/dim.h>
 
 #include <fstream>
 #include <sstream>
@@ -52,7 +52,7 @@ static void writeDouble(double x, ostream &out)
 	*/
 
 	Monitor const *monitor = control.monitor();
-	unsigned long nvalue = product(monitor->dim());
+	unsigned long nvalue = monitor->stat()->length();
 	
 	vector<bool> ans(nvalue, false);
 	vector<double> y(monitor->size());
@@ -91,7 +91,7 @@ static void WriteIndex(MonitorControl const &control,
 	return;
     }
 
-    unsigned long nvalue = product(monitor->dim());
+    unsigned long nvalue = monitor->stat()->length();
     vector<string> const &enames = monitor->elementNames(); //FIXME: elementNames should be part of MonitorControl
     for (unsigned int v = 0; v < nvalue; ++v) {
 	if (missing[v]) continue;
@@ -110,8 +110,9 @@ static void WriteOutput(MonitorControl const &control, unsigned int chain,
     if (monitor->poolIterations()) {
 	return;
     }
-    
-    unsigned long nvalue = product(monitor->dim());
+
+        
+    unsigned long nvalue = monitor->stat()->length();
     vector<double> y(monitor->size());
     monitor->value(y, chain);
     for (unsigned int v = 0; v < nvalue; ++v) {
@@ -138,8 +139,9 @@ static void WriteTable(MonitorControl const &control, unsigned int chain,
     vector<double> y(monitor->size());
     monitor->value(y, chain);
     vector<string> const &enames = monitor->elementNames(); //FIXME: elementNames should be part of MonitorControl, not Monitor
+
     
-    unsigned long nvalue = product(monitor->dim());
+    unsigned long nvalue = monitor->stat()->length();
     for (unsigned int v = 0; v < nvalue; ++v) {
 	if (missing[v]) continue;
 	index << enames[v] << " ";
