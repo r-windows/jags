@@ -13,23 +13,27 @@ namespace jags {
 	Monitor *WAICMonitorFactory::getMonitor(string const &name,
 						Range const &range,
 						BUGSModel *model,
-						string const &type,
+						string const &stat,
+						string const &summary,
 						string &msg)
 	{
-	    if (type != "mean")
-		return nullptr;
-	
 	    if (name != "WAIC")
 		return nullptr;
+	    if (stat != "value")
+		return nullptr;
+	    if (summary != "mean")
+		return nullptr;
 
+	    if (model->symtab().getVariable("WAIC")) {
+		//Ignore user-defined WAIC variable
+		return nullptr;
+	    }
 	    if (!isNULL(range))
 		msg = string("Cannot monitor a subset of ") + name;
-	
+	    
 	    vector<StochasticNode const *> observed_nodes;
 	    vector<StochasticNode *> const &snodes = model->stochasticNodes();
-	    for (vector<StochasticNode *>::const_iterator p = snodes.begin();
-		 p != snodes.end(); ++p)
-	    {
+	    for (auto p = snodes.begin(); p != snodes.end(); ++p) {
 		if (isObserved(*p)) {
 		    if (isParameter(*p)) {
 			msg = "There are partly observed stochastic nodes";
@@ -46,7 +50,6 @@ namespace jags {
 	    }
 
 	    Monitor *m = new WAICMonitor(observed_nodes);
-	    m->setName(name);
 	    vector<string> onames(observed_nodes.size());
 	    for (unsigned int i = 0; i < observed_nodes.size(); ++i) {
 		onames[i] = model->symtab().getName(observed_nodes[i]);
