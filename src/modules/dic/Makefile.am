@@ -13,7 +13,7 @@ dic_la_SOURCES = dic.cc 		\
 DevianceMonitorFactory.cc 			\
 NodeDensityMonitorFactory.cc    		\
 DensityTrace.cc DensityMean.cc DensityVariance.cc			\
-DensityTotal.cc  \
+DensityTotalTrace.cc  \
 DensityEnums.cc PenaltyPD.cc PenaltyPOPT.cc PenaltyPV.cc    \
 PenaltyPDTotal.cc \
 DensityTotalMean.cc DensityTotalVar.cc \
@@ -25,7 +25,7 @@ noinst_HEADERS = 		\
 DevianceMonitorFactory.h  	\
 NodeDensityMonitorFactory.h  \
 DensityTrace.h DensityMean.h DensityVariance.h			\
-DensityTotal.h  \
+DensityTotalTrace.h  \
 DensityEnums.h PenaltyPD.h PenaltyPOPT.h PenaltyPV.h    \
 PenaltyPDTotal.h \
 DensityTotalMean.h DensityTotalVar.h \

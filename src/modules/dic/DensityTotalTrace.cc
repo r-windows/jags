@@ -1,6 +1,6 @@
 #include <config.h>
 
-#include "DensityTotal.h"
+#include "DensityTotalTrace.h"
 #include "DensityTotalStat.h"
 
 using std::vector;

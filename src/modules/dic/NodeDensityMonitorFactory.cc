@@ -3,7 +3,7 @@
 #include "DensityTrace.h"
 #include "DensityMean.h"
 #include "DensityVariance.h"
-#include "DensityTotal.h"
+#include "DensityTotalTrace.h"
 #include "DensityTotalMean.h"
 #include "DensityTotalVar.h"
 
