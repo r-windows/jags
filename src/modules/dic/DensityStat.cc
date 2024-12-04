@@ -31,8 +31,14 @@ namespace jags {
 	    case LOGDENSITY:
 	    case DEVIANCE:
 		break;
+	    case DENSITY_TOTAL:
+	    case LOGDENSITY_TOTAL:
+	    case DEVIANCE_TOTAL:
+		throw logic_error("Incompatible DensityType in DensityStat");
+		break;
 	    case DTUNSET:
 		throw logic_error("Unimplemented DensityType in DensityStat");
+		break;
 	    }
 	}
 
@@ -48,9 +54,14 @@ namespace jags {
 		case DEVIANCE:
 		    value[i] = -2.0 * loglik;
 		    break;
-		case LOGDENSITY: case DTUNSET:
+		case LOGDENSITY:
 		    value[i] = loglik;
 		    break;
+		case DENSITY_TOTAL:
+		case LOGDENSITY_TOTAL:
+		case DEVIANCE_TOTAL:
+		case DTUNSET:
+		    break; //-Wswitch
 		}
 	    }
 	    return value;

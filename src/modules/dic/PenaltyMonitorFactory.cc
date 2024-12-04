@@ -1,8 +1,5 @@
 #include "DensityEnums.h"
 #include "PenaltyMonitorFactory.h"
-#include "PenaltyPV.h"
-//#include "PenaltyPOPTTotal.h"
-//#include "PenaltyPOPTTotalRep.h"
 
 #include "PDStat.h"
 #include "POPTStat.h"
@@ -101,16 +98,11 @@ namespace jags {
 		nodes = nodearray.nodes();
 	    }
 
-
-	    switch(penalty_type) {
-	    case PD:
-	    case POPT:
-	    case PD_TOTAL:
-	    case POPT_TOTAL:
-		if (model->nchain() < 2) {
-		    msg = "at least two chains are required for a pD or popt monitor";
-		    return nullptr;
-		}
+	    if (model->nchain() < 2) {
+		msg = "at least two chains are required for a pD or popt monitor";
+		return nullptr;
+	    }
+	    
 		
 		/* 
 		   We could limit pD/popt monitors to observed stochastic nodes only
@@ -132,7 +124,6 @@ namespace jags {
 		   return 0;
 		   }
 		   }*/
-	    }
 
 	    vector<RNG*> rngs;	    
 	    for (unsigned int i = 0; i < model->nchain(); ++i) {
@@ -149,19 +140,11 @@ namespace jags {
 		else if (penalty_type == POPT) {
 		    m = newPenaltyMonitor<WeightedMeanMonitor, POPTStat>(nodes, rngs, 10);
 		}
-		else if (penalty_type == PV) {
-		    m = new PenaltyPV(nodes);
-		}
 	    }
 	    else if (summary == "trace") {
 		if (penalty_type == PD_TOTAL) {
 		    m = newPenaltyMonitor<TraceMonitor, PDTotalStat>(nodes, rngs, 10);
 		}
-		/*
-		else if (penalty_type == POPT_TOTAL) {
-		    m = new PenaltyPOPTTotal(nodes, rngs, 10);
-		}
-		*/
 	    }
 	    if (!m) {
 		return nullptr;
@@ -178,9 +161,7 @@ namespace jags {
 		    elt_names.push_back(model->symtab().getName(*p));
 		}
 		break;
-	    case PV:
 	    case PD_TOTAL:
-	    case POPT_TOTAL:
 		// These stats have only a single entry
 		elt_names.push_back(name + printRange(range));
 		break;
