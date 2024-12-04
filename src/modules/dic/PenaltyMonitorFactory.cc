@@ -1,13 +1,17 @@
 #include "DensityEnums.h"
 #include "PenaltyMonitorFactory.h"
-#include "PDMean.h"
-#include "POPTMean.h"
 #include "PenaltyPV.h"
-#include "PDTotalTrace.h"
 //#include "PenaltyPOPTTotal.h"
 //#include "PenaltyPOPTTotalRep.h"
 
+#include "PDStat.h"
+#include "POPTStat.h"
+#include "PDTotalStat.h"
+
 #include <model/BUGSModel.h>
+#include <model/MeanMonitor.h>
+#include <model/WeightedMeanMonitor.h>
+#include <model/TraceMonitor.h>
 #include <graph/Graph.h>
 #include <graph/Node.h>
 #include <model/NodeArraySubset.h>
@@ -22,6 +26,15 @@ using std::vector;
 
 namespace jags {
     namespace dic {
+
+	template<class T, class S>
+	T * newPenaltyMonitor(vector<Node const *> const &nodes,
+			 vector<RNG *> const &rngs,
+			 unsigned int nrep)
+	{
+	    MonitorStat * stat = new S(nodes, rngs, nrep);
+	    return new T(nodes, stat);
+	}
 
 	Monitor *PenaltyMonitorFactory::getMonitor(string const &name, 
 						   Range const &range,
@@ -102,10 +115,10 @@ namespace jags {
 	    Monitor *m = nullptr;
 	    if (summary == "mean") {
 		if (penalty_type == PD) {
-		    m = new PDMean(nodes, rngs, 10);
+		    m = newPenaltyMonitor<MeanMonitor, PDStat>(nodes, rngs, 10);
 		}
 		else if (penalty_type == POPT) {
-		    m = new POPTMean(nodes, rngs, 10);
+		    m = newPenaltyMonitor<WeightedMeanMonitor, POPTStat>(nodes, rngs, 10);
 		}
 		else if (penalty_type == PV) {
 		    m = new PenaltyPV(nodes);
@@ -113,7 +126,7 @@ namespace jags {
 	    }
 	    else if (summary == "trace") {
 		if (penalty_type == PD_TOTAL) {
-		    m = new PDTotalTrace(nodes, rngs, 10);
+		    m = newPenaltyMonitor<TraceMonitor, PDTotalStat>(nodes, rngs, 10);
 		}
 		/*
 		else if (penalty_type == POPT_TOTAL) {
