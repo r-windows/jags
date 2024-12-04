@@ -38,7 +38,7 @@ namespace dic {
     {
 		
 	/* This factory is used when monitoring all observed
-	   stochastic nodes.  The string _observations_ is not a valid
+	   stochastic nodes.  The string _observed_ is not a valid
 	   node name so is guaranteed not to clash with a node.  If
 	   changing it then see also scanner.ll and
 	   NodeDensityMonitorFactory.cc And also parse.varname,

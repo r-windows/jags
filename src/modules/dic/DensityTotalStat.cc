@@ -42,10 +42,10 @@ namespace jags {
 	    if (jags_isna(loglik)) {
 		// Don't try and convert NA to density or deviance
 	    }
-	    else if ( _density_type == DENSITY ) {
+	    else if ( _density_type == DENSITY_TOTAL ) {
 		loglik = exp(loglik);
 	    }
-	    else if ( _density_type == DEVIANCE ) {
+	    else if ( _density_type == DEVIANCE_TOTAL ) {
 		loglik = -2.0 * loglik;
 	    }
 	    return vector<double>(1, loglik);

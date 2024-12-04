@@ -3,15 +3,6 @@
 #include "DensityStat.h"
 #include "DensityTotalStat.h"
 
-/*
-#include "DensityTrace.h"
-#include "DensityMean.h"
-#include "DensityVariance.h"
-#include "DensityTotalTrace.h"
-#include "DensityTotalMean.h"
-#include "DensityTotalVar.h"
-*/
-
 #include <model/BUGSModel.h>
 #include <graph/Graph.h>
 #include <graph/Node.h>
@@ -21,10 +12,6 @@
 #include <model/VarMonitor.h>
 #include <sarray/RangeIterator.h>
 
-#include <set>
-#include <stdexcept>
-
-using std::set;
 using std::string;
 using std::vector;
 
@@ -47,11 +34,16 @@ namespace dic {
 						   string &msg)
     {
 	DensityType density_type = DTUNSET;
-	if (name == "deviance") {
-	    /* For compatibility with JAGS 4.0 we allow the user to
-	     * monitor 'deviance' as if it were a virtual node */
-	    if (stat != "value") return nullptr;
-	    if (!isNULL(range)) return nullptr;
+	if (name == "deviance" && stat == "value") {
+	    /*
+	      In JAGS 4.x.y. "deviance" was defined as a virtual
+	      node. We retain this for back-compatibility, but
+	      this is equivalent to name = "_observed_" and stat =
+	      "deviance_total" in JAGS 5.0.0.
+	    */
+	    if (model->symtab().getVariable("deviance")) {
+		return nullptr; //Quit if we have a user-defined deviance
+	    }
 	    density_type = DEVIANCE_TOTAL;
 	}
 	else {
@@ -59,9 +51,15 @@ namespace dic {
 	}
 	if (density_type == DTUNSET) return nullptr;
 
-	Range node_range = range;
+	
 	vector<Node const *> nodes;
 	if (name == "_observed_" || name == "deviance") {
+
+	    if (!isNULL(range)) {
+		msg = string("Cannot take a subset of ") + name;
+		return nullptr;
+	    }
+
 	    vector<Node const *> const &observed_snodes = model->observedStochasticNodes();
 	    if (observed_snodes.empty()) {
 		msg = "There are no observed stochastic nodes";
@@ -72,23 +70,19 @@ namespace dic {
 	    }
 	}
 	else {
+
 	    NodeArray *array = model->symtab().getVariable(name);
 	    if (!array) {
 		// Not an error: name may refer to a virtual node
 		return nullptr;
 	    }
-	    if (isNULL(range)) {
-		//A null range corresponds to the whole array
-		node_range = array->range();
-	    }
-	    else if (!array->range().contains(range)) {
+	    if (!isNULL(range) && !array->range().contains(range)) {
 		msg = string("Invalid subset ") + name + printRange(range);
 		return nullptr;
 	    }
-
-	    NodeArraySubset nodearray = NodeArraySubset(array, range);
+	    NodeArraySubset subset = NodeArraySubset(array, range);
 	    //FIXME: check for closure
-	    nodes = nodearray.nodes();
+	    nodes = subset.nodes();
 	}
 
 	/* Create the correct subtype of monitor */
@@ -139,7 +133,7 @@ namespace dic {
 	return m;
 		
     }
-
+    
     string NodeDensityMonitorFactory::name() const
     {
 	return "dic::NodeDensity";

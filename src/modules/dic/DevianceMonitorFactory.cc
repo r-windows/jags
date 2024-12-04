@@ -30,27 +30,23 @@ namespace jags {
 						    string const &summary,
 						    string &msg)
 	{
-	    if (name != "deviance") {
-		if(model->symtab().getVariable("deviance")) {
-		    // Ignore if a variable named "deviance" is defined in the model
-		    return nullptr;
-		}
-	    }
-	    else if (name != "_deviance_") {
+	    if (name != "deviance")
+		return nullptr;
+	    if (model->symtab().getVariable("deviance")) {
+		// Ignore if a variable named "deviance" is defined in the model
 		return nullptr;
 	    }
-
 	    if (!isNULL(range)) {
-		msg = string("cannot monitor a subset of ") + name;
+		msg = string("cannot monitor a subset of deviance");
 		return nullptr;
 	    }
-
+	    
 	    if (stat != "value")
 		return nullptr;
-
+	    
 	    if (summary != "mean" && summary != "trace" && summary != "var")
 		return nullptr;
-	
+	    
 	    vector<StochasticNode *> const &snodes = model->stochasticNodes();
 	    vector<Node const *> observed_snodes;
 	    for (unsigned int i = 0; i < snodes.size(); ++i) {
@@ -74,11 +70,11 @@ namespace jags {
 		m = newDevianceMonitor<TraceMonitor>(observed_snodes);
 	    }
 	    if (m) {
-		m->setElementNames(vector<string>(1,"deviance"));
+		m->setElementNames(vector<string>(1, "deviance"));
 	    }
 	    return m;
 	}
-
+	
 	string DevianceMonitorFactory::name() const
 	{
 	    return "dic::Deviance";

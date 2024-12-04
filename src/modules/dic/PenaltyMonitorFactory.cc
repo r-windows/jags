@@ -26,16 +26,23 @@ using std::vector;
 
 namespace jags {
     namespace dic {
-
+	
+	/*
+	  Template constructor. T is a Monitor subtype and S is either
+	  PDStat or POPTStat (Both stats take the same arguments in
+	  the constructor). The common code avoids the need to create
+	  a Monitor subclass for each combination of stat and summary.
+	*/
+	
 	template<class T, class S>
 	T * newPenaltyMonitor(vector<Node const *> const &nodes,
-			 vector<RNG *> const &rngs,
-			 unsigned int nrep)
+			      vector<RNG *> const &rngs,
+			      unsigned int nrep)
 	{
 	    MonitorStat * stat = new S(nodes, rngs, nrep);
 	    return new T(nodes, stat);
 	}
-
+	
 	Monitor *PenaltyMonitorFactory::getMonitor(string const &name, 
 						   Range const &range,
 						   BUGSModel *model,
@@ -43,10 +50,34 @@ namespace jags {
 						   string const &summary,
 						   string &msg)
 	{
+	    PenaltyType penalty_type = PTUNSET;
+	    if (name == "pD" && stat == "value") {
+		/*
+		  In JAGS 4.x.y. "pD" was defined as a virtual
+		  node. We retain this for back-compatibility, but
+		  this is equivalent to name = "_observed_" and stat =
+		  "pD_total" in JAGS 5.0.0.
+		*/
+		if (model->symtab().getVariable("pD")) {
+		    return nullptr; //Quit if we have a user-defined pD
+		}
+		penalty_type = PD_TOTAL;
+	    }
+	    else {
+		penalty_type = getPenaltyType(stat);
+	    }
+	    if (penalty_type == PTUNSET) return nullptr;
+	    
 	    vector<Node const *> nodes;
 	    Range node_range = range;
 		    
-	    if (name == "_observed_") {
+	    if (name == "_observed_" || name == "pD") {
+	   
+		if (!isNULL(range)) {
+		    msg = string("Cannot take a subset of ") + name;
+		    return nullptr;
+		}
+
 		vector<Node const *> const &observed_snodes = model->observedStochasticNodes();
 		if (observed_snodes.empty()) {
 		    msg = "There are no observed stochastic nodes";
@@ -59,20 +90,18 @@ namespace jags {
 	    else {
 		NodeArray *array = model->symtab().getVariable(name);
 		if (!array) {
-		    //Not an error: name may be a virtual node
 		    return nullptr;
 		}
-		if (isNULL(range)) {
-		    //A null range corresponds to the whole array
-		    node_range = array->range();
+		if (!isNULL(range) && !array->range().contains(range)) {
+		    msg = string("Invalid subset ") + name + printRange(range);
+		    return nullptr;
 		}
 		NodeArraySubset nodearray = NodeArraySubset(array, range);
 		//FIXME: check for closure
 		nodes = nodearray.nodes();
 	    }
 
-	    PenaltyType penalty_type = getPenaltyType(stat);
-	    if (penalty_type == PTUNSET) return nullptr;
+
 	    switch(penalty_type) {
 	    case PD:
 	    case POPT:
@@ -140,25 +169,26 @@ namespace jags {
 	    
 	    /* Set name attributes */
 
-	    /** FIXME: Does not work for multivariate nodes
-	     // These types are summarised between variables:
-	     if (monitor_type == TOTAL || monitor_type == PDTOTAL
-	     || monitor_type == POPTTOTAL || monitor_type == PV) {
-	     m->setElementNames(vector<string>(1, type));
-	     }
-	     else {
-	     vector<string> elt_names;
-	     if (node_range.length() > 1) {
-	     for (RangeIterator i(node_range); !i.atEnd(); i.nextLeft()) {
-	     elt_names.push_back(name + printIndex(i));
-	     }
-	     }
-	     else {
-	     elt_names.push_back(name + printRange(range));
-	     }
-	     m->setElementNames(elt_names);
-	     }
-	    */
+	    vector<string> elt_names;	    
+	    switch(penalty_type) {
+	    case PD:
+	    case POPT:
+		// These stats have a single entry for each node
+		for (auto p = nodes.begin(); p != nodes.end(); ++p) {
+		    elt_names.push_back(model->symtab().getName(*p));
+		}
+		break;
+	    case PV:
+	    case PD_TOTAL:
+	    case POPT_TOTAL:
+		// These stats have only a single entry
+		elt_names.push_back(name + printRange(range));
+		break;
+	    case PTUNSET:
+		break; //-Wswitch
+	    }
+	    m->setElementNames(elt_names);
+
 	    return m;
 		
 	}
