@@ -1,9 +1,9 @@
 #include "DensityEnums.h"
 #include "PenaltyMonitorFactory.h"
-#include "PenaltyPD.h"
-#include "PenaltyPOPT.h"
+#include "PDMean.h"
+#include "POPTMean.h"
 #include "PenaltyPV.h"
-#include "PenaltyPDTotal.h"
+#include "PDTotalTrace.h"
 //#include "PenaltyPOPTTotal.h"
 //#include "PenaltyPOPTTotalRep.h"
 
@@ -102,10 +102,10 @@ namespace jags {
 	    Monitor *m = nullptr;
 	    if (summary == "mean") {
 		if (penalty_type == PD) {
-		    m = new PenaltyPD(nodes, rngs, 10);
+		    m = new PDMean(nodes, rngs, 10);
 		}
 		else if (penalty_type == POPT) {
-		    m = new PenaltyPOPT(nodes, rngs, 10);
+		    m = new POPTMean(nodes, rngs, 10);
 		}
 		else if (penalty_type == PV) {
 		    m = new PenaltyPV(nodes);

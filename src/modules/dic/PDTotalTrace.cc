@@ -1,6 +1,6 @@
 #include <config.h>
 
-#include "PenaltyPDTotal.h"
+#include "PDTotalTrace.h"
 #include "PDTotalStat.h"
 
 using std::vector;

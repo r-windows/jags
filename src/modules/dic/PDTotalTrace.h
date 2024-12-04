@@ -1,5 +1,5 @@
-#ifndef PENALTY_PD_TOTAL_H_
-#define PENALTY_PD_TOTAL_H_
+#ifndef PD_TOTAL_TRACE_H_
+#define PD_TOTAL_TRACE_H_
 
 #include <model/TraceMonitor.h>
 
@@ -21,4 +21,4 @@ namespace jags {
     }
 }
 
-#endif /* PENALTY_PD_TOTAL_H_ */
+#endif /* PD_TOTAL_TRACE_H_ */
