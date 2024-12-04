@@ -1,7 +1,6 @@
 #include <module/Module.h>
 
 #include "NodeDensityMonitorFactory.h"
-#include "DevianceMonitorFactory.h"
 #include "PenaltyMonitorFactory.h"
 
 using std::vector;
