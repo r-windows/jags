@@ -1,16 +1,24 @@
 #include "DensityEnums.h"
 #include "NodeDensityMonitorFactory.h"
+#include "DensityStat.h"
+#include "DensityTotalStat.h"
+
+/*
 #include "DensityTrace.h"
 #include "DensityMean.h"
 #include "DensityVariance.h"
 #include "DensityTotalTrace.h"
 #include "DensityTotalMean.h"
 #include "DensityTotalVar.h"
+*/
 
 #include <model/BUGSModel.h>
 #include <graph/Graph.h>
 #include <graph/Node.h>
 #include <model/NodeArraySubset.h>
+#include <model/TraceMonitor.h>
+#include <model/MeanMonitor.h>
+#include <model/VarMonitor.h>
 #include <sarray/RangeIterator.h>
 
 #include <set>
@@ -22,6 +30,14 @@ using std::vector;
 
 namespace jags {
 namespace dic {
+
+    template<class T, class S>
+    T * newDensityMonitor(vector<Node const *> const &nodes,
+			  DensityType density_type)
+    {
+	MonitorStat * stat = new  S(nodes, density_type);
+	return new  T(nodes, stat);
+    }
 
     Monitor *NodeDensityMonitorFactory::getMonitor(string const &name, 
 						   Range const &range,
@@ -84,13 +100,13 @@ namespace dic {
 	case LOGDENSITY_TOTAL:
 	case DEVIANCE_TOTAL:
 	    if (summary == "trace") {
-		m = new DensityTotalTrace(nodes, density_type);
+		m = newDensityMonitor<TraceMonitor, DensityTotalStat>(nodes, density_type);
 	    }
 	    else if (summary == "mean") {
-		m = new DensityTotalMean(nodes, density_type);
+		m = newDensityMonitor<MeanMonitor, DensityTotalStat>(nodes, density_type);
 	    }
 	    else if (summary == "var") {
-		m = new DensityTotalVar(nodes, density_type);
+		m = newDensityMonitor<VarMonitor,  DensityTotalStat>(nodes, density_type);
 	    }
 	    // These stats are summarised between variables:
 	    elt_names.push_back(name + printRange(range));
@@ -99,13 +115,13 @@ namespace dic {
 	case LOGDENSITY:
 	case DEVIANCE:
 	    if (summary == "trace") {
-		m = new DensityTrace(nodes, density_type);
+		m = newDensityMonitor<TraceMonitor, DensityStat>(nodes, density_type);
 	    }
 	    else if (summary == "mean") {
-		m = new DensityMean(nodes, density_type);
+		m = newDensityMonitor<MeanMonitor, DensityStat>(nodes, density_type);
 	    }
 	    else if (summary == "var") {
-		m = new DensityVariance(nodes, density_type);
+		m = newDensityMonitor<VarMonitor, DensityStat>(nodes, density_type);
 	    }
 	    // These stats have a single entry for each node
 	    for (auto p = nodes.begin(); p != nodes.end(); ++p) {

@@ -1,9 +1,10 @@
 #include "DevianceMonitorFactory.h"
-#include "DensityMean.h"
-#include "DensityTrace.h"
-#include "DensityVariance.h"
+#include "DensityTotalStat.h"
 
 #include <model/BUGSModel.h>
+#include <model/TraceMonitor.h>
+#include <model/MeanMonitor.h>
+#include <model/VarMonitor.h>
 #include <graph/StochasticNode.h>
 
 #include <set>
@@ -14,6 +15,13 @@ using std::vector;
 
 namespace jags {
     namespace dic {
+
+	template<class T>
+	T * newDevianceMonitor(vector<Node const *> const &nodes)
+	{
+	    MonitorStat * stat = new DensityTotalStat(nodes, DEVIANCE_TOTAL);
+	    return new T(nodes, stat);
+	}
 
 	Monitor *DevianceMonitorFactory::getMonitor(string const &name, 
 						    Range const &range,
@@ -57,13 +65,13 @@ namespace jags {
 
 	    Monitor *m = nullptr;
 	    if (summary == "mean") {
-		m = new DensityMean(observed_snodes, DEVIANCE_TOTAL);
+		m = newDevianceMonitor<MeanMonitor>(observed_snodes);
 	    }
 	    if (summary == "var") {
-		m = new DensityVariance(observed_snodes, DEVIANCE_TOTAL);
+		m = newDevianceMonitor<VarMonitor>(observed_snodes);
 	    }
 	    else if (summary == "trace") {
-		m = new DensityTrace(observed_snodes, DEVIANCE_TOTAL);
+		m = newDevianceMonitor<TraceMonitor>(observed_snodes);
 	    }
 	    if (m) {
 		m->setElementNames(vector<string>(1,"deviance"));

@@ -23,9 +23,9 @@ namespace jags {
 	{
 	    // Sanity check that input arguments match to this function:
 	    switch(density_type) {
-	    case DENSITY:
-	    case LOGDENSITY:
-	    case DEVIANCE:
+	    case DENSITY_TOTAL:
+	    case LOGDENSITY_TOTAL:
+	    case DEVIANCE_TOTAL:
 		break;
 	    default:
 		throw logic_error("Unimplemented DensityType in DensityTotal");
