@@ -54,6 +54,12 @@ namespace dic {
 	
 	vector<Node const *> nodes;
 	if (name == "_observed_" || name == "deviance") {
+	    /* The name _observed_ is used when monitoring all
+	       observed stochastic nodes.  The string _observed_ is
+	       not a valid node name so is guaranteed not to clash
+	       with a node.  If changing it then see also scanner.ll
+	       and NodeDensityMonitorFactory.cc And also
+	       parse.varname, waic.samples etc in rjags */
 
 	    if (!isNULL(range)) {
 		msg = string("Cannot take a subset of ") + name;

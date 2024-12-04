@@ -20,8 +20,6 @@ namespace dic {
     {
 	// density-related monitors
 	insert(new NodeDensityMonitorFactory);
-	// deviance monitor - deprecated but keep it in for now
-	insert(new DevianceMonitorFactory);
 	// penalty monitors
 	insert(new PenaltyMonitorFactory);
     }
