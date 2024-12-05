@@ -11,4 +11,9 @@ namespace jags {
 	return vector<double>();
     }
 
+    bool MonitorStat::weighted() const
+    {
+	return false;
+    }
+
 }
