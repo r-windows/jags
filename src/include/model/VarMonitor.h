@@ -11,8 +11,7 @@ namespace jags {
      * @short Stores running variance of a given stat
      */
     class VarMonitor : public Monitor {
-	std::vector<std::vector<double>> _sums;
-	std::vector<std::vector<double>> _sum_of_squares;
+	std::vector<std::vector<double>> _S, _SS, _W, _D;
     public:
 	VarMonitor(std::vector<Node const *> const &nodes,
 		   MonitorStat *stat);

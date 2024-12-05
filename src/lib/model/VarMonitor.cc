@@ -14,9 +14,13 @@ namespace jags {
     VarMonitor::VarMonitor(vector<Node const *> const &nodes,
 			   MonitorStat *stat)
 	: Monitor(nodes, stat),
-	  _sums(nchain(), vector<double>(stat->length(), 0.0)),
-	  _sum_of_squares(nchain(), vector<double>(stat->length(), 0.0))
+	  _S(nchain(), vector<double>(stat->length(), 0.0)),
+	  _SS(nchain(), vector<double>(stat->length(), 0.0))
     {
+	if (stat->weighted()) {
+	    _W = vector<vector<double>>(nchain(), vector<double>(stat->length(), 0.0));
+	    _D = vector<vector<double>>(nchain(), vector<double>(stat->length(), 0.0));
+	}
     }
 
     VarMonitor::~VarMonitor()
@@ -26,25 +30,60 @@ namespace jags {
     void VarMonitor::update(unsigned int chain)
     {
 	vector<double> value = stat()->value(chain);
-	vector<double> &S = _sums[chain];
-	vector<double> &SS = _sum_of_squares[chain];		
+	vector<double> &S = _S[chain]; // sum of values
+	vector<double> &SS = _SS[chain]; // sum of squares of residuals	
+
 	unsigned long n = niter();
-	
-	for (unsigned int i = 0; i < value.size(); ++i) {
-	    if (n > 1) {
-		double delta = value[i] - S[i]/(n-1);
-		SS[i] += (n-1) * delta * delta / n;
+	if (stat()->weighted()) {
+	    //Weighted
+	    vector<double> weight = stat()->weight(chain);
+	    vector<double> &W = _W[chain]; // sum of weights
+	    vector<double> &D = _D[chain]; // denominator
+	    
+	    for (unsigned int i = 0; i < value.size(); ++i) {
+		double shrink = W[i] / (W[i] + weight[i]);
+		if (n > 1) {
+		    double delta = value[i] - S[i]/W[i];
+		    SS[i] += weight[i] * delta * delta * shrink;
+		}
+		S[i] += weight[i] * value[i];
+		W[i] += weight[i];
+		/* Recursively defined expression for D = W - W2/W
+		   where W is the sum of weights and W2 is the sum
+		   of squares of the weights */
+		D[i] += (2 * weight[i] + D[i]) * shrink;
 	    }
-	    S[i] += value[i];
+	}
+	else {
+	    //Unweighted
+	    double shrink = static_cast<double>(n-1)/n;
+	    for (unsigned int i = 0; i < value.size(); ++i) {
+		if (n > 1) {
+		    double delta = value[i] - S[i]/(n-1);
+		    SS[i] += delta * delta * shrink;
+		}
+		S[i] += value[i];
+	    }
 	}
     }
 
     void VarMonitor::value(vector<double> &v, unsigned int chain) const
     {
 	unsigned long n = niter();
-	copy(_sum_of_squares[chain].begin(), _sum_of_squares[chain].end(), v.begin());
-	for (unsigned int i = 0; i < v.size(); ++i) {
-	    v[i] /= (n-1);
+	copy(_SS[chain].begin(), _SS[chain].end(), v.begin());
+	if (stat()->weighted()) {
+	    // Weighted: separate denominator for each element
+	    vector<double> const &D = _D[chain];
+	    for (unsigned int i = 0; i < v.size(); ++i) {
+		v[i] /= D[i];
+	    }
+	}
+	else {
+	    // Unweighted: common denominator based on sample size
+	    double d = niter() - 1;
+	    for (unsigned int i = 0; i < v.size(); ++i) {
+		v[i] /= d;
+	    }
 	}
     }
 
