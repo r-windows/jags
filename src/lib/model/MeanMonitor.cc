@@ -12,8 +12,12 @@ using std::vector;
 namespace jags {
 
     MeanMonitor::MeanMonitor(vector<Node const *> const &nodes, MonitorStat *stat)
-	: Monitor(nodes, stat), _sums(nchain(), vector<double>(stat->length(), 0.0))
+	: Monitor(nodes, stat),
+	  _value_sums(nchain(), vector<double>(stat->length(), 0.0))
     {
+	if (stat->weighted()) {
+	    _weight_sums = vector<vector<double>>(nchain(), vector<double>(stat->length(), 0.0));	    
+	}
     }
 
     MeanMonitor::~MeanMonitor()
@@ -23,17 +27,38 @@ namespace jags {
     void MeanMonitor::update(unsigned int ch)
     {
 	const vector<double> value = stat()->value(ch);
-	for (unsigned int i = 0; i < value.size(); ++i) {
-	    _sums[ch][i] += value[i];
+	if (stat()->weighted()) {
+	    //Weighted 
+	    const vector<double> wt = stat()->weight(ch);
+	    for (unsigned int i = 0; i < value.size(); ++i) {
+		_value_sums[ch][i] += wt[i] * value[i];
+		_weight_sums[ch][i] += wt[i];
+	    }
+	}
+	else {
+	    //Unweighted
+	    for (unsigned int i = 0; i < value.size(); ++i) {
+		_value_sums[ch][i] += value[i];
+	    }
 	}
     }
 
-    void MeanMonitor::value(vector<double> &v, unsigned int chain) const
+    void MeanMonitor::value(vector<double> &v, unsigned int ch) const
     {
-	unsigned long n = niter();
-	copy(_sums[chain].begin(), _sums[chain].end(), v.begin());
-	for (unsigned int i = 0; i < v.size(); ++i) {
-	    v[i] /= n;
+	copy(_value_sums[ch].begin(), _value_sums[ch].end(), v.begin());
+	if (stat()->weighted()) {
+	    //Weighted 
+	    for (unsigned int i = 0; i < v.size(); ++i) {
+		v[i] /= _weight_sums[ch][i];
+	    }
+
+	}
+	else {
+	    //Unweighted
+	    unsigned long n = niter();
+	    for (unsigned int i = 0; i < v.size(); ++i) {
+		v[i] /= n;
+	    }
 	}
     }
 

@@ -8,7 +8,7 @@ namespace jags {
 
     vector<double> MonitorStat::weight(unsigned int chain) const
     {
-	return vector<double>(length(), 1.0);
+	return vector<double>();
     }
 
 }

@@ -7,7 +7,6 @@
 
 #include <model/BUGSModel.h>
 #include <model/MeanMonitor.h>
-#include <model/WeightedMeanMonitor.h>
 #include <model/TraceMonitor.h>
 #include <graph/Graph.h>
 #include <graph/Node.h>
@@ -138,7 +137,7 @@ namespace jags {
 		    m = newPenaltyMonitor<MeanMonitor, PDStat>(nodes, rngs, 10);
 		}
 		else if (penalty_type == POPT) {
-		    m = newPenaltyMonitor<WeightedMeanMonitor, POPTStat>(nodes, rngs, 10);
+		    m = newPenaltyMonitor<MeanMonitor, POPTStat>(nodes, rngs, 10);
 		}
 	    }
 	    else if (summary == "trace") {
