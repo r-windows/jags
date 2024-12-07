@@ -11,79 +11,114 @@ using std::vector;
 
 namespace jags {
 
+    static unsigned long weight_size(MonitorStat *stat)
+    {
+	switch(stat->weighted()) {
+	case UNWEIGHTED:
+	    return 0;
+	case SCALAR_WEIGHT:
+	    return 1;
+	case VECTOR_WEIGHT:
+	    return stat->length();
+	}
+	
+    }
+
     VarMonitor::VarMonitor(vector<Node const *> const &nodes,
 			   MonitorStat *stat)
 	: Monitor(nodes, stat),
 	  _S(nchain(), vector<double>(stat->length(), 0.0)),
-	  _SS(nchain(), vector<double>(stat->length(), 0.0))
+	  _SS(nchain(), vector<double>(stat->length(), 0.0)),
+	  _W(nchain(), vector<double>(weight_size(stat), 0.0)),
+	  _WW(nchain(), vector<double>(weight_size(stat), 0.0))
     {
-	if (stat->weighted()) {
-	    _W = vector<vector<double>>(nchain(), vector<double>(stat->length(), 0.0));
-	    _D = vector<vector<double>>(nchain(), vector<double>(stat->length(), 0.0));
-	}
     }
 
     VarMonitor::~VarMonitor()
     {
     }
+
+    static void update_value(double value, double wt, double W, double &S, double &SS) {
+	if (W > 0) {
+	    double delta = value - S/W;
+	    SS += wt * delta * delta * W / (W + wt);
+	}
+	S += wt * value;
+    }
+    
+    static void update_weight(double wt, double &W, double &WW) {
+	W += wt;
+	WW += wt * wt;
+    }
+
+    static double denominator(double W, double WW) {
+	/*
+	  Denominator for weighted sum of squares with
+	  degree-of-freedom adjustment for estimating the weighted
+	  mean. This could be expressed as W*(1 - 1/ESS) where ESS is
+	  the effective sample size of the weights
+	*/
+	return W - WW/W;
+    }
     
     void VarMonitor::update(unsigned int chain)
     {
-	vector<double> value = stat()->value(chain);
-	vector<double> &S = _S[chain]; // sum of values
+	vector<double> &S = _S[chain];   // sum of values
 	vector<double> &SS = _SS[chain]; // sum of squares of residuals	
-
+	vector<double> &W = _W[chain];   // sum of weights
+	vector<double> &WW = _WW[chain]; // sum of squares of weights
+	
+	vector<double> value = stat()->value(chain);
+	vector<double> weight = stat()->weight(chain);
+	
 	unsigned long n = niter();
-	if (stat()->weighted()) {
-	    //Weighted
-	    vector<double> weight = stat()->weight(chain);
-	    vector<double> &W = _W[chain]; // sum of weights
-	    vector<double> &D = _D[chain]; // denominator
-	    
+	switch(stat()->weighted()) {
+	case UNWEIGHTED:
 	    for (unsigned int i = 0; i < value.size(); ++i) {
-		double shrink = W[i] / (W[i] + weight[i]);
-		if (n > 1) {
-		    double delta = value[i] - S[i]/W[i];
-		    SS[i] += weight[i] * delta * delta * shrink;
-		}
-		S[i] += weight[i] * value[i];
-		W[i] += weight[i];
-		/* Recursively defined expression for D = W - W2/W
-		   where W is the sum of weights and W2 is the sum
-		   of squares of the weights */
-		D[i] += (2 * weight[i] + D[i]) * shrink;
+		update_value(value[i], 1, n - 1, S[i], SS[i]);
 	    }
-	}
-	else {
-	    //Unweighted
-	    double shrink = static_cast<double>(n-1)/n;
+	    break;
+	case SCALAR_WEIGHT:
 	    for (unsigned int i = 0; i < value.size(); ++i) {
-		if (n > 1) {
-		    double delta = value[i] - S[i]/(n-1);
-		    SS[i] += delta * delta * shrink;
-		}
-		S[i] += value[i];
+		update_value(value[i], weight[0], W[0], S[i], SS[i]);
 	    }
+	    update_weight(weight[0], W[0], WW[0]);
+	    break;
+	case VECTOR_WEIGHT:
+	    for (unsigned int i = 0; i < value.size(); ++i) {
+		update_value(value[i], weight[i], W[i], S[i], SS[i]);
+		update_weight(weight[i], W[i], WW[i]);
+	    }
+	    break;
 	}
     }
 
-    void VarMonitor::value(vector<double> &v, unsigned int chain) const
+    void VarMonitor::value(vector<double> &v, unsigned int ch) const
     {
+	copy(_SS[ch].begin(), _SS[ch].end(), v.begin());
+
+	double d = 0;
 	unsigned long n = niter();
-	copy(_SS[chain].begin(), _SS[chain].end(), v.begin());
-	if (stat()->weighted()) {
-	    // Weighted: separate denominator for each element
-	    vector<double> const &D = _D[chain];
-	    for (unsigned int i = 0; i < v.size(); ++i) {
-		v[i] /= D[i];
-	    }
-	}
-	else {
-	    // Unweighted: common denominator based on sample size
-	    double d = niter() - 1;
+	
+	switch(stat()->weighted()) {
+	case UNWEIGHTED:
+	    d = denominator(n, n);
 	    for (unsigned int i = 0; i < v.size(); ++i) {
 		v[i] /= d;
 	    }
+	    break;
+	case SCALAR_WEIGHT:
+	    d = denominator(_W[ch][0], _WW[ch][0]);
+	    for (unsigned int i = 0; i < v.size(); ++i) {
+		v[i] /= d;
+	    }
+	    break;
+	case VECTOR_WEIGHT:
+	    for (unsigned int i = 0; i < v.size(); ++i) {
+		d = denominator(_W[ch][i], _WW[ch][i]);
+		v[i] /= d;
+	    }
+	    break;
 	}
     }
 

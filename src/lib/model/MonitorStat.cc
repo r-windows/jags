@@ -11,9 +11,9 @@ namespace jags {
 	return vector<double>();
     }
 
-    bool MonitorStat::weighted() const
+    WeightType MonitorStat::weighted() const
     {
-	return false;
+	return UNWEIGHTED;
     }
 
 }

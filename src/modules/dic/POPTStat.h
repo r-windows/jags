@@ -24,6 +24,7 @@ namespace jags {
 	    unsigned long length() const override;
 	    std::vector<double> value(unsigned int chain) const override;
 	    std::vector<double> weight(unsigned int chain) const override;
+	    WeightType weighted() const override;
 	};
 
     }

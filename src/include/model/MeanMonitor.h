@@ -11,8 +11,8 @@ namespace jags {
      * @short Stores running mean of a given stat
      */
     class MeanMonitor : public Monitor {
-	std::vector<std::vector<double>> _value_sums;
-	std::vector<std::vector<double>> _weight_sums;
+	std::vector<std::vector<double>> _S;
+	std::vector<std::vector<double>> _W;
     public:
 	MeanMonitor(std::vector<Node const *> const &nodes, MonitorStat *stat);
 	~MeanMonitor();

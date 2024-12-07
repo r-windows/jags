@@ -50,6 +50,11 @@ namespace jags {
 	    return v;
 	}
 
+	WeightType POPTStat::weighted() const
+	{
+	    return VECTOR_WEIGHT;
+	}
+	
 	vector<double> POPTStat::weight(unsigned int ch) const
 	{
 	    unsigned long n = _nodes.size();
