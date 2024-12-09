@@ -86,8 +86,7 @@ SArray Monitor::dump(bool flat) const
     vector<double> v(nvalue * nchain);
     vector<double>::iterator p = v.begin();
     for (unsigned int ch = 0; ch < nchain; ++ch) {
-	vector<double> x(this->size());
-	this->value(x, ch);
+	const vector<double> x = this->value(ch);
 	p = copy(x.begin(), x.end(), p);
     }
 

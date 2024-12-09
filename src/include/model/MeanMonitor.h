@@ -17,7 +17,7 @@ namespace jags {
 	MeanMonitor(std::vector<Node const *> const &nodes, MonitorStat *stat);
 	~MeanMonitor();
 	void update(unsigned int chain) override;
-	void value(std::vector<double> &v, unsigned int chain) const override;
+	std::vector<double> value(unsigned int chain) const override;
 	bool poolChains() const override;
 	bool poolIterations() const override;
     };

@@ -62,10 +62,9 @@ namespace jags {
 	}
     }
 
-    void MeanMonitor::value(vector<double> &v, unsigned int ch) const
+    vector<double>  MeanMonitor::value(unsigned int ch) const
     {
-	copy(_S[ch].begin(), _S[ch].end(), v.begin());
-
+	vector<double> v = _S[ch];
 	vector<double> const &W = _W[ch];
 	unsigned long n = niter();
 	    
@@ -86,6 +85,8 @@ namespace jags {
 	    }
 	    break;
 	}
+
+	return v;
     }
 
     bool MeanMonitor::poolChains() const

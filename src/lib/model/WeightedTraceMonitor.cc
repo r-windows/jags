@@ -19,8 +19,8 @@ namespace jags {
     
     void WeightedTraceMonitor::update(unsigned int ch)
     {
-	vector<double> value = stat()->value(ch);
-	vector<double> wt = stat()->weight(ch);
+	const vector<double> value = stat()->value(ch);
+	const vector<double> wt = stat()->weight(ch);
 	
 	for (unsigned int i = 0; i < value.size(); ++i) {
 	    _values[ch].push_back(wt[i] * value[i]);
@@ -28,7 +28,7 @@ namespace jags {
 	}
     }
 
-    void WeightedTraceMonitor::value(vector<double> &v, unsigned int ch) const
+    vector<double> WeightedTraceMonitor::value(unsigned int ch) const
     {
 	unsigned long n = niter();
 	unsigned long m = nchain();
@@ -37,13 +37,16 @@ namespace jags {
 	for (unsigned int j = 0; j < m; ++j) {
 	    weight_means[j] = _weight_sums[ch][j]/n;
 	}
+
+	vector<double> v = _values[ch];
 	unsigned long k = 0;
 	for(unsigned long i = 0; i < n; ++i) {
 	    for (unsigned long j = 0; j < m; ++j) {
-		v[k] = _values[ch][k] / weight_means[j];
+		v[k] /= weight_means[j];
 		++k;
 	    }
 	}
+	return v;
     }
     
     bool WeightedTraceMonitor::poolChains() const

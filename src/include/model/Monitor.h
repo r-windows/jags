@@ -64,14 +64,9 @@ public:
      */
     virtual bool poolIterations() const = 0;
     /**
-     * Gets the vector of monitored values for the given chain
-     *
-     * @param value Vector of length given by Monitor#size to which the monitor value
-     * is written.
-     * @param chain Chain number to interrogate.
-     *       
+     * Returns the vector of monitored values for the given chain.
      */
-    virtual void value(std::vector<double> &value, unsigned int chain) const = 0;
+    virtual std::vector<double> value(unsigned int chain) const = 0;
     /**
      * Returns the current size of the value vector. This is used to determine the
      * appropriate size of the value vector to pass to Monitor#value.

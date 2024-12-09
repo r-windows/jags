@@ -22,13 +22,13 @@ namespace jags {
     
     void TraceMonitor::update(unsigned int chain)
     {
-	vector<double> v = stat()->value(chain);
+	const vector<double> v = stat()->value(chain);
 	_values[chain].insert(_values[chain].end(), v.begin(), v.end());
     }
 
-    void TraceMonitor::value(vector<double> &v, unsigned int chain) const
+    vector<double> TraceMonitor::value(unsigned int chain) const
     {
-	copy(_values[chain].begin(), _values[chain].end(), v.begin());
+	return _values[chain];
     }
     
     bool TraceMonitor::poolChains() const

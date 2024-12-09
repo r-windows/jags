@@ -68,8 +68,8 @@ namespace jags {
 	vector<double> &W = _W[chain];   // sum of weights
 	vector<double> &WW = _WW[chain]; // sum of squares of weights
 	
-	vector<double> value = stat()->value(chain);
-	vector<double> weight = stat()->weight(chain);
+	const vector<double> value = stat()->value(chain);
+	const vector<double> weight = stat()->weight(chain);
 	
 	unsigned long n = niter();
 	switch(stat()->weighted()) {
@@ -93,9 +93,9 @@ namespace jags {
 	}
     }
 
-    void VarMonitor::value(vector<double> &v, unsigned int ch) const
+    vector<double> VarMonitor::value(unsigned int ch) const
     {
-	copy(_SS[ch].begin(), _SS[ch].end(), v.begin());
+	vector<double> v = _SS[ch];
 
 	double d = 0;
 	unsigned long n = niter();
@@ -120,6 +120,7 @@ namespace jags {
 	    }
 	    break;
 	}
+	return v;
     }
 
     bool VarMonitor::poolChains() const
