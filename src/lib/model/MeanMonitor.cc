@@ -11,7 +11,7 @@ using std::vector;
 
 namespace jags {
 
-    static unsigned long weight_size(MonitorStat *stat)
+    static unsigned long weight_size(MonitorStat const *stat)
     {
 	unsigned long s = 0;
 	switch(stat->weighted()) {

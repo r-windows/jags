@@ -12,6 +12,7 @@ namespace jags {
      */
     class VarMonitor : public Monitor {
 	std::vector<std::vector<double>> _S, _SS, _W, _WW;
+	std::vector<bool> _missing;
     public:
 	VarMonitor(std::vector<Node const *> const &nodes,
 		   MonitorStat *stat);

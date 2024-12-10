@@ -11,17 +11,20 @@ using std::vector;
 
 namespace jags {
 
-    static unsigned long weight_size(MonitorStat *stat)
+    static unsigned long weight_size(MonitorStat const *stat)
     {
+	unsigned long s = 0;
 	switch(stat->weighted()) {
 	case UNWEIGHTED:
-	    return 0;
+	    break;
 	case SCALAR_WEIGHT:
-	    return 1;
+	    s = 1;
+	    break;
 	case VECTOR_WEIGHT:
-	    return stat->length();
+	    s = stat->length();
+	    break;
 	}
-	
+	return s;
     }
 
     VarMonitor::VarMonitor(vector<Node const *> const &nodes,
@@ -30,7 +33,9 @@ namespace jags {
 	  _S(nchain(), vector<double>(stat->length(), 0.0)),
 	  _SS(nchain(), vector<double>(stat->length(), 0.0)),
 	  _W(nchain(), vector<double>(weight_size(stat), 0.0)),
-	  _WW(nchain(), vector<double>(weight_size(stat), 0.0))
+	  _WW(nchain(), vector<double>(weight_size(stat), 0.0)),
+	  _missing(stat->length(), false)
+	  
     {
     }
 
@@ -70,56 +75,84 @@ namespace jags {
 	
 	const vector<double> value = stat()->value(chain);
 	const vector<double> weight = stat()->weight(chain);
-	
+
 	unsigned long n = niter();
-	switch(stat()->weighted()) {
-	case UNWEIGHTED:
-	    for (unsigned int i = 0; i < value.size(); ++i) {
+	for (unsigned int i = 0; i < value.size(); ++i) {
+	    if (_missing[i]) {
+		continue;
+	    }
+	    if (jags_isna(value[i])) {
+		_missing[i] = true;
+		continue;
+	    }
+	    switch(stat()->weighted()) {
+	    case UNWEIGHTED:
 		update_value(value[i], 1, n - 1, S[i], SS[i]);
+		break;
+	    case SCALAR_WEIGHT:
+		update_value(value[i], weight[0], W[0], S[i], SS[i]);
+		break;
+	    case VECTOR_WEIGHT:
+		update_value(value[i], weight[i], W[i], S[i], SS[i]);
 	    }
 	    break;
+	}
+
+	switch(stat()->weighted()) {
+	case UNWEIGHTED:
+	    break;
 	case SCALAR_WEIGHT:
-	    for (unsigned int i = 0; i < value.size(); ++i) {
-		update_value(value[i], weight[0], W[0], S[i], SS[i]);
-	    }
 	    update_weight(weight[0], W[0], WW[0]);
 	    break;
 	case VECTOR_WEIGHT:
 	    for (unsigned int i = 0; i < value.size(); ++i) {
-		update_value(value[i], weight[i], W[i], S[i], SS[i]);
-		update_weight(weight[i], W[i], WW[i]);
+		if (!_missing[i]) {
+		    update_weight(weight[i], W[i], WW[i]);
+		}
 	    }
 	    break;
 	}
+
     }
 
     vector<double> VarMonitor::value(unsigned int ch) const
     {
 	vector<double> v = _SS[ch];
-
-	double d = 0;
 	unsigned long n = niter();
-	
-	switch(stat()->weighted()) {
+
+	vector<double> d(weight_size(stat()));
+	switch (stat()->weighted()) {
 	case UNWEIGHTED:
-	    d = denominator(n, n);
-	    for (unsigned int i = 0; i < v.size(); ++i) {
-		v[i] /= d;
-	    }
+	    d[0] = denominator(n, n);
 	    break;
 	case SCALAR_WEIGHT:
-	    d = denominator(_W[ch][0], _WW[ch][0]);
-	    for (unsigned int i = 0; i < v.size(); ++i) {
-		v[i] /= d;
-	    }
+	    d[0] = denominator(_W[ch][0], _WW[ch][0]);
 	    break;
 	case VECTOR_WEIGHT:
-	    for (unsigned int i = 0; i < v.size(); ++i) {
-		d = denominator(_W[ch][i], _WW[ch][i]);
-		v[i] /= d;
+	    for (unsigned long i = 0; i < v.size(); ++i) {
+		if (_missing[i]) {
+		    d[i] = denominator(_W[ch][i], _WW[ch][i]);
+		}
 	    }
 	    break;
 	}
+	
+	for (unsigned long i = 0; i < v.size(); ++i) {
+	    if (_missing[i]) {
+		v[i] = JAGS_NA;
+	    }
+	    else {
+		switch(stat()->weighted()) {
+		case UNWEIGHTED:
+		case SCALAR_WEIGHT:
+		    v[i] /= d[0];
+		    break;
+		case VECTOR_WEIGHT:
+		    v[i] /= d[i];
+		}
+	    }
+	}
+
 	return v;
     }
 
