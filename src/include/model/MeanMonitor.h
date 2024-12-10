@@ -13,6 +13,7 @@ namespace jags {
     class MeanMonitor : public Monitor {
 	std::vector<std::vector<double>> _S;
 	std::vector<std::vector<double>> _W;
+	std::vector<bool> _missing;
     public:
 	MeanMonitor(std::vector<Node const *> const &nodes, MonitorStat *stat);
 	~MeanMonitor();
