@@ -29,7 +29,7 @@ namespace jags {
 
     VarMonitor::VarMonitor(vector<Node const *> const &nodes,
 			   MonitorStat *stat)
-	: Monitor(nodes, stat),
+	: Monitor(nodes), _stat(stat),
 	  _S(nchain(), vector<double>(stat->length(), 0.0)),
 	  _SS(nchain(), vector<double>(stat->length(), 0.0)),
 	  _W(nchain(), vector<double>(weight_size(stat), 0.0)),
@@ -41,6 +41,7 @@ namespace jags {
 
     VarMonitor::~VarMonitor()
     {
+	delete _stat;
     }
 
     static void update_value(double value, double wt, double W, double &S, double &SS) {
@@ -73,8 +74,8 @@ namespace jags {
 	vector<double> &W = _W[chain];   // sum of weights
 	vector<double> &WW = _WW[chain]; // sum of squares of weights
 	
-	const vector<double> value = stat()->value(chain);
-	const vector<double> weight = stat()->weight(chain);
+	const vector<double> value = _stat->value(chain);
+	const vector<double> weight = _stat->weight(chain);
 
 	unsigned long n = niter();
 	for (unsigned int i = 0; i < value.size(); ++i) {
@@ -85,7 +86,7 @@ namespace jags {
 		_missing[i] = true;
 		continue;
 	    }
-	    switch(stat()->weighted()) {
+	    switch(_stat->weighted()) {
 	    case UNWEIGHTED:
 		update_value(value[i], 1, n - 1, S[i], SS[i]);
 		break;
@@ -98,7 +99,7 @@ namespace jags {
 	    break;
 	}
 
-	switch(stat()->weighted()) {
+	switch(_stat->weighted()) {
 	case UNWEIGHTED:
 	    break;
 	case SCALAR_WEIGHT:
@@ -120,8 +121,8 @@ namespace jags {
 	vector<double> v = _SS[ch];
 	unsigned long n = niter();
 
-	vector<double> d(weight_size(stat()));
-	switch (stat()->weighted()) {
+	vector<double> d(weight_size(_stat));
+	switch (_stat->weighted()) {
 	case UNWEIGHTED:
 	    d[0] = denominator(n, n);
 	    break;
@@ -142,7 +143,7 @@ namespace jags {
 		v[i] = JAGS_NA;
 	    }
 	    else {
-		switch(stat()->weighted()) {
+		switch(_stat->weighted()) {
 		case UNWEIGHTED:
 		case SCALAR_WEIGHT:
 		    v[i] /= d[0];
@@ -154,6 +155,16 @@ namespace jags {
 	}
 
 	return v;
+    }
+    
+    unsigned long VarMonitor::length() const
+    {
+	return _stat->length();
+    }
+    
+    vector<unsigned long> VarMonitor::dim() const
+    {
+	return _stat->dim();
     }
 
     bool VarMonitor::poolChains() const

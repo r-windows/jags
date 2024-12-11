@@ -1,7 +1,5 @@
 #include <config.h>
 #include <model/Monitor.h>
-#include <model/MonitorStat.h>
-#include <graph/StochasticNode.h>
 #include <graph/Node.h>
 #include <util/dim.h>
 
@@ -14,14 +12,13 @@ using std::copy;
 
 namespace jags {
 
-    Monitor::Monitor(vector<Node const *> const &nodes, MonitorStat *stat)
-	: _nodes(nodes), _stat(stat), _nchain(countChains(nodes)), _niter(0UL)
+    Monitor::Monitor(vector<Node const *> const &nodes)
+	: _nodes(nodes), _nchain(countChains(nodes)), _niter(0UL)
     {
     }
 
     Monitor::~Monitor()
     {
-	delete _stat;
     }
 
     void Monitor::update()
@@ -52,21 +49,6 @@ namespace jags {
 	return _nchain;
     }
 
-    unsigned long Monitor::size() const
-    {
-	if (poolIterations()) {
-	    return _stat->length();
-	}
-	else {
-	    return _stat->length() * niter();
-	}
-    }
-
-    MonitorStat const *Monitor::stat() const
-    {
-	return _stat;
-    }
-    
     //FIXME: These should be in monitorinfo
     vector<string> const &Monitor::elementNames() const
     {
@@ -81,27 +63,23 @@ namespace jags {
 SArray Monitor::dump(bool flat) const
 {
     unsigned int nchain = poolChains() ? 1 : _nchain;
-    unsigned long nvalue = this->size();
+    unsigned int niter = poolIterations() ? 1 : _niter;
+    unsigned long nvalue = this->length();
     
-    vector<double> v(nvalue * nchain);
+    vector<double> v(nvalue * niter * nchain);
     vector<double>::iterator p = v.begin();
     for (unsigned int ch = 0; ch < nchain; ++ch) {
 	const vector<double> x = this->value(ch);
 	p = copy(x.begin(), x.end(), p);
     }
 
-    vector<unsigned long> vdim = _stat->dim();
-    unsigned long vlen = _stat->length();
-    if (nvalue % vlen != 0) {
-	throw logic_error("Inconsistent dimensions in Monitor");
-    }
-    unsigned long niter = nvalue / vlen;
     if (poolIterations() && niter != 1) {
 	throw logic_error("Invalid number of iterations in Monitor");
     }
 
+    vector<unsigned long> vdim = dim();
     if (flat) {
-	vdim = vector<unsigned long>(1, vlen);
+	vdim = vector<unsigned long>(1, nvalue);
     }
 	
     vector<string> names(vdim.size(), "");

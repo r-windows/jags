@@ -12,7 +12,7 @@ namespace jags {
 
     TraceMonitor::TraceMonitor(vector<Node const *> const &nodes,
 			       MonitorStat *stat)
-	: Monitor(nodes, stat), _values(nchain())
+	: Monitor(nodes), _stat(stat), _values(nchain())
     {
     }
 
@@ -22,7 +22,7 @@ namespace jags {
     
     void TraceMonitor::update(unsigned int chain)
     {
-	const vector<double> v = stat()->value(chain);
+	const vector<double> v = _stat->value(chain);
 	_values[chain].insert(_values[chain].end(), v.begin(), v.end());
     }
 
@@ -30,7 +30,17 @@ namespace jags {
     {
 	return _values[chain];
     }
-    
+
+    unsigned long TraceMonitor::length() const
+    {
+	return _stat->length();
+    }
+
+    vector<unsigned long> TraceMonitor::dim() const
+    {
+	return _stat->dim();
+    }
+
     bool TraceMonitor::poolChains() const
     {
 	return false;

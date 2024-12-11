@@ -10,7 +10,6 @@
 namespace jags {
 
     class Node;
-    class MonitorStat;
     
 /**
  * @short Analyze sampled values 
@@ -20,12 +19,11 @@ namespace jags {
  */
 class Monitor {
     std::vector<Node const *> _nodes;
-    MonitorStat *_stat;
     unsigned int _nchain;
     unsigned int _niter;
     std::vector<std::string> _elt_names;
 public:
-    Monitor(std::vector<Node const *> const &nodes, MonitorStat *stat);
+    Monitor(std::vector<Node const *> const &nodes);
     virtual ~Monitor();
     /**
      * Updates the monitor. 
@@ -68,14 +66,15 @@ public:
      */
     virtual std::vector<double> value(unsigned int chain) const = 0;
     /**
-     * Returns the current size of the value vector. This is used to determine the
-     * appropriate size of the value vector to pass to Monitor#value.
+     * Returns the length of the monitored value corresponding to a
+     * single iteration in a single chain.
      */
-    unsigned long size() const;
+    virtual unsigned long length() const = 0;
     /**
-     * Returns a pointer to the stat object used to construct the Monitor.
+     * Returns the dimensions of the value corresponding to a single
+     * iteration in a single chain.
      */
-    MonitorStat const *stat() const;
+    virtual std::vector<unsigned long> dim() const = 0;
     /**
      * Dumps the monitored values to an SArray. 
      *

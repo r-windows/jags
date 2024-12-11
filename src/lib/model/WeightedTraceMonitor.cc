@@ -12,15 +12,20 @@ using std::string;
 namespace jags {
 
     WeightedTraceMonitor::WeightedTraceMonitor(vector<Node const *> const &nodes, MonitorStat *stat)
-	: Monitor(nodes, stat), _values(nchain()),
+	: Monitor(nodes), _stat(stat), _values(nchain()),
 	  _weight_sums(nchain(), vector<double>(stat->length(), 0.0))
     {
+    }
+
+    WeightedTraceMonitor::~WeightedTraceMonitor()
+    {
+	delete _stat;
     }
     
     void WeightedTraceMonitor::update(unsigned int ch)
     {
-	const vector<double> value = stat()->value(ch);
-	const vector<double> wt = stat()->weight(ch);
+	const vector<double> value = _stat->value(ch);
+	const vector<double> wt = _stat->weight(ch);
 	
 	for (unsigned int i = 0; i < value.size(); ++i) {
 	    _values[ch].push_back(wt[i] * value[i]);

@@ -52,7 +52,7 @@ static void writeDouble(double x, ostream &out)
 	*/
 
 	Monitor const *monitor = control.monitor();
-	unsigned long nvalue = monitor->stat()->length();
+	unsigned long nvalue = monitor->length();
 	
 	vector<bool> ans(nvalue, false);
 	for (unsigned int ch = 0; ch < nchain; ++ch) {
@@ -90,7 +90,7 @@ static void WriteIndex(MonitorControl const &control,
 	return;
     }
 
-    unsigned long nvalue = monitor->stat()->length();
+    unsigned long nvalue = monitor->length();
     vector<string> const &enames = monitor->elementNames(); //FIXME: elementNames should be part of MonitorControl
     for (unsigned int v = 0; v < nvalue; ++v) {
 	if (missing[v]) continue;
@@ -111,7 +111,7 @@ static void WriteOutput(MonitorControl const &control, unsigned int chain,
     }
 
         
-    unsigned long nvalue = monitor->stat()->length();
+    unsigned long nvalue = monitor->length();
     const vector<double> y = monitor->value(chain);
     for (unsigned int v = 0; v < nvalue; ++v) {
 	if (missing[v]) continue;
@@ -137,7 +137,7 @@ static void WriteTable(MonitorControl const &control, unsigned int chain,
     const vector<double> y = monitor->value(chain);
     vector<string> const &enames = monitor->elementNames(); //FIXME: elementNames should be part of MonitorControl, not Monitor
 
-    unsigned long nvalue = monitor->stat()->length();
+    unsigned long nvalue = monitor->length();
     for (unsigned int v = 0; v < nvalue; ++v) {
 	if (missing[v]) continue;
 	index << enames[v] << " ";

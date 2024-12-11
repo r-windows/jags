@@ -11,12 +11,15 @@ namespace jags {
      * @short Stores sampled values for a given stat
      */
     class TraceMonitor : public Monitor {
+	MonitorStat * _stat;
 	std::vector<std::vector<double>> _values; // sampled values
     public:
 	TraceMonitor(std::vector<Node const *> const &nodes, MonitorStat *stat);
 	~TraceMonitor();
 	void update(unsigned int chain) override;
 	std::vector<double> value(unsigned int chain) const override;
+	unsigned long length() const override;
+	std::vector<unsigned long> dim() const override;
 	bool poolChains() const override;
 	bool poolIterations() const override;
     };
