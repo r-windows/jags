@@ -2,14 +2,17 @@
 #include <graph/Node.h>
 #include <util/nainf.h>
 
-#include <algorithm>
+#include <model/CovMonitor.h>
+#include <model/MonitorStat.h>
 
-//#include <model/CovMonitor.h>
-//#include <model/MonitorStat.h>
+#include <stdexcept>
 
 using std::vector;
+using std::logic_error;
 
 namespace jags {
+
+    class MonitorStat;
     
     CovMonitor::CovMonitor(vector<Node const *> const &nodes,
 			   MonitorStat *stat)
@@ -62,25 +65,23 @@ namespace jags {
     
     void CovMonitor::update(unsigned int chain)
     {
-	vector<double> &S = _S[chain];   // sum of values
+	vector<double> &S  =  _S[chain]; // sum of values
 	vector<double> &SS = _SS[chain]; // sum of squares of residuals	
-	vector &W = _W[chain];   // sum of weights
-	vector &WW = _WW[chain]; // sum of squares of weights
 	
-	vector<double> value = stat()->value(chain);
-	vector<double> weight = stat()->weight(chain);
+	const vector<double> value = _stat->value(chain);
+	const vector<double> weight = _stat->weight(chain);
 	
 	unsigned long n = niter();
-	switch(stat()->weighted()) {
+	switch(_stat->weighted()) {
 	case UNWEIGHTED:
-	    update_value(value, 1, n - 1, S, SS);
+	    update_value(value, _stat->missing(), 1, n - 1, S, SS);
 	    break;
 	case SCALAR_WEIGHT:
-	    update_value(value, weight[0], W, S, SS);
-	    update_weight(weight[0], W, WW);
+	    update_value(value, _stat->missing(), weight[0], _W[chain], S, SS);
+	    update_weight(weight[0], _W[chain], _WW[chain]);
 	    break;
 	case VECTOR_WEIGHT:
-	    break;
+	    break; //-Wswitch
 	}
     }
 
@@ -91,7 +92,7 @@ namespace jags {
 	double d = 0;
 	unsigned long n = niter();
 	
-	switch(stat()->weighted()) {
+	switch(_stat->weighted()) {
 	case UNWEIGHTED:
 	    d = denominator(n, n);
 	    break;
@@ -99,35 +100,35 @@ namespace jags {
 	    d = denominator(_W[ch], _WW[ch]);
 	    break;
 	case VECTOR_WEIGHT:
-	    break;
+	    break; //-Wswitch
 	}
 
 	unsigned long m = _stat->length();
 	for (unsigned long i = 0; i < m; ++i) {
 	    for (unsigned long j = 0; j < m; ++j) {
-		if (_missing[j] || _missing[j]) {
-		    V[p*i + j] = JAGS_NA;
+		if (_missing[i] || _missing[j]) {
+		    V[m*i + j] = JAGS_NA;
 		}
 		else {
-		    V[p*i + j] /= d;
+		    V[m*i + j] /= d;
 		}
 	    }
 	}
 
-	return v;
+	return V;
     }
 
     unsigned long CovMonitor::length() const
     {
-	unsigned long = _stat->length();
-	return long * long;
+	unsigned long length = _stat->length();
+	return length  * length;
     }
     
     vector<unsigned long> CovMonitor::dim() const
     {
 	vector<unsigned long> d = _stat->dim();
 	vector<unsigned long> dim = d;
-	append(dim.end(), d.begin(), d.end());
+	dim.insert(dim.end(), d.begin(), d.end());
 	return dim;
     }
 

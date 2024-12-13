@@ -3,8 +3,6 @@
 
 #include <model/Monitor.h>
 
-#include <vector>
-
 namespace jags {
 
     class MonitorStat;
@@ -12,7 +10,7 @@ namespace jags {
     /**
      * @short Stores running variance of a given stat
      */
-    class VarMonitor : public Monitor {
+    class CovMonitor : public Monitor {
 	MonitorStat *_stat;
 	std::vector<std::vector<double>> _S, _SS;
 	std::vector<double> _W, _WW;
@@ -23,7 +21,8 @@ namespace jags {
 	~CovMonitor();
 	void update(unsigned int chain) override;
 	std::vector<double> value(unsigned int chain) const override;
-	vector<unsigned long> dim() const override;
+	std::vector<unsigned long> dim() const override;
+	unsigned long length() const override;
 	bool poolChains() const override;
 	bool poolIterations() const override;
     };
