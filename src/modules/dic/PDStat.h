@@ -3,8 +3,6 @@
 
 #include <model/MonitorStat.h>
 
-#include <vector>
-
 namespace jags {
 
     class RNG;
@@ -20,9 +18,7 @@ namespace jags {
 	    PDStat(std::vector<Node const *> const &nodes,
 		   std::vector<RNG *> const &rngs,
 		   unsigned int nrep);
-	    std::vector<unsigned long> dim() const override;
 	    std::vector<double> value(unsigned int chain) const override;
-	    unsigned long length() const override;
 	};
 	
     }

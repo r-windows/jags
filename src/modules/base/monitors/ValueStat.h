@@ -16,9 +16,7 @@ namespace jags {
 	    NodeArraySubset _subset;
 	public:
 	    ValueStat(NodeArraySubset const &subset);
-	    std::vector<unsigned long> dim() const override;
 	    std::vector<double> value(unsigned int chain) const override;
-	    unsigned long length() const override;
 	};
 	
     }

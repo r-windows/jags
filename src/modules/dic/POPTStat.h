@@ -20,8 +20,6 @@ namespace jags {
 	    POPTStat(std::vector<Node const *> const &nodes,
 		     std::vector<RNG *> const &rngs,
 		     unsigned int nrep);
-	    std::vector<unsigned long> dim() const override;
-	    unsigned long length() const override;
 	    std::vector<double> value(unsigned int chain) const override;
 	    std::vector<double> weight(unsigned int chain) const override;
 	    WeightType weighted() const override;

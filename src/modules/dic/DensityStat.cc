@@ -22,7 +22,7 @@ namespace jags {
 
 	DensityStat::DensityStat(vector<Node const *> const &nodes, 
 				 DensityType density_type)
-	    : MonitorStat(), _nodes(nodes), _density_type(density_type)
+	    : MonitorStat(nodes.size()), _nodes(nodes), _density_type(density_type)
 	{
 	    // Sanity check that input arguments match to this function:
 	
@@ -66,16 +66,6 @@ namespace jags {
 	    }
 	    return value;
 	}
-	
-	vector<unsigned long> DensityStat::dim() const
-	{
-	    return vector<unsigned long>(1, _nodes.size());
-	}
-
-	unsigned long DensityStat::length() const
-	{
-	    return _nodes.size();
-	}
-	
+		
     }
 }

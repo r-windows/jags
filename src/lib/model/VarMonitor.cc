@@ -34,7 +34,7 @@ namespace jags {
 	  _SS(nchain(), vector<double>(stat->length(), 0.0)),
 	  _W(nchain(), vector<double>(weight_size(stat), 0.0)),
 	  _WW(nchain(), vector<double>(weight_size(stat), 0.0)),
-	  _missing(stat->length(), false)
+	  _missing(stat->missing())
 	  
     {
     }
@@ -79,13 +79,7 @@ namespace jags {
 
 	unsigned long n = niter();
 	for (unsigned int i = 0; i < value.size(); ++i) {
-	    if (_missing[i]) {
-		continue;
-	    }
-	    if (jags_isna(value[i])) {
-		_missing[i] = true;
-		continue;
-	    }
+	    if (_missing[i]) continue;
 	    switch(_stat->weighted()) {
 	    case UNWEIGHTED:
 		update_value(value[i], 1, n - 1, S[i], SS[i]);

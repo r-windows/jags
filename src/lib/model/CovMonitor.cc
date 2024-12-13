@@ -18,7 +18,7 @@ namespace jags {
 	  _SS(nchain(), vector<double>(stat->length() * stat->length(), 0.0)),
 	  _W(nchain(), 0.0),
 	  _WW(nchain(), 0.0),
-	  _missing(stat->length(), false)
+	  _missing(stat->missing())
     {
 	if (stat->weighted() == VECTOR_WEIGHT) {
 	    throw logic_error("Cannot construct CovMonitor with vector weights");
@@ -28,14 +28,6 @@ namespace jags {
     CovMonitor::~CovMonitor()
     {
 	delete _stat;
-    }
-
-    static void update_missing(vector<double> const &value, vector<bool> &missing)
-    {
-	for (unsigned long i = 0; i < value.size(); ++i) {
-	    if (!missing[i] && jags_isna(value[i]))
-		missing[i] = true;
-	}
     }
 
     static void update_value(vector<double> const &value, vector<bool> const &missing, double wt, double W, vector<double> &S, vector<double> &SS)
@@ -52,6 +44,9 @@ namespace jags {
 		    SS[p*i + j] += wt * delta_i * delta_j * W / (W + wt);
 		}
 	    }
+	}
+
+	for (unsigned long i = 0; i < p; ++i) {
 	    S[i] += wt * value[i];
 	}
     }
@@ -74,7 +69,6 @@ namespace jags {
 	
 	vector<double> value = stat()->value(chain);
 	vector<double> weight = stat()->weight(chain);
-	update_missing(value, _missing);
 	
 	unsigned long n = niter();
 	switch(stat()->weighted()) {

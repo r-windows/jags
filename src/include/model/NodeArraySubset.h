@@ -20,6 +20,7 @@ namespace jags {
 	unsigned int _nchain;
 	std::vector<Node *> _node_pointers;
 	std::vector<unsigned long> _offsets;
+	std::vector<bool> _missing;
       public:
 	/**
 	 * Constructor. Creates a NodeArraySubset from a NodeArray
@@ -33,6 +34,13 @@ namespace jags {
 	 * @param chain Index number of chain to read.
 	 */
 	std::vector<double> value(unsigned int chain) const;
+	/**
+	 * Returns a boolean vector indicating which elements of the value
+	 * vector are missing (represented by the special value JAGS_NA).
+	 * These elements correspond to parts of the array subset that are
+	 * not filled with Nodes.
+	 */
+	std::vector<bool> missing() const;
 	/**
 	 * Returns the dimension of the subset
 	 */

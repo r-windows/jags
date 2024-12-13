@@ -9,18 +9,8 @@ namespace jags {
     namespace base {
 
 	ValueStat::ValueStat(NodeArraySubset const &subset)
-	    : MonitorStat(), _subset(subset)
+	    : MonitorStat(subset.dim(), subset.missing()), _subset(subset)
 	{
-	}
-
-	unsigned long ValueStat::length() const
-	{
-	    return _subset.length();
-	}
-	
-	vector<unsigned long> ValueStat::dim() const
-	{
-	    return _subset.dim();
 	}
 
 	vector<double> ValueStat::value(unsigned int ch) const

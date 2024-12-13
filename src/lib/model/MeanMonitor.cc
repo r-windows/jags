@@ -32,7 +32,7 @@ namespace jags {
 	  _stat(stat),
 	  _S(nchain(), vector<double>(stat->length(), 0.0)),
 	  _W(nchain(), vector<double>(weight_size(stat), 0.0)),
-	  _missing(stat->length(), false)
+	  _missing(stat->missing())
     {
     }
 
@@ -50,13 +50,7 @@ namespace jags {
 	const vector<double> weight = _stat->weight(ch);
 	
 	for (unsigned int i = 0; i < value.size(); ++i) {
-	    if (_missing[i]) {
-		continue;
-	    }
-	    if (jags_isna(value[i])) {
-		_missing[i] = true;
-		continue;
-	    }
+	    if (_missing[i]) continue;
 	    switch(_stat->weighted()) {
 	    case UNWEIGHTED:
 		S[i] += value[i];

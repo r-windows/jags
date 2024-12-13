@@ -19,7 +19,7 @@ namespace jags {
 	
 	DensityTotalStat::DensityTotalStat(vector<Node const *> const &nodes, 
 					   DensityType const density_type)
-	    : MonitorStat(), _nodes(nodes), _density_type(density_type)
+	    : MonitorStat(1UL), _nodes(nodes), _density_type(density_type)
 	{
 	    // Sanity check that input arguments match to this function:
 	    switch(density_type) {
@@ -56,15 +56,6 @@ namespace jags {
 	    return vector<double>(1, loglik);
 	}
 	
-	vector<unsigned long> DensityTotalStat::dim() const
-	{
-	    return vector<unsigned long>(1, 1UL);
-	}
-
-	unsigned long DensityTotalStat::length() const
-	{
-	    return 1UL;
-	}
     }
 
 }

@@ -15,18 +15,8 @@ namespace jags {
 	POPTStat::POPTStat(vector<Node const *> const &nodes,
 				 vector<RNG *> const &rngs,
 				 unsigned int nrep)
-	    : MonitorStat(), _nodes(nodes), _rngs(rngs), _nrep(nrep)
+	    : MonitorStat(nodes.size()), _nodes(nodes), _rngs(rngs), _nrep(nrep)
 	{
-	}
-
-	vector<unsigned long> POPTStat::dim() const
-	{
-	    return vector<unsigned long>(1, _nodes.size());
-	}
-
-	unsigned long POPTStat::length() const
-	{
-	    return  _nodes.size();
 	}
 
 	vector<double> POPTStat::value(unsigned int ch) const

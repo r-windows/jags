@@ -23,9 +23,7 @@ namespace jags {
 	public:
    	    DensityTotalStat(std::vector<Node const *> const &nodes, 
 			     DensityType const density_type);
-   	    std::vector<unsigned long> dim() const override;
 	    std::vector<double> value(unsigned int ch) const override;
-	    unsigned long length() const override;
    	};
     }
 }

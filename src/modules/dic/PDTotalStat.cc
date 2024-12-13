@@ -11,15 +11,10 @@ namespace jags {
 	
 	PDTotalStat::PDTotalStat(vector<Node const *> const &nodes,
 				 vector<RNG *> const &rngs, unsigned int nrep)
-	    : MonitorStat(), _nodes(nodes), _rngs(rngs), _nrep(nrep)
+	    : MonitorStat(1UL), _nodes(nodes), _rngs(rngs), _nrep(nrep)
 	{
 	}
 	
-	vector<unsigned long> PDTotalStat::dim() const
-	{
-	    return vector<unsigned long>(1, 1UL);
-	}
-		
 	vector<double> PDTotalStat::value(unsigned int ch) const
 	{
 	    unsigned long m = _nodes[0]->nchain();
@@ -35,11 +30,6 @@ namespace jags {
 	    }
 
 	    return vector<double>(1, pdsum/(m-1));
-	}
-
-	unsigned long PDTotalStat::length() const
-	{
-	    return 1UL;
 	}
 
     }

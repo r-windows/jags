@@ -57,6 +57,10 @@ namespace jags {
 		_offsets.push_back(array->_offsets[i]);
 	    }
 	}
+	_missing.resize(_node_pointers.size());
+	for (unsigned long i = 0; i < _node_pointers.size(); ++i) {
+	    _missing[i] = _node_pointers[i];
+	}
     }
     
     vector<double> NodeArraySubset::value(unsigned int chain) const
@@ -77,6 +81,11 @@ namespace jags {
 	    }
 	}
 	return ans;
+    }
+
+    vector<bool> NodeArraySubset::missing() const
+    {
+	return _missing;
     }
     
     vector<unsigned long> const &NodeArraySubset::dim() const
