@@ -1,7 +1,7 @@
 #ifndef PD_TOTAL_STAT_H_
 #define PD_TOTAL_STAT_H_
 
-#include "DiagStat.h"
+#include <model/MonitorStat.h>
 
 namespace jags {
 
