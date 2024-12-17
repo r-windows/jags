@@ -1,6 +1,6 @@
 #include <config.h>
 
-#include "DensityStat.h"
+#include "LooDensityStat.h"
 
 #include <graph/Node.h>
 
@@ -11,22 +11,21 @@ using std::vector;
 using std::exp;
 using std::logic_error;
 
-#include <graph/Node.h>
-
 namespace jags {
   
     namespace dic {
-
-	DensityStat::DensityStat(vector<Node const *> const &nodes, 
-				 DensityType density_type)
+	
+	LooDensityStat::LooDensityStat(vector<Node const *> const &nodes, 
+				       DensityType density_type)
 	    : MonitorStat(nodes.size()), _nodes(nodes), _density_type(density_type)
 	{
+	    // Sanity check that input arguments match to this function:
 	    if (density_type == DTUNSET) {
-		throw logic_error("Unimplemented DensityType in DensityStat");
+		throw logic_error("Unimplemented DensityType in LooDensityStat");
 	    }
 	}
 
-	vector<double> DensityStat::value(unsigned int ch) const
+	vector<double> LooDensityStat::value(unsigned int ch) const
 	{
 	    vector<double> value(_nodes.size());
 	    for (unsigned long i = 0; i < _nodes.size(); ++i) {
@@ -46,6 +45,20 @@ namespace jags {
 		}
 	    }
 	    return value;
+	}
+	
+	vector<double> LooDensityStat::weight(unsigned int ch) const
+	{
+	    vector<double> w(_nodes.size());
+	    for (unsigned long i = 0; i < _nodes.size(); ++i) {
+		w[i] = exp(- _nodes[i]->logDensity(ch, PDF_FULL));
+	    }
+	    return w;
+	}
+	
+	WeightType LooDensityStat::weighted() const
+	{
+	    return VECTOR_WEIGHT;
 	}
 		
     }

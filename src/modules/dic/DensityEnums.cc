@@ -8,25 +8,32 @@ namespace jags {
 	DensityType getDensityType(string const &stat)
 	{
       
-	    if (stat == "density") {
+	    if (stat == "density" || stat == "loo_density" || stat == "density_total") {
 		return DENSITY;
 	    }
-	    else if (stat == "logdensity") {
+	    else if (stat == "logdensity" || stat == "loo_logdensity" || stat == "logdensity_total") {
 		return LOGDENSITY;
 	    }
-	    else if (stat == "deviance") {
+	    else if (stat == "deviance" || stat == "loo_deviance" || stat == "deviance_total") {
 		return DEVIANCE;
 	    }
-	    else if (stat == "density_total") {
-		return DENSITY_TOTAL;
-	    }
-	    else if (stat == "logdensity_total") {
-		return LOGDENSITY_TOTAL;
-	    }
-	    else if (stat == "deviance_total") {
-		return DEVIANCE_TOTAL;
-	    }
 	    return DTUNSET;
+	}
+
+	bool isWeighted(string const &stat)
+	{
+	    return (stat == "loo_density" ||
+		    stat == "loo_logdensity" ||
+		    stat == "loo_deviance" ||
+		    stat == "popt");
+	}
+
+	bool isTotal(string const &stat)
+	{
+	    return (stat == "density_total" ||
+		    stat == "logdensity_total" ||
+		    stat == "deviance_total" ||
+		    stat == "pD_total");
 	}
 
 	PenaltyType getPenaltyType(string const &stat)

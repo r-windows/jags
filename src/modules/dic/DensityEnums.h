@@ -12,7 +12,7 @@ namespace jags {
 	 * This enum is used by some monitors/factories in the DIC module
 	 * to generalise calculation of values related to the deviance
 	 */
-	enum DensityType {DTUNSET, DENSITY, LOGDENSITY, DEVIANCE, DENSITY_TOTAL, LOGDENSITY_TOTAL, DEVIANCE_TOTAL};
+	enum DensityType {DTUNSET, DENSITY, LOGDENSITY, DEVIANCE};
 
 	/**
 	 * @short Stat types for penalty monitors
@@ -29,7 +29,9 @@ namespace jags {
 	*/
 	DensityType getDensityType(std::string const &stat);
 	PenaltyType getPenaltyType(std::string const &stat);
-	
+
+	bool isWeighted(std::string const &stat);
+	bool isTotal(std::string const &stat);
     }
 }
 

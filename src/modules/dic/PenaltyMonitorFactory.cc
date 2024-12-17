@@ -1,6 +1,7 @@
-#include "DensityEnums.h"
-#include "PenaltyMonitorFactory.h"
+#include <config.h>
 
+#include "PenaltyMonitorFactory.h"
+#include "DensityEnums.h"
 #include "PDStat.h"
 #include "POPTStat.h"
 #include "PDTotalStat.h"
@@ -8,15 +9,9 @@
 #include <model/BUGSModel.h>
 #include <model/MeanMonitor.h>
 #include <model/TraceMonitor.h>
-#include <graph/Graph.h>
-#include <graph/Node.h>
 #include <model/NodeArraySubset.h>
-#include <sarray/RangeIterator.h>
+#include <graph/Node.h>
 
-#include <set>
-#include <stdexcept>
-
-using std::set;
 using std::string;
 using std::vector;
 

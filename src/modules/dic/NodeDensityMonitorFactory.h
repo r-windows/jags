@@ -5,24 +5,23 @@
 #include <model/Monitor.h>
 
 namespace jags {
-namespace dic {
+    namespace dic {
 
-// Required for DensityType enum:
-
-    /**
-     * @short Factory for creating density-related monitors for a given node
-     */
-    class NodeDensityMonitorFactory : public MonitorFactory
-    {
-      public:
-	Monitor *getMonitor(std::string const &name, Range const &range,
-			    BUGSModel *model,
-			    std::string const &stat,
-			    std::string const &summary,
-			    std::string &msg) override;
-	std::string name() const override;
-    };
-    
-}}
+	/**
+	 * @short Factory for creating density-related monitors for a given node
+	 */
+	class NodeDensityMonitorFactory : public MonitorFactory
+	{
+	public:
+	    Monitor *getMonitor(std::string const &name, Range const &range,
+				BUGSModel *model,
+				std::string const &stat,
+				std::string const &summary,
+				std::string &msg) override;
+	    std::string name() const override;
+	};
+	
+    }
+}
 
 #endif /* NODE_DENSITY_MONITOR_FACTORY_H_ */

@@ -1,16 +1,13 @@
 #include <config.h>
-#include <graph/Node.h>
-#include <distribution/Distribution.h>
-// Required for PDFtype enum
-#include <util/nainf.h>
 
 #include "DensityTotalStat.h"
+
+#include <graph/Node.h>
 
 #include <cmath>
 #include <stdexcept>
 
 using std::vector;
-using std::string;
 using std::logic_error;
 using std::exp;
 
@@ -21,18 +18,7 @@ namespace jags {
 					   DensityType const density_type)
 	    : MonitorStat(1UL), _nodes(nodes), _density_type(density_type)
 	{
-	    // Sanity check that input arguments match to this function:
-	    switch(density_type) {
-	    case DENSITY_TOTAL:
-	    case LOGDENSITY_TOTAL:
-	    case DEVIANCE_TOTAL:
-		break;
-	    case DENSITY:
-	    case LOGDENSITY:
-	    case DEVIANCE:
-		throw logic_error("Incompatible DensityType in DensityStat");
-		break;
-	    case DTUNSET:
+	    if (density_type == DTUNSET) {
 		throw logic_error("Unimplemented DensityType in DensityTotal");
 	    }
 	}
@@ -43,14 +29,14 @@ namespace jags {
 	    for (auto p = _nodes.begin(); p != _nodes.end(); ++p) {
 		loglik += (*p)->logDensity(ch, PDF_FULL);
 	    }
-	
-	    if (jags_isna(loglik)) {
-		// Don't try and convert NA to density or deviance
-	    }
-	    else if ( _density_type == DENSITY_TOTAL ) {
+
+	    switch(_density_type) {
+	    case DENSITY: case DTUNSET:
+		break;
+	    case LOGDENSITY:
 		loglik = exp(loglik);
-	    }
-	    else if ( _density_type == DEVIANCE_TOTAL ) {
+		break;
+	    case DEVIANCE:
 		loglik = -2.0 * loglik;
 	    }
 	    return vector<double>(1, loglik);
