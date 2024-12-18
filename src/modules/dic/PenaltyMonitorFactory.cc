@@ -24,13 +24,38 @@ namespace jags {
 	  the constructor). The common code avoids the need to create
 	  a Monitor subclass for each combination of stat and summary.
 	*/
-	
+
+	/*
 	template<class T, class S>
 	T * newPenaltyMonitor(vector<Node const *> const &nodes,
 			      vector<RNG *> const &rngs,
 			      unsigned int nrep)
 	{
 	    MonitorStat * stat = new S(nodes, rngs, nrep);
+	    return new T(nodes, stat);
+	}
+	*/
+
+	template<class T>
+	T * newPenaltyMonitor(vector<Node const *> const &nodes,
+			      PenaltyType penalty_type,
+			      vector<RNG *> const &rngs,
+			      unsigned long nrep)
+	{
+	    MonitorStat * stat = nullptr;
+	    switch(penalty_type) {
+	    case PD:
+		stat = new PDStat(nodes, rngs, nrep);
+		break;
+	    case POPT:
+		stat = new POPTStat(nodes, rngs, nrep);
+		break;
+	    case PD_TOTAL:
+		stat = new PDTotalStat(nodes, rngs, nrep);
+		break;
+	    case PTUNSET:
+		return nullptr;
+	    }
 	    return new T(nodes, stat);
 	}
 	
@@ -41,29 +66,26 @@ namespace jags {
 						   string const &summary,
 						   string &msg)
 	{
-	    PenaltyType penalty_type = PTUNSET;
+	    string nname = name;
+	    string nstat = stat;
+	    
 	    if (name == "pD" && stat == "value") {
 		/*
 		  In JAGS 4.x.y. "pD" was defined as a virtual
-		  node. We retain this for back-compatibility, but
-		  this is equivalent to name = "_observed_" and stat =
-		  "pD_total" in JAGS 5.0.0.
+		  node. We retain this for back-compatibility.
 		*/
 		if (model->symtab().getVariable("pD")) {
-		    return nullptr; //Quit if we have a user-defined pD
+		    return nullptr; //Quit if we have a user-defined pD variable
 		}
-		penalty_type = PD_TOTAL;
+		nname = "_observed_";
+		nstat = "pD_total";
 	    }
-	    else {
-		penalty_type = getPenaltyType(stat);
-	    }
+	    PenaltyType penalty_type = getPenaltyType(nstat);
 	    if (penalty_type == PTUNSET) return nullptr;
 	    
 	    vector<Node const *> nodes;
 	    Range node_range = range;
-		    
-	    if (name == "_observed_" || name == "pD") {
-	   
+	    if (nname == "_observed_") {
 		if (!isNULL(range)) {
 		    msg = string("Cannot take a subset of ") + name;
 		    return nullptr;
@@ -79,7 +101,7 @@ namespace jags {
 		}
 	    }
 	    else {
-		NodeArray *array = model->symtab().getVariable(name);
+		NodeArray *array = model->symtab().getVariable(nname);
 		if (!array) {
 		    return nullptr;
 		}
@@ -128,41 +150,27 @@ namespace jags {
 
 	    Monitor *m = nullptr;
 	    if (summary == "mean") {
-		if (penalty_type == PD) {
-		    m = newPenaltyMonitor<MeanMonitor, PDStat>(nodes, rngs, 10);
-		}
-		else if (penalty_type == POPT) {
-		    m = newPenaltyMonitor<MeanMonitor, POPTStat>(nodes, rngs, 10);
-		}
+		m = newPenaltyMonitor<MeanMonitor>(nodes, penalty_type, rngs, 10);
 	    }
 	    else if (summary == "trace") {
-		if (penalty_type == PD_TOTAL) {
-		    m = newPenaltyMonitor<TraceMonitor, PDTotalStat>(nodes, rngs, 10);
-		}
-	    }
-	    if (!m) {
-		return nullptr;
+		m = newPenaltyMonitor<TraceMonitor>(nodes, penalty_type, rngs, 10);
 	    }
 	    
-	    /* Set name attributes */
-
-	    vector<string> elt_names;	    
-	    switch(penalty_type) {
-	    case PD:
-	    case POPT:
-		// These stats have a single entry for each node
-		for (auto p = nodes.begin(); p != nodes.end(); ++p) {
-		    elt_names.push_back(model->symtab().getName(*p));
+	    if (m) {
+		/* Set name attributes */
+		vector<string> elt_names;	  
+		if (isTotal(nstat)) {
+		    // Stats with only a single value
+		    elt_names.push_back(name + printRange(range));
 		}
-		break;
-	    case PD_TOTAL:
-		// These stats have only a single entry
-		elt_names.push_back(name + printRange(range));
-		break;
-	    case PTUNSET:
-		break; //-Wswitch
+		else {
+		    // Stats with a single entry for each node
+		    for (auto p = nodes.begin(); p != nodes.end(); ++p) {
+			elt_names.push_back(model->symtab().getName(*p));
+		    }
+		}
+		m->setElementNames(elt_names);
 	    }
-	    m->setElementNames(elt_names);
 
 	    return m;
 		

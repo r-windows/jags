@@ -20,6 +20,24 @@ namespace jags {
 	    return DTUNSET;
 	}
 
+	SummaryType getSummaryType(string const &summary)
+	{
+	    if (summary == "trace") {
+		return TRACE;
+	    }
+	    else if (summary == "mean") {
+		return MEAN;
+	    }
+	    else if (summary == "var" || summary == "variance") {
+		return VAR;
+	    }
+	    else if (summary == "cov") {
+		return COV;
+	    }
+	    return STUNSET;
+	}
+
+	
 	bool isWeighted(string const &stat)
 	{
 	    return (stat == "loo_density" ||

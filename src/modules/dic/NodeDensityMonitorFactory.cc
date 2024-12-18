@@ -12,6 +12,7 @@
 #include <model/TraceMonitor.h>
 #include <model/MeanMonitor.h>
 #include <model/VarMonitor.h>
+#include <model/CovMonitor.h>
 
 using std::vector;
 using std::string;
@@ -19,12 +20,31 @@ using std::string;
 namespace jags {
 namespace dic {
 
-    template<class T, class S>
-    T * newDensityMonitor(vector<Node const *> const &nodes,
-			  DensityType density_type)
+    template<class S>
+    Monitor * newDensityMonitor(vector<Node const *> const &nodes,
+				DensityType density_type,
+				SummaryType summary_type)
     {
 	MonitorStat * stat = new  S(nodes, density_type);
-	return new  T(nodes, stat);
+	Monitor *m = nullptr;
+	switch(summary_type) {
+	case TRACE:
+	    m =  new TraceMonitor(nodes, stat);
+	    break;
+	case MEAN:
+	    m = new MeanMonitor(nodes, stat);
+	    break;
+	case VAR:
+	    m = new VarMonitor(nodes, stat);
+	    break;
+	case COV:
+	    m = new CovMonitor(nodes, stat);
+	    break;
+	case STUNSET:
+	    delete stat;
+	    break; //-Wswitch
+	}
+	return m;
     }
 
     Monitor *NodeDensityMonitorFactory::getMonitor(string const &name, 
@@ -96,45 +116,22 @@ namespace dic {
 	}
 
 	/* Create the correct subtype of monitor */
-
+	SummaryType summary_type = getSummaryType(summary);
+	
 	Monitor *m = nullptr;
 	if (isWeighted(nstat)) {
 	    // loo_density, loo_logdensity, loo_deviance
-	    if (summary == "trace") {
-		m = newDensityMonitor<TraceMonitor, LooDensityStat>(nodes, density_type);
-	    }
-	    else if (summary == "mean") {
-		m = newDensityMonitor<MeanMonitor, LooDensityStat>(nodes, density_type);
-	    }
-	    else if (summary == "var") {
-		m = newDensityMonitor<VarMonitor, LooDensityStat>(nodes, density_type);
-	    }
+	    m = newDensityMonitor<LooDensityStat>(nodes, density_type, summary_type);
 	}
 	else if (isTotal(nstat)) {
 	    // density_total, logdensity_total, deviance_total
-	    if (summary == "trace") {
-		m = newDensityMonitor<TraceMonitor, DensityTotalStat>(nodes, density_type);
-	    }
-	    else if (summary == "mean") {
-		m = newDensityMonitor<MeanMonitor, DensityTotalStat>(nodes, density_type);
-	    }
-	    else if (summary == "var") {
-		m = newDensityMonitor<VarMonitor,  DensityTotalStat>(nodes, density_type);
-	    }
+	    m = newDensityMonitor<DensityTotalStat>(nodes, density_type, summary_type);
 	}
 	else {
 	    // density, logdensity, deviance
-	    if (summary == "trace") {
-		m = newDensityMonitor<TraceMonitor, DensityStat>(nodes, density_type);
-	    }
-	    else if (summary == "mean") {
-		m = newDensityMonitor<MeanMonitor, DensityStat>(nodes, density_type);
-	    }
-	    else if (summary == "var") {
-		m = newDensityMonitor<VarMonitor,  DensityStat>(nodes, density_type);
-	    }
+	    m = newDensityMonitor<DensityStat>(nodes, density_type, summary_type);
 	}
-	
+
 	if (m) {
 	    // Set name attributes
 	    vector<string> elt_names;
