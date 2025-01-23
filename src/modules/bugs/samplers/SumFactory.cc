@@ -2,7 +2,7 @@
 //#include <distribution/Distribution.h>
 #include <graph/Graph.h>
 #include <graph/StochasticNode.h>
-//#include <graph/NodeError.h>
+#include <graph/NodeError.h>
 #include <sampler/MutableSampler.h>
 #include <sampler/GraphView.h>
 
@@ -50,7 +50,11 @@ namespace jags {
 		     sum_nodes.begin(); p != sum_nodes.end(); ++p)
 	    {
 		i = smap.find(*p);
-		if (!SumMethod::canSample(i->second, graph)) continue;
+		if (!SumMethod::canSample(i->second, graph)) {
+		    /* We used to skip this case, but there is no other sampler that will preserve the sum constraint.
+		       So we may as well give up and return an informative error message here */
+		    throw NodeError(*p, "Cannot sample the stochastic parents of this sum node\nwithout breaking the sum constraint"); 
+		}
 
 		GraphView *gv = new GraphView(i->second, graph, true);		
 		unsigned int N = nchain(gv);

@@ -124,6 +124,9 @@ namespace jags {
 	bool SumMethod::canSample(vector<StochasticNode*> const &snodes,
 				  Graph const &graph)
 	{
+	    //We must have at least 2 nodes
+	    if (snodes.size() < 2) return false;
+	    
 	    //Are individual nodes candidates?
 	    StochasticNode *sumchild = isCandidate(snodes[0], graph);
 	    if (sumchild == nullptr) return false;
@@ -142,7 +145,7 @@ namespace jags {
 	    GraphView gv(snodes, graph, true);
 	    
 	    /* Only deterministic nodes with a path to sumnode need to
-	       be additive. Constract a local graph that strips out
+	       be additive. Construct a local graph that strips out
 	       the rest.
 	    */
 	    Graph lgraph; //local graph
