@@ -5,6 +5,7 @@
 
 #include <model/TraceMonitor.h>
 #include <model/MonitorStat.h>
+#include <util/nainf.h>
 
 using std::vector;
 
@@ -22,7 +23,13 @@ namespace jags {
     
     void TraceMonitor::update(unsigned int chain)
     {
-	const vector<double> v = _stat->value(chain);
+	vector<double> v = _stat->value(chain);
+	vector<bool> const &missing = _stat->missing();
+	for (unsigned int i = 0; i < v.size(); ++i) {
+	    if (missing[i]) {
+		v[i] = JAGS_NA;
+	    }
+	}
 	_values[chain].insert(_values[chain].end(), v.begin(), v.end());
     }
 

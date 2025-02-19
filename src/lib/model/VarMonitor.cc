@@ -35,7 +35,6 @@ namespace jags {
 	  _W(nchain(), vector<double>(weight_size(stat), 0.0)),
 	  _WW(nchain(), vector<double>(weight_size(stat), 0.0)),
 	  _missing(stat->missing())
-	  
     {
     }
 
@@ -51,13 +50,13 @@ namespace jags {
 	}
 	S += wt * value;
     }
-    
+
     static void update_weight(double wt, double &W, double &WW) {
 	W += wt;
 	WW += wt * wt;
     }
 
-    static double denominator(double W, double WW) {
+    static inline double denominator(double W, double WW) {
 	/*
 	  Denominator for weighted sum of squares with
 	  degree-of-freedom adjustment for estimating the weighted
@@ -78,7 +77,7 @@ namespace jags {
 	const vector<double> weight = _stat->weight(chain);
 
 	unsigned long n = niter();
-	for (unsigned int i = 0; i < value.size(); ++i) {
+	for (unsigned long i = 0; i < value.size(); ++i) {
 	    if (_missing[i]) continue;
 	    switch(_stat->weighted()) {
 	    case UNWEIGHTED:
@@ -89,8 +88,8 @@ namespace jags {
 		break;
 	    case VECTOR_WEIGHT:
 		update_value(value[i], weight[i], W[i], S[i], SS[i]);
+		break;
 	    }
-	    break;
 	}
 
 	switch(_stat->weighted()) {
@@ -107,7 +106,7 @@ namespace jags {
 	    }
 	    break;
 	}
-
+	
     }
 
     vector<double> VarMonitor::value(unsigned int ch) const
@@ -115,23 +114,6 @@ namespace jags {
 	vector<double> v = _SS[ch];
 	unsigned long n = niter();
 
-	vector<double> d(weight_size(_stat));
-	switch (_stat->weighted()) {
-	case UNWEIGHTED:
-	    d[0] = denominator(n, n);
-	    break;
-	case SCALAR_WEIGHT:
-	    d[0] = denominator(_W[ch][0], _WW[ch][0]);
-	    break;
-	case VECTOR_WEIGHT:
-	    for (unsigned long i = 0; i < v.size(); ++i) {
-		if (_missing[i]) {
-		    d[i] = denominator(_W[ch][i], _WW[ch][i]);
-		}
-	    }
-	    break;
-	}
-	
 	for (unsigned long i = 0; i < v.size(); ++i) {
 	    if (_missing[i]) {
 		v[i] = JAGS_NA;
@@ -139,11 +121,14 @@ namespace jags {
 	    else {
 		switch(_stat->weighted()) {
 		case UNWEIGHTED:
+		    v[i] /= denominator(n, n);
+		    break;
 		case SCALAR_WEIGHT:
-		    v[i] /= d[0];
+		    v[i] /= denominator(_W[ch][0], _W[ch][0]);
 		    break;
 		case VECTOR_WEIGHT:
-		    v[i] /= d[i];
+		    v[i] /= denominator(_W[ch][i], _WW[ch][i]);
+		    break;
 		}
 	    }
 	}

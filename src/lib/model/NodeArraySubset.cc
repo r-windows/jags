@@ -59,7 +59,7 @@ namespace jags {
 	}
 	_missing.resize(_node_pointers.size());
 	for (unsigned long i = 0; i < _node_pointers.size(); ++i) {
-	    _missing[i] = _node_pointers[i];
+	    _missing[i] = !_node_pointers[i];
 	}
     }
     
