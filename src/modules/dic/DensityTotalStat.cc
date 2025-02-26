@@ -31,13 +31,14 @@ namespace jags {
 	    }
 
 	    switch(_density_type) {
-	    case DENSITY: case DTUNSET:
-		break;
-	    case LOGDENSITY:
+	    case DENSITY:
 		loglik = exp(loglik);
 		break;
 	    case DEVIANCE:
 		loglik = -2.0 * loglik;
+		break;
+	    case LOGDENSITY: case DTUNSET:
+		break;
 	    }
 	    return vector<double>(1, loglik);
 	}
