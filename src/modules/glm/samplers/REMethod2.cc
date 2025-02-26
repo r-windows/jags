@@ -45,13 +45,16 @@ namespace jags {
 	    set<StochasticNode*> sset;
 	    sset.insert(schild.begin(), schild.end());
 
+	    unsigned int xcol = 0;
 	    for (unsigned int i = 0; i < enodes.size(); ++i) {
 		if (sset.count(enodes[i])) {
 		    if (tau->isDependent(enodes[i]->parents()[0])) {
 			throwLogicError("Invalid REMethod2");
 		    }
 		    _indices.push_back(i);
+		    _xcols.push_back(xcol);
 		}
+		xcol += glmmethod->_sub_views[i]->length();
 	    }
 
 	    if (_indices.size() != schild.size()) {
@@ -71,16 +74,9 @@ namespace jags {
 	
 	void REMethod2::calDesignSigma()
 	{
-	    //Sanity checks
-	    //unsigned int Neps = _eps->nodes().size();
 	    if (_z->nrow != _x->nrow) {
 		throwLogicError("Row mismatch in REMethod2");
 	    }
-	    /*
-	    if (_x->ncol != _z->ncol * Neps || _x->ncol != _eps->length()) {
-		throwLogicError("Column mismatch in REMethod2");
-	    }
-	    */
 	    
 	    //Set up access to sparse design matrix for eps
 	    int const *Xp = static_cast<int const*>(_x->p);
@@ -93,20 +89,26 @@ namespace jags {
 	    //Set all elements of _z to zero.
 	    fill(Zx, Zx + _z->nzmax, 0);
 
-	    //If there are m columns of _z then _z[,i] is the sum of
-	    //every mth column of _x (starting with _x[,i]),
-	    //multiplied by the corresponding random effect
+	    /* 
+	       If there are m columns of _z then _z[,c] is the sum of
+	       contributions from the columns of _x corresponding to the
+	       c'th element of each random effect. All random effect terms
+	       have the same length by construction.
 
+	       To find the column of _z corresponding to the first
+	       element of random effect j, we look up _xcols[j].
+	    */
+	       
 	    vector<StochasticNode*> const &eps=_eps->nodes();
 	    for (unsigned int j = 0; j < _indices.size(); ++j) {
 		unsigned int i = _indices[j];
 		double const *eval = eps[i]->value(_chain);
 		double const *emean = eps[i]->parents()[0]->value(_chain);
 		for (unsigned long zcol = 0; zcol < _z->ncol; ++zcol) {
-		    unsigned long xcol = i * _z->ncol + zcol;
+		    unsigned long xcol = _xcols[j] + zcol;
 		    for (int xi = Xp[xcol]; xi < Xp[xcol+1]; ++xi) {
-			unsigned long row = static_cast<unsigned long>(Xi[xi]);
-			unsigned long zi = _z->nrow * zcol + row;
+			int zrow = Xi[xi];
+			int zi = _z->nrow * zcol + zrow;
 			Zx[zi] += Xx[xi] * (eval[zcol] - emean[zcol]);
 		    }
 		}

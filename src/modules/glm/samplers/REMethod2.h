@@ -31,7 +31,7 @@ namespace glm {
 	cholmod_sparse const *_x;
 	const unsigned int _chain;
 	cholmod_dense *_z;
-	std::vector<unsigned int> _indices;
+	std::vector<unsigned int> _indices, _xcols;
       public:
 	/**
 	 * Constructor.
