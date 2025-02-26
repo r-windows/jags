@@ -29,7 +29,7 @@ namespace jags {
 			pdsum += _nodes[k]->KL(ch, j, _rngs[ch], _nrep);
 		    }
 		}
-		v[k] = pdsum/(n-1);
+		v[k] = pdsum/(m-1);
 	    }
 	    return v;
 	}
