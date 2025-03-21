@@ -43,7 +43,7 @@ namespace jags {
 	    return (stat == "loo_density" ||
 		    stat == "loo_logdensity" ||
 		    stat == "loo_deviance" ||
-		    stat == "popt");
+		    stat == "loo_leverage");
 	}
 
 	bool isTotal(string const &stat)
@@ -51,19 +51,19 @@ namespace jags {
 	    return (stat == "density_total" ||
 		    stat == "logdensity_total" ||
 		    stat == "deviance_total" ||
-		    stat == "pD_total");
+		    stat == "pD");
 	}
 
 	PenaltyType getPenaltyType(string const &stat)
 	{
-	    if (stat == "pD") {
+	    if (stat == "leverage") {
+		return LEVERAGE;
+	    }
+	    else if (stat == "pD") {
 		return PD;
 	    }
-	    else if (stat == "pD_total") {
-		return PD_TOTAL;
-	    }
-	    else if (stat == "popt") {
-		return POPT;
+	    else if (stat == "loo_leverage") {
+		return LOO_LEVERAGE;
 	    }
 	    else {
 		return PTUNSET;

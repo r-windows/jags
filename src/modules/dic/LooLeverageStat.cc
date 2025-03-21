@@ -1,6 +1,6 @@
 #include <config.h>
 
-#include "POPTStat.h"
+#include "LooLeverageStat.h"
 
 #include <graph/Node.h>
 
@@ -12,14 +12,14 @@ using std::exp;
 namespace jags {
     namespace dic {
 
-	POPTStat::POPTStat(vector<Node const *> const &nodes,
-				 vector<RNG *> const &rngs,
-				 unsigned int nrep)
+	LooLeverageStat::LooLeverageStat(vector<Node const *> const &nodes,
+					 vector<RNG *> const &rngs,
+					 unsigned int nrep)
 	    : MonitorStat(nodes.size()), _nodes(nodes), _rngs(rngs), _nrep(nrep)
 	{
 	}
 
-	vector<double> POPTStat::value(unsigned int ch) const
+	vector<double> LooLeverageStat::value(unsigned int ch) const
 	{
 	    unsigned long n = _nodes.size();
 	    unsigned long m = _nodes[0]->nchain();
@@ -40,12 +40,12 @@ namespace jags {
 	    return v;
 	}
 
-	WeightType POPTStat::weighted() const
+	WeightType LooLeverageStat::weighted() const
 	{
 	    return VECTOR_WEIGHT;
 	}
 	
-	vector<double> POPTStat::weight(unsigned int ch) const
+	vector<double> LooLeverageStat::weight(unsigned int ch) const
 	{
 	    unsigned long n = _nodes.size();
 	    unsigned long m = _nodes[0]->nchain();

@@ -12,13 +12,12 @@ namespace jags {
 	
 	class PDStat : public MonitorStat {
 	    std::vector<Node const *> const _nodes;
-	    std::vector<RNG *> _rngs;
-	    unsigned int _nrep;
+	    std::vector<RNG *> const _rngs;
+	    unsigned int const _nrep;
 	public:
 	    PDStat(std::vector<Node const *> const &nodes,
-		   std::vector<RNG *> const &rngs,
-		   unsigned int nrep);
-	    std::vector<double> value(unsigned int chain) const override;
+		   std::vector<RNG *> const &rngs, unsigned int nrep);
+	    std::vector<double>  value(unsigned int chain) const override;
 	};
 	
     }

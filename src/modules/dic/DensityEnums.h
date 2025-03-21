@@ -9,19 +9,20 @@ namespace jags {
 	/**
 	 * @short Stat types for density monitors
 	 *
-	 * This enum is used by some monitors/factories in the DIC module
-	 * to generalise calculation of values related to the deviance.
+	 * This enum is used by some monitors/factories in the
+	 * diagnostics module to generalise calculation of values
+	 * related to the deviance.
 	 */
 	enum DensityType {DTUNSET, DENSITY, LOGDENSITY, DEVIANCE};
 
 	/**
 	 * @short Stat types for penalty monitors
 	 *
-	 * This enum is used by some monitors/factories in the DIC
-	 * module for calculation of values related to the optimism of
-	 * the deviance.
+	 * This enum is used by some monitors/factories in the
+	 * diagnostics module for calculation of values related to
+	 * leverage and the optimism of the deviance.
 	 */
-	enum PenaltyType {PTUNSET, PD, PD_TOTAL, POPT};
+	enum PenaltyType {PTUNSET, LEVERAGE, PD, LOO_LEVERAGE};
 
 	/**
 	 * @short Summary types for monitors in the dic module

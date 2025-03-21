@@ -2,9 +2,9 @@
 
 #include "PenaltyMonitorFactory.h"
 #include "DensityEnums.h"
+#include "LeverageStat.h"
+#include "LooLeverageStat.h"
 #include "PDStat.h"
-#include "POPTStat.h"
-#include "PDTotalStat.h"
 
 #include <model/BUGSModel.h>
 #include <model/MeanMonitor.h>
@@ -44,14 +44,14 @@ namespace jags {
 	{
 	    MonitorStat * stat = nullptr;
 	    switch(penalty_type) {
+	    case LEVERAGE:
+		stat = new LeverageStat(nodes, rngs, nrep);
+		break;
+	    case LOO_LEVERAGE:
+		stat = new LooLeverageStat(nodes, rngs, nrep);
+		break;
 	    case PD:
 		stat = new PDStat(nodes, rngs, nrep);
-		break;
-	    case POPT:
-		stat = new POPTStat(nodes, rngs, nrep);
-		break;
-	    case PD_TOTAL:
-		stat = new PDTotalStat(nodes, rngs, nrep);
 		break;
 	    case PTUNSET:
 		return nullptr;
@@ -78,7 +78,7 @@ namespace jags {
 		    return nullptr; //Quit if we have a user-defined pD variable
 		}
 		nname = "_observed_";
-		nstat = "pD_total";
+		nstat = "pD";
 	    }
 	    PenaltyType penalty_type = getPenaltyType(nstat);
 	    if (penalty_type == PTUNSET) return nullptr;
@@ -115,7 +115,7 @@ namespace jags {
 	    }
 
 	    if (model->nchain() < 2) {
-		msg = "at least two chains are required for a pD or popt monitor";
+		msg = string("at least two chains are required to monitor ") + nstat;
 		return nullptr;
 	    }
 	    
