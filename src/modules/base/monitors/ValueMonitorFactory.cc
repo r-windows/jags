@@ -5,6 +5,7 @@
 #include <model/TraceMonitor.h>
 #include <model/MeanMonitor.h>
 #include <model/VarMonitor.h>
+#include <model/CovMonitor.h>
 #include <sarray/RangeIterator.h>
 
 using std::string;
@@ -57,8 +58,11 @@ namespace jags {
 	    else if (summary == "mean") {
 		m = newValueMonitor<MeanMonitor>(array, range);
 	    }
-	    else if (summary == "var") {
+	    else if (summary == "var" || summary == "variance") {
 		m = newValueMonitor<VarMonitor>(array, range);
+	    }
+	    else if (summary == "cov") {
+		m = newValueMonitor<CovMonitor>(array, range);
 	    }
 
 	    if (!m) {
