@@ -1,10 +1,10 @@
 #include <config.h>
 
-#include "PenaltyMonitorFactory.h"
+#include "LeverageMonitorFactory.h"
 #include "DensityEnums.h"
 #include "LeverageStat.h"
 #include "LooLeverageStat.h"
-#include "PDStat.h"
+#include "LeverageTotalStat.h"
 
 #include <model/BUGSModel.h>
 #include <model/MeanMonitor.h>
@@ -17,49 +17,32 @@ using std::vector;
 
 namespace jags {
     namespace dic {
-	
-	/*
-	  Template constructor. T is a Monitor subtype and S is either
-	  PDStat or POPTStat (Both stats take the same arguments in
-	  the constructor). The common code avoids the need to create
-	  a Monitor subclass for each combination of stat and summary.
-	*/
 
-	/*
-	template<class T, class S>
-	T * newPenaltyMonitor(vector<Node const *> const &nodes,
-			      vector<RNG *> const &rngs,
-			      unsigned int nrep)
+	template<class S>
+	Monitor * newLeverageMonitor(vector<Node const *> const &nodes,
+				    SummaryType summary_type,
+				    vector<RNG*> &rngs,
+				    unsigned int nrep)
 	{
-	    MonitorStat * stat = new S(nodes, rngs, nrep);
-	    return new T(nodes, stat);
-	}
-	*/
-
-	template<class T>
-	T * newPenaltyMonitor(vector<Node const *> const &nodes,
-			      PenaltyType penalty_type,
-			      vector<RNG *> const &rngs,
-			      unsigned long nrep)
-	{
-	    MonitorStat * stat = nullptr;
-	    switch(penalty_type) {
-	    case LEVERAGE:
-		stat = new LeverageStat(nodes, rngs, nrep);
+	    MonitorStat * stat = new  S(nodes, rngs, nrep);
+	    Monitor *m = nullptr;
+	    switch(summary_type) {
+	    case TRACE:
+		m =  new TraceMonitor(nodes, stat);
 		break;
-	    case LOO_LEVERAGE:
-		stat = new LooLeverageStat(nodes, rngs, nrep);
+	    case MEAN:
+		m = new MeanMonitor(nodes, stat);
 		break;
-	    case PD:
-		stat = new PDStat(nodes, rngs, nrep);
-		break;
-	    case PTUNSET:
-		return nullptr;
+	    case VAR:
+	    case COV:
+	    case STUNSET:
+		delete stat;
+		break; //-Wswitch
 	    }
-	    return new T(nodes, stat);
+	    return m;
 	}
 	
-	Monitor *PenaltyMonitorFactory::getMonitor(string const &name, 
+	Monitor *LeverageMonitorFactory::getMonitor(string const &name, 
 						   Range const &range,
 						   BUGSModel *model,
 						   string const &stat,
@@ -78,10 +61,11 @@ namespace jags {
 		    return nullptr; //Quit if we have a user-defined pD variable
 		}
 		nname = "_observed_";
-		nstat = "pD";
+		nstat = "leverage_total";
 	    }
-	    PenaltyType penalty_type = getPenaltyType(nstat);
-	    if (penalty_type == PTUNSET) return nullptr;
+	    if (nstat != "leverage" && nstat != "loo_leverage" && nstat != "leverage_total") {
+		return nullptr;
+	    }
 	    
 	    vector<Node const *> nodes;
 	    Range node_range = range;
@@ -115,7 +99,7 @@ namespace jags {
 	    }
 
 	    if (model->nchain() < 2) {
-		msg = string("at least two chains are required to monitor ") + nstat;
+		msg = "At least two chains are required for leverage monitors";
 		return nullptr;
 	    }
 	    
@@ -148,14 +132,23 @@ namespace jags {
 
 	    /* Create the correct subtype of monitor */
 
-	    Monitor *m = nullptr;
-	    if (summary == "mean") {
-		m = newPenaltyMonitor<MeanMonitor>(nodes, penalty_type, rngs, 10);
-	    }
-	    else if (summary == "trace") {
-		m = newPenaltyMonitor<TraceMonitor>(nodes, penalty_type, rngs, 10);
-	    }
+	    SummaryType summary_type = getSummaryType(summary);
+	    if (summary_type != MEAN && summary_type != TRACE) return nullptr;
 	    
+	    Monitor *m = nullptr;
+	    if (isWeighted(nstat)) {
+		// loo_leverage
+		m = newLeverageMonitor<LooLeverageStat>(nodes, summary_type, rngs, 10);
+	    }
+	    else if (isTotal(nstat)) {
+		// leverage_total
+		m = newLeverageMonitor<LeverageTotalStat>(nodes, summary_type, rngs, 10);
+	    }
+	    else {
+		// Leverage
+		m = newLeverageMonitor<LeverageStat>(nodes, summary_type, rngs, 10);
+	    }
+    
 	    if (m) {
 		/* Set name attributes */
 		vector<string> elt_names;	  
@@ -176,9 +169,9 @@ namespace jags {
 		
 	}
 
-	string PenaltyMonitorFactory::name() const
+	string LeverageMonitorFactory::name() const
 	{
-	    return "dic::Penalty";
+	    return "dic::Leverage";
 	}
 	
     }

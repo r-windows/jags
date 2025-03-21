@@ -51,23 +51,7 @@ namespace jags {
 	    return (stat == "density_total" ||
 		    stat == "logdensity_total" ||
 		    stat == "deviance_total" ||
-		    stat == "pD");
-	}
-
-	PenaltyType getPenaltyType(string const &stat)
-	{
-	    if (stat == "leverage") {
-		return LEVERAGE;
-	    }
-	    else if (stat == "pD") {
-		return PD;
-	    }
-	    else if (stat == "loo_leverage") {
-		return LOO_LEVERAGE;
-	    }
-	    else {
-		return PTUNSET;
-	    }
+		    stat == "leverage_total");
 	}
 
     }

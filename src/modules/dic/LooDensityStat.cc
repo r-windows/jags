@@ -40,7 +40,7 @@ namespace jags {
 		case LOGDENSITY:
 		    value[i] = loglik;
 		    break;
-		case DTUNSET:
+		case DTUNSET: 
 		    break; //-Wswitch
 		}
 	    }

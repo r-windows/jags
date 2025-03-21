@@ -1,6 +1,6 @@
 #include <config.h>
 
-#include "PDStat.h"
+#include "LeverageTotalStat.h"
 
 #include <graph/Node.h>
 
@@ -9,13 +9,13 @@ using std::vector;
 namespace jags {
     namespace dic {
 	
-	PDStat::PDStat(vector<Node const *> const &nodes,
-				 vector<RNG *> const &rngs, unsigned int nrep)
+	LeverageTotalStat::LeverageTotalStat(vector<Node const *> const &nodes,
+					     vector<RNG *> const &rngs, unsigned int nrep)
 	    : MonitorStat(1UL), _nodes(nodes), _rngs(rngs), _nrep(nrep)
 	{
 	}
 	
-	vector<double> PDStat::value(unsigned int ch) const
+	vector<double> LeverageTotalStat::value(unsigned int ch) const
 	{
 	    unsigned long m = _nodes[0]->nchain();
 	    unsigned long n = _nodes.size();

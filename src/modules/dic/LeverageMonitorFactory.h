@@ -1,5 +1,5 @@
-#ifndef PENALTY_MONITOR_FACTORY_H_
-#define PENALTY_MONITOR_FACTORY_H_
+#ifndef LEVERAGE_MONITOR_FACTORY_H_
+#define LEVERAGE_MONITOR_FACTORY_H_
 
 #include <model/MonitorFactory.h>
 #include <model/Monitor.h>
@@ -10,7 +10,7 @@ namespace jags {
 	/**
 	 * @short Factory for creating penalties for predictive information criteria
 	 */
-	class PenaltyMonitorFactory : public MonitorFactory
+	class LeverageMonitorFactory : public MonitorFactory
 	{
 	public:
 	    Monitor *getMonitor(std::string const &name, Range const &range,
@@ -24,4 +24,4 @@ namespace jags {
     }
 }
 
-#endif /* PENALTY_MONITOR_FACTORY_H_ */
+#endif /* LEVERAGE_MONITOR_FACTORY_H_ */

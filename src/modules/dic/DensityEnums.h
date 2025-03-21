@@ -16,15 +16,6 @@ namespace jags {
 	enum DensityType {DTUNSET, DENSITY, LOGDENSITY, DEVIANCE};
 
 	/**
-	 * @short Stat types for penalty monitors
-	 *
-	 * This enum is used by some monitors/factories in the
-	 * diagnostics module for calculation of values related to
-	 * leverage and the optimism of the deviance.
-	 */
-	enum PenaltyType {PTUNSET, LEVERAGE, PD, LOO_LEVERAGE};
-
-	/**
 	 * @short Summary types for monitors in the dic module
 	 */
 	enum SummaryType {STUNSET, TRACE, MEAN, VAR, COV};
@@ -33,11 +24,6 @@ namespace jags {
 	* @short Process a string to return density type
 	*/
 	DensityType getDensityType(std::string const &stat);
-
-	/**
-	 * @short Process a string to return penalty type
-	 */
-	PenaltyType getPenaltyType(std::string const &stat);
 
 	/**
 	 * @short Process a string to return summary type

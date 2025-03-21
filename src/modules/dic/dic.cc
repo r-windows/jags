@@ -1,7 +1,7 @@
 #include <module/Module.h>
 
 #include "NodeDensityMonitorFactory.h"
-#include "PenaltyMonitorFactory.h"
+#include "LeverageMonitorFactory.h"
 
 using std::vector;
 
@@ -19,8 +19,8 @@ namespace jags {
 	{
 	    // density-related monitors
 	    insert(new NodeDensityMonitorFactory);
-	    // penalty monitors
-	    insert(new PenaltyMonitorFactory);
+	    // leverage monitors
+	    insert(new LeverageMonitorFactory);
 	}
     
 	DICModule::~DICModule() {
