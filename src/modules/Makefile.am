@@ -1,1 +1,1 @@
-SUBDIRS = base bugs msm mix lecuyer glm dic
+SUBDIRS = base bugs msm mix lecuyer glm diag

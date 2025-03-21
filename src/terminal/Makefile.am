@@ -15,7 +15,7 @@ else
 jags_terminal_LDADD = $(LIBLTDL) ${top_builddir}/src/lib/libjags.la	\
 -dlopen ${top_builddir}/src/modules/base/basemod.la \
 -dlopen ${top_builddir}/src/modules/bugs/bugs.la \
--dlopen ${top_builddir}/src/modules/dic/diag.la \
+-dlopen ${top_builddir}/src/modules/diag/diag.la \
 -dlopen ${top_builddir}/src/modules/glm/glm.la \
 -dlopen ${top_builddir}/src/modules/lecuyer/lecuyer.la \
 -dlopen ${top_builddir}/src/modules/mix/mix.la \
