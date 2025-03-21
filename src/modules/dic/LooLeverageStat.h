@@ -10,7 +10,7 @@ namespace jags {
     class RNG;
     class Node;
     
-    namespace dic {
+    namespace diag {
 
 	class LooLeverageStat : public MonitorStat {
 	    const std::vector<Node const *> _nodes;

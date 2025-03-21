@@ -12,7 +12,7 @@ using std::logic_error;
 using std::exp;
 
 namespace jags {
-    namespace dic {
+    namespace diag {
 	
 	DensityTotalStat::DensityTotalStat(vector<Node const *> const &nodes, 
 					   DensityType const density_type)

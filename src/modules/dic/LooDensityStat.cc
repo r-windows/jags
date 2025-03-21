@@ -13,7 +13,7 @@ using std::logic_error;
 
 namespace jags {
   
-    namespace dic {
+    namespace diag {
 	
 	LooDensityStat::LooDensityStat(vector<Node const *> const &nodes, 
 				       DensityType density_type)

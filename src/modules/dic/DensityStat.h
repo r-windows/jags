@@ -9,7 +9,7 @@ namespace jags {
 
     class Node;
     
-    namespace dic {
+    namespace diag {
 	
    	/**
    	 * @short Stores running mean values of density/log density/deviance

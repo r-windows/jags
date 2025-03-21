@@ -4,7 +4,7 @@
 #include <string>
 
 namespace jags {
-    namespace dic {
+    namespace diag {
 
 	/**
 	 * @short Stat types for density monitors
@@ -16,7 +16,7 @@ namespace jags {
 	enum DensityType {DTUNSET, DENSITY, LOGDENSITY, DEVIANCE};
 
 	/**
-	 * @short Summary types for monitors in the dic module
+	 * @short Summary types for monitors in the diag module
 	 */
 	enum SummaryType {STUNSET, TRACE, MEAN, VAR, COV};
       
@@ -33,7 +33,7 @@ namespace jags {
 	/**
 	 * @short Process a string to see if a stat is weighted
 	 *
-	 * @param stat String containing the name of a stat used in the dic module
+	 * @param stat String containing the name of a stat used in the diag module
 	 *
 	 * @return true if the corresponding MonitorStat object is weighted
 	 */
@@ -43,7 +43,7 @@ namespace jags {
 	 *
 	 * @short Process a string to see if a stat aggregates over nodes
 	 *
-	 * @param stat String containing the name of a stat used in the dic module
+	 * @param stat String containing the name of a stat used in the diag module
 	 *
 	 * @return true if the corresponding MonitorStat object gives a single summary
 	 * statistic for all monitored nodes; false if each node has its own scalar value.

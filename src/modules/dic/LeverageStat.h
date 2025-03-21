@@ -8,7 +8,7 @@ namespace jags {
     class RNG;
     class Node;
     
-    namespace dic {
+    namespace diag {
 	
 	class LeverageStat : public MonitorStat {
 	    std::vector<Node const *> const _nodes;

@@ -6,16 +6,16 @@
 using std::vector;
 
 namespace jags {
-    namespace dic {
+    namespace diag {
 
-	class DICModule: public Module {
+	class DiagModule: public Module {
 	public:
-	    DICModule();
-	    ~DICModule() override;
+	    DiagModule();
+	    ~DiagModule() override;
 	};
     
-	DICModule::DICModule() 
-	    : Module("dic")
+	DiagModule::DiagModule() 
+	    : Module("diag")
 	{
 	    // density-related monitors
 	    insert(new NodeDensityMonitorFactory);
@@ -23,7 +23,7 @@ namespace jags {
 	    insert(new LeverageMonitorFactory);
 	}
     
-	DICModule::~DICModule() {
+	DiagModule::~DiagModule() {
 	
 	    vector<MonitorFactory*> const &mvec = monitorFactories();
 	    for (unsigned int i = 0; i < mvec.size(); ++i) {
@@ -34,5 +34,5 @@ namespace jags {
     }
 }
 
-jags::dic::DICModule _dic_module;
+jags::diag::DiagModule _diag_module;
 

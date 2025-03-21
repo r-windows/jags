@@ -16,7 +16,7 @@ using std::string;
 using std::vector;
 
 namespace jags {
-    namespace dic {
+    namespace diag {
 
 	template<class S>
 	Monitor * newLeverageMonitor(vector<Node const *> const &nodes,
@@ -171,7 +171,7 @@ namespace jags {
 
 	string LeverageMonitorFactory::name() const
 	{
-	    return "dic::Leverage";
+	    return "diag::Leverage";
 	}
 	
     }

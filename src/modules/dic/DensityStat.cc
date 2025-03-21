@@ -15,7 +15,7 @@ using std::logic_error;
 
 namespace jags {
   
-    namespace dic {
+    namespace diag {
 
 	DensityStat::DensityStat(vector<Node const *> const &nodes, 
 				 DensityType density_type)

@@ -8,7 +8,7 @@ using std::vector;
 
 namespace jags {
 
-    namespace dic {
+    namespace diag {
 
 	LeverageStat::LeverageStat(vector<Node const *> const &nodes,
 				   vector<RNG *> const &rngs, unsigned int nrep)

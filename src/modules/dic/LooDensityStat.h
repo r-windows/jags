@@ -9,7 +9,7 @@ namespace jags {
 
     class Node;
     
-    namespace dic {
+    namespace diag {
 	
    	/**
    	 * @short Leave-one-out (LOO) weighted version of DensityStat

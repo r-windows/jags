@@ -5,7 +5,7 @@
 #include <model/Monitor.h>
 
 namespace jags {
-    namespace dic {
+    namespace diag {
 
 	/**
 	 * @short Factory for creating density-related monitors for a given node

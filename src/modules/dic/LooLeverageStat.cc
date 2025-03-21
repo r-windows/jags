@@ -10,7 +10,7 @@ using std::vector;
 using std::exp;
 
 namespace jags {
-    namespace dic {
+    namespace diag {
 
 	LooLeverageStat::LooLeverageStat(vector<Node const *> const &nodes,
 					 vector<RNG *> const &rngs,

@@ -3,7 +3,7 @@
 using std::string;
 
 namespace jags {
-    namespace dic {
+    namespace diag {
 
 	DensityType getDensityType(string const &stat)
 	{

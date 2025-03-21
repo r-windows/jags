@@ -709,10 +709,13 @@ bool Console::dumpSamplers(vector<vector<string> > &sampler_names)
 
 bool Console::loadModule(string const &name)
 {
+    // Handle the change of name of the dic module 
+    const string mname = (name == "dic") ? "diag" : name;
+
     list<Module*>::const_iterator p;
     for (p = Module::modules().begin(); p != Module::modules().end(); ++p)
     {
-	if ((*p)->name() == name) {
+	if ((*p)->name() == mname) {
 	    (*p)->load();
 	    if (rngSeed() != 0) {
 		// Set default seed of RNG factories
@@ -740,10 +743,13 @@ vector<string> Console::listModules()
 
 bool Console::unloadModule(string const &name)
 {
+    // Handle the change of name of the dic module
+    const string mname = (name == "dic") ? "diag" : name;
+	
     for (auto p = Module::loadedModules().begin(); 
 	 p !=  Module::loadedModules().end(); ++p)
     {
-	if ((*p)->name() == name) {
+	if ((*p)->name() == mname) {
 	    (*p)->unload();
 	    return true;
 	}

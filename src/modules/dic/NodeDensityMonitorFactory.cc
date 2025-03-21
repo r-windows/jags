@@ -18,7 +18,7 @@ using std::vector;
 using std::string;
 
 namespace jags {
-namespace dic {
+namespace diag {
 
     template<class S>
     Monitor * newDensityMonitor(vector<Node const *> const &nodes,
@@ -154,7 +154,7 @@ namespace dic {
     
     string NodeDensityMonitorFactory::name() const
     {
-	return "dic::NodeDensity";
+	return "diag::NodeDensity";
     }
 	
 }
