@@ -10,6 +10,8 @@
 #include <sampler/SingletonGraphView.h>
 #include <module/ModuleError.h>
 #include <util/integer.h>
+#include <matrix/lapack.h>
+#include <matrix/blas.h>
 
 #include <set>
 #include <vector>
@@ -26,26 +28,6 @@ using std::copy;
 using std::reverse;
 
 #include <iostream>
-
-#define F77_DPOTRF F77_FUNC(dpotrf,DPOTRF)
-#define F77_DTRTRI F77_FUNC(dtrtri, DTRTRI)
-#define F77_DTRMM  F77_FUNC(dtrmm, DTRMM)
-#define F77_DSYRK  F77_FUNC(dsyrk, DSYRK)
-
-extern "C" {
-    void F77_DPOTRF (const char *uplo, const int *n, double *a,
-		     const int *lda, const int *info);
-    void F77_DTRTRI (const char *uplo, const char *diag,
-		     const int *n, double *a, const int *lda, const int *info);
-    void F77_DTRMM(const char *side, const char *uplo, const char *transa,
-		   const char *diag, const int *m, const int *n,
-		   const double *alpha, const double *a, const int *lda,
-		   double *b, const int *ldb);
-    void F77_DSYRK(const char *uplo, const char *trans, const int *n,
-		   const int *k,
-		   const double *alpha, const double *a, const int *lda,
-		   const double *beta, double *c, const int *ldc);
-}
 
 
 //FIXME We would not need this if we could call bugs::DWish::sampleWishart
@@ -74,11 +56,11 @@ static void sampleWishart(double *X, unsigned long length,
     vector<double> C(length);
     copy(R, R + length, C.rbegin());
     int ni = jags::asInteger(nrow);
-    F77_DPOTRF("L", &ni, &C[0], &ni, &info);
+    jags_dpotrf("L", &ni, &C[0], &ni, &info);
     if (info != 0) {
 	jags::throwRuntimeError("Failed to get Cholesky decomposition of R");
     }
-    F77_DTRTRI("L", "N", &ni, &C[0], &ni, &info);
+    jags_dtrtri("L", "N", &ni, &C[0], &ni, &info);
     if (info != 0) {
 	jags::throwRuntimeError("Failed to invert Cholesky decomposition of R");
     }
@@ -103,11 +85,11 @@ static void sampleWishart(double *X, unsigned long length,
 
     // Z = Z %*% C 
     double one = 1;
-    F77_DTRMM("R", "U", "N", "N", &ni, &ni, &one, &C[0], &ni, &Z[0], &ni);
+    jags_dtrmm("R", "U", "N", "N", &ni, &ni, &one, &C[0], &ni, &Z[0], &ni);
 
     // X = t(Z) %*% Z
     double zero = 0;
-    F77_DSYRK("U", "T", &ni, &ni, &one, &Z[0], &ni, &zero, X, &ni);
+    jags_dsyrk("U", "T", &ni, &ni, &one, &Z[0], &ni, &zero, X, &ni);
 
     // Copy upper triangle of X to lower triangle
     for (unsigned long i = 0; i < nrow; ++i) {

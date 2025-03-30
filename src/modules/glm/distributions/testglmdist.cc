@@ -8,6 +8,7 @@
 
 #include <MersenneTwisterRNG.h>
 #include <JRmath.h>
+#include <matrix/lapack.h>
 
 #include <cmath>
 #include <set>
@@ -25,18 +26,7 @@ using std::ostringstream;
 using std::sort;
 using std::isfinite;
 
-#define F77_DPOTRF F77_FUNC(dpotrf,DPOTRF)
-#define F77_DPOTRI F77_FUNC(dpotri, DPOTRI)
-
 using jags::RScalarDist;
-
-extern "C" {
-    void F77_DPOTRF (const char *uplo, const int *n, double *a,
-		     const int *lda, const int *info);
-    void F77_DPOTRI (const char *uplo, const int *n, double *a,
-		     const int *lda, const int *info);
-
-}
 
 void GLMDistTest::setUp() {
 
@@ -373,14 +363,14 @@ static bool inverse_spd (double *A, int n)
     /* invert n x n symmetric positive definite matrix A*/
 
     int info = 0;
-    F77_DPOTRF ("L", &n, A, &n, &info);
+    jags_dpotrf("L", &n, A, &n, &info);
     if (info < 0) {
 	CPPUNIT_FAIL("Illegal argument in inverse_spd");
     }
     else if (info > 0) {
 	CPPUNIT_FAIL("Cannot invert matrix: not positive definite");
     }
-    F77_DPOTRI ("L", &n, A, &n, &info); 
+    jags_dpotri("L", &n, A, &n, &info); 
 
     for (int i = 0; i < n; ++i) {
 	for (int j = 0; j < i; ++j) {

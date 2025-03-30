@@ -5,8 +5,9 @@
 
 #include "DMNorm.h"
 
-#include <lapack.h>
-#include <matrix.h>
+#include <matrix/blas.h>
+#include <matrix/lapack.h>
+#include <matrix/matrix.h>
 #include <rng/RNG.h>
 
 #include <cmath>
@@ -14,9 +15,6 @@
 #include <cfloat>
 
 #include <JRmath.h>
-
-#include "blas.h"
-#include "lapack.h"
 
 using std::vector;
 

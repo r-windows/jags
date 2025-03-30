@@ -7,9 +7,8 @@
 
 #include <module/ModuleError.h>
 #include <util/integer.h>
-
-#include "lapack.h"
-#include "matrix.h"
+#include <matrix/lapack.h>
+#include <matrix/matrix.h>
 
 using std::log;
 using std::fabs;
@@ -17,7 +16,6 @@ using std::copy;
 using std::vector;
 
 namespace jags {
-namespace bugs {
 
 double logdet(double const *a, unsigned long n)
 {
@@ -207,4 +205,4 @@ bool check_symmetry(double const *x, unsigned long n, double tol)
 }
     */
 
-}}
+}

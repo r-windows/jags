@@ -8,4 +8,4 @@ libufsparse_la_LIBADD = \
 	AMD/libamd.la		\
         COLAMD/libcolamd.la	\
         CHOLMOD/libcholmod.la	\
-	@BLAS_LIBS@
+	@BLAS_LIBS@ @FLIBS@

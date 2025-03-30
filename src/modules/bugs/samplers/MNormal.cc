@@ -1,13 +1,13 @@
 #include <config.h>
 #include "MNormal.h"
 
-#include <matrix.h>
 #include <DMNorm.h>
-#include <lapack.h>
 
 #include <graph/StochasticNode.h>
 #include <sampler/SingletonGraphView.h>
 #include <rng/RNG.h>
+#include <matrix/lapack.h>
+#include <matrix/matrix.h>
 
 #include <cmath>
 #include <algorithm>

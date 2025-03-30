@@ -1,5 +1,5 @@
 SUBDIRS = util sarray distribution function sampler graph model	\
-	compiler rng module
+	compiler rng module matrix
 
 extra_dist = version.cc.in
 
@@ -18,12 +18,15 @@ libjags_la_LIBADD = model/libmodel.la		\
 	graph/libgraph.la			\
 	compiler/libcompiler.la			\
         rng/librng.la				\
-	module/libmodule.la
+	module/libmodule.la			\
+	matrix/libmatrix.la			\
+	@LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
 
 libjags_la_LDFLAGS = -version-info $(JAGS_MAJOR):$(JAGS_MINOR):0
 if WINDOWS
 libjags_la_LDFLAGS += -no-undefined
 libjags_la_SOURCES += dllversion.rc
+##libjags_la_LIBADD += -lgomp
 endif
 
 ### Test library 

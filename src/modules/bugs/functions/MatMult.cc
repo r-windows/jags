@@ -1,10 +1,10 @@
 #include <config.h>
 
 #include "MatMult.h"
+
 #include <util/dim.h>
 #include <util/integer.h>
-
-#include "blas.h"
+#include <matrix/blas.h>
 
 using std::vector;
 

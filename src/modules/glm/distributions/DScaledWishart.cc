@@ -5,6 +5,7 @@
 #include <util/nainf.h>
 #include <module/ModuleError.h>
 #include <util/integer.h>
+#include <matrix/lapack.h>
 
 #include "DScaledWishart.h"
 
@@ -23,15 +24,6 @@ using std::copy;
 #define DF(par)    (*par[1])
 #define NROW(dims)  (dims[0][0])
 
-#define F77_DSYEV F77_FUNC(dsyev,DSYEV)
-
-extern "C" {
-    void F77_DSYEV (const char* jobz, const char* uplo,
-		    const int* n, double* a, const int* lda,
-		    double* w, 
-		    double* work, const int* lwork, int* info);
-}
-
 namespace jags {
 namespace glm {
 
@@ -49,13 +41,13 @@ namespace glm {
 	double worktest = 0;
 	int info = 0;
 	int ni = asInteger(n);
-	F77_DSYEV("N","L", &ni, &acopy[0], &ni, &w[0], &worktest, &lwork, &info);
+	jags_dsyev("N","L", &ni, &acopy[0], &ni, &w[0], &worktest, &lwork, &info);
 	if (info != 0) {
 	    throwRuntimeError("unable to calculate workspace size for dsyev");
 	}
 	lwork = static_cast<int>(worktest);
 	double *work = new double[lwork];
-	F77_DSYEV("N","L", &ni, &acopy[0], &ni, &w[0], work, &lwork, &info);
+	jags_dsyev("N","L", &ni, &acopy[0], &ni, &w[0], work, &lwork, &info);
 	delete [] work;
 	if (info != 0) {
 	    throwRuntimeError("unable to calculate eigenvalues in dsyev");

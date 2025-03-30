@@ -1,10 +1,11 @@
 #include <config.h>
 
 #include "Det.h"
-#include "matrix.h"
 
 #include <util/dim.h>
 #include <util/integer.h>
+#include <matrix/matrix.h>
+
 #include <cmath>
 
 using std::vector;

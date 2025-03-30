@@ -1,7 +1,8 @@
 #include <config.h>
-#include "matrix.h"
+
 #include <util/dim.h>
 #include <util/integer.h>
+#include <matrix/matrix.h>
 
 #include "InverseLU.h"
 

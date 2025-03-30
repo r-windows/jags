@@ -1,15 +1,15 @@
 #include <config.h>
 
+#include "DWish.h"
+
 #include <rng/RNG.h>
 #include <util/dim.h>
 #include <util/nainf.h>
 #include <module/ModuleError.h>
 #include <util/integer.h>
-
-#include "blas.h"
-#include "lapack.h"
-#include "matrix.h"
-#include "DWish.h"
+#include <matrix/blas.h>
+#include <matrix/lapack.h>
+#include <matrix/matrix.h>
 
 #include <cfloat>
 #include <cmath>

@@ -6,4 +6,4 @@ msmmatrix_la_LDFLAGS = -no-undefined -module -avoid-version
 
 msmmatrix_la_SOURCES = matexp.cc 
 
-noinst_HEADERS = matexp.h lapack.h 
+noinst_HEADERS = matexp.h

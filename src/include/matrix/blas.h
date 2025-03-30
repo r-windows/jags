@@ -21,6 +21,11 @@ extern "C" {
     void jags_dtrmm (const char *side, const char *uplo, const char *transa, const char *diag, const int *m, const int *n, const double *alpha, const double *a, const int *lda, double *b, const int *ldb);
 
     void jags_dtrsv (const char *uplo, const char *trans, const char *diag, const int *n, const double *a, const int *lda, double *x, const int *incx);
+
+    void jags_dcopy (const int* n, double const *X, const int* incx, double *Y, const int *incy);
+    
+    void jags_dscal (const int* n, double const *alpha, double *X, const int *incx);
+
 }
 
 #endif /* BLAS_H_ */

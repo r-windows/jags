@@ -5,8 +5,8 @@
 #include "DMNorm.h"
 #include "DMT.h"
 
-#include <lapack.h>
-#include <matrix.h>
+#include <matrix/lapack.h>
+#include <matrix/matrix.h>
 
 #include <cmath>
 #include <vector>

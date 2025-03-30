@@ -9,9 +9,8 @@
 #include <sampler/SingletonGraphView.h>
 #include <module/ModuleError.h>
 #include <util/integer.h>
-
-#include "blas.h"
-#include "lapack.h"
+#include <matrix/blas.h>
+#include <matrix/lapack.h>
 
 #include <set>
 #include <vector>

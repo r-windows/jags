@@ -16,8 +16,9 @@
 #include <cmath>
 
 #include <module/ModuleError.h>
+#include <matrix/lapack.h>
+#include <matrix/blas.h>
 
-#include "lapack.h"
 #include "matexp.h"
 
 using std::pow;
@@ -62,8 +63,8 @@ static void solve (double *X, double const *A, double const *B, int n)
 
     int N = n*n;
     double *Acopy = new double[N];
-    F77_DCOPY(&N, A, &c_1, Acopy, &c_1);
-    F77_DCOPY(&N, B, &c_1, X, &c_1);
+    jags_dcopy(&N, A, &c_1, Acopy, &c_1);
+    jags_dcopy(&N, B, &c_1, X, &c_1);
     /*
       for (int i = 0; i < N; i++) {
       Acopy[i] = A[i];
@@ -72,7 +73,7 @@ static void solve (double *X, double const *A, double const *B, int n)
     */
     int *ipiv = new int[n];
     int info = 0;
-    F77_DGESV (&n, &n, Acopy, &n, ipiv, X, &n, &info);
+    jags_dgesv(&n, &n, Acopy, &n, ipiv, X, &n, &info);
     if (info != 0) {
 	throwRuntimeError("Unable to solve linear equations");
     }
@@ -130,8 +131,8 @@ padeseries (double *Sum, double const *A, int n, int order,
   FormIdentity(Sum, n);
   for (int j = order; j >= 1; --j) {
     double s = (order-j+1) / (j*(2*order-j+1) * scale);
-    F77_DGEMM ("n","n", &n, &n, &n, &s, Sum, &n, A, &n, &zero, Temp, &n);
-    F77_DCOPY(&N, Temp, &c_1, Sum, &c_1);
+    jags_dgemm("n","n", &n, &n, &n, &s, Sum, &n, A, &n, &zero, Temp, &n);
+    jags_dcopy(&N, Temp, &c_1, Sum, &c_1);
     /*
     MultMat(Temp, Sum, A, n);
     for (int i = 0; i < N; ++i) {
@@ -160,8 +161,8 @@ MatrixExpPade(double *ExpAt, double const *A, int n, double t)
     double * const Denom = workspace + 3*N;
 
     // Take a copy of the matrix and scale it by t
-    F77_DCOPY(&N, A, &c_1, At, &c_1);
-    F77_DSCAL(&N, &t, At, &c_1);
+    jags_dcopy(&N, A, &c_1, At, &c_1);
+    jags_dscal(&N, &t, At, &c_1);
     /*
       for (int i = 0; i < N; ++i) {
       At[i] = A[i] * t;
@@ -169,8 +170,8 @@ MatrixExpPade(double *ExpAt, double const *A, int n, double t)
     */
 
     // Scale the matrix by a power of 2 
-    double l1 = F77_DLANGE("1", &n, &n, At, &n, nullptr); //L-1 norm
-    double linf = F77_DLANGE("i", &n, &n, At, &n, Temp); //L-Infinity norm
+    double l1 = jags_dlange("1", &n, &n, At, &n, nullptr); //L-1 norm
+    double linf = jags_dlange("i", &n, &n, At, &n, Temp); //L-Infinity norm
     /* 
        sqrt(l1 * linf) is an upper bound on the L2 norm of the matrix At
        (i.e the largest eigenvalue). We want to take the log, to base 2

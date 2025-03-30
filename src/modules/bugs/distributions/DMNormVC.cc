@@ -1,19 +1,17 @@
 #include <config.h>
-#include <util/dim.h>
-#include <util/nainf.h>
 #include "DMNormVC.h"
 #include "DMNorm.h"
 
-#include <lapack.h>
-#include <matrix.h>
+#include <util/dim.h>
+#include <util/nainf.h>
+#include <matrix/lapack.h>
+#include <matrix/matrix.h>
 
 #include <cmath>
 #include <vector>
 #include <cfloat>
 
 #include <JRmath.h>
-
-#include "matrix.h"
 
 using std::vector;
 

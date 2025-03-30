@@ -1,9 +1,7 @@
-
 #ifndef MATRIX_H_
 #define MATRIX_H_
 
 namespace jags {
-namespace bugs {
 
 /**
  * Inverts a general square matrix using the LAPACK routine DGESV
@@ -50,6 +48,6 @@ double logdet(double const *A, unsigned long n);
  */
 double det(double const *A, int n);
     
-}}
+}
 
 #endif /* MATRIX_H_ */

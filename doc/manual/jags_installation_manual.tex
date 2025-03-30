@@ -4,8 +4,9 @@
 \usepackage{url}
 \usepackage{multirow}
 \usepackage{amsfonts}
-\newcommand{\release}{4.3.1}
+\newcommand{\release}{5.0.0}
 \newcommand{\JAGS}{\textsf{JAGS}}
+\newcommand{\Rtools}{\textsf{Rtools45}}
 \newcommand{\BUGS}{\textsf{BUGS}}
 \newcommand{\WinBUGS}{\textsf{WinBUGS}}
 \newcommand{\R}{\textsf{R}}
@@ -665,7 +666,7 @@ running windows, where it can be run from the Windows command prompt.
 
 You need to install the following packages
 \begin{itemize}
-\item The Rtools42 compiler suite for Windows
+\item The \Rtools\ compiler suite for Windows
 \item NSIS, including the AccessControl plug-in  
 \end{itemize}
 
@@ -675,11 +676,11 @@ Rtools is a set of compilers and utilities used for compiling R on
 Windows. Rtools can be downloaded from your nearest CRAN mirror
 (\url{https://cran.r-project.org/bin/windows/Rtools/}). We have to use
 the same compiler for R and \JAGS\ to maintain binary compatibility.
-For R 4.2.0 and above, the Rtools42 toolchain is used.
+For R 4.5.0 and above, the \Rtools\ toolchain is used.
 
-Rtools42 comes with its own version of MSYS, a minimal unix shell
+\Rtools\ comes with its own version of MSYS, a minimal unix shell
 that we will use to build \JAGS. At the time of writing, the MSYS
-shell does not include the Rtools42 compiler tools on the PATH,
+shell does not include the \Rtools\ compiler tools on the PATH,
 sot this must be added manually with
 \begin{verbatim}
 export PATH=/x86_64-w64-mingw32.static.posix/bin:$PATH
@@ -704,7 +705,7 @@ installation directory, you will need to copy
 
 \subsection{Building LAPACK}
 
-Rtools42 contains static libraries for BLAS and LAPACK. In order
+\Rtools\ contains static libraries for BLAS and LAPACK. In order
 to use these with \JAGS\ we need to build dynamic libraries for them.
 
 First identify the location of the static libraries
@@ -742,14 +743,21 @@ liblapack.def $TLIB/liblapack.a  -L. -lblas
 
 Unpack the \JAGS\ source
 \begin{verbatim}
-tar xfvz JAGS-4.3.1.tar.gz
-cd JAGS-4.3.1
+tar xfvz JAGS-5.0.0.tar.gz
+cd JAGS-5.0.0
 \end{verbatim}
 and configure \JAGS 
 \begin{verbatim}
-./configure --host=x86_64-w64-mingw32.static.posix \
---with-blas="-L$SHAREDLB -lblas" --with-lapack="-L$SHAREDLB -llapack"
+lt_cv_deplibs_check_method=pass_all \
+./configure --host=x86_64-w64-mingw32.static.posix 
 \end{verbatim}
+The \verb+pass_all+ parameter passed to libtool bypasses some file
+checks that libtool conducts on dependent libraries. These checks fail
+on Windows (presumably due to the different file system) and libtool
+falsely concludes that it cannot build a shared library for
+JAGS. Bypassing these checks with \verb+pass_all+ ensures that libtool
+will build a shared library, as well as dynamic shared objects for the
+modules.
 
 After the configure step, type
 \begin{verbatim}
@@ -808,7 +816,7 @@ exceptions and apparent failures for some of the tests, so it must be
 disabled.
 
 \JAGS\ relies on \texttt{pkg-config} to detect \texttt{libcppunit}, but
-\texttt{pkg-config} is not installed automatically with Rtools42. You
+\texttt{pkg-config} is not installed automatically with \Rtools. You
 can install it with
 \begin{verbatim}
 pacman -Sy pkg-config

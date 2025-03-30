@@ -1,9 +1,10 @@
 #include <config.h>
-#include <util/logical.h>
-#include <util/integer.h>
 
 #include "InProd.h"
-#include "blas.h"
+
+#include <util/logical.h>
+#include <util/integer.h>
+#include <matrix/blas.h>
 
 #include <algorithm>
 

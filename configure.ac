@@ -50,8 +50,8 @@ LTDL_INIT([recursive])
 AC_PROG_CC
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX([11], [ext], [mandatory])
-AC_PROG_F77
 AC_PROG_FC
+AC_PROG_F77
 AC_PROG_LEX([noyywrap])
 AC_PROG_YACC
 
@@ -74,19 +74,28 @@ esac
 AM_CONDITIONAL(WINDOWS, test x$win = xtrue)
 
 dnl fortran stuff
-AC_F77_WRAPPERS
+dnl AC_F77_WRAPPERS
 AC_F77_LIBRARY_LDFLAGS
+AC_FC_LIBRARY_LDFLAGS
 AX_LAPACK([],[
 	AC_MSG_ERROR("You need to install the LAPACK library")
 ])
 
 AC_LANG_PUSH([C++])
-AX_OPENMP
+AC_OPENMP
 CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
 AC_LANG_POP
 AC_LANG_PUSH([C])
-AX_OPENMP
+AC_OPENMP
 CFLAGS="$CFLAGS $OPENMP_CFLAGS"
+AC_LANG_POP
+AC_LANG_PUSH([Fortran])
+AC_OPENMP
+FCFLAGS="$FCFLAGS $OPENMP_FCFLAGS"
+AC_LANG_POP
+AC_LANG_PUSH([Fortran 77])
+AC_OPENMP
+FFLAGS="$FFLAGS $OPENMP_FFLAGS"
 AC_LANG_POP
 
 jagsmoddir=${libdir}/JAGS/modules-${JAGS_MAJOR}
@@ -113,6 +122,7 @@ AC_CONFIG_FILES([
   src/lib/module/Makefile
   src/lib/compiler/Makefile
   src/lib/rng/Makefile
+  src/lib/matrix/Makefile	
   src/jrmath/Makefile	
   src/include/Makefile
   src/include/version.h
@@ -126,6 +136,7 @@ AC_CONFIG_FILES([
   src/include/module/Makefile
   src/include/compiler/Makefile
   src/include/rng/Makefile
+  src/include/matrix/Makefile
   src/modules/Makefile
   src/modules/base/Makefile
   src/modules/base/functions/Makefile
@@ -136,7 +147,6 @@ AC_CONFIG_FILES([
   src/modules/bugs/functions/Makefile	
   src/modules/bugs/distributions/Makefile	
   src/modules/bugs/samplers/Makefile	
-  src/modules/bugs/matrix/Makefile	
   src/modules/msm/Makefile	
   src/modules/msm/functions/Makefile	
   src/modules/msm/distributions/Makefile	

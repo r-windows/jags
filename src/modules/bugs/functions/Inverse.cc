@@ -1,7 +1,9 @@
 #include <config.h>
-#include "matrix.h"
+
 #include <util/dim.h>
 #include <util/integer.h>
+#include <matrix/matrix.h>
+
 #include "Inverse.h"
 
 using std::vector;

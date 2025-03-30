@@ -99,6 +99,14 @@ contains
     REAL(c_double), INTENT(INOUT) :: X(*)
     CALL DTRSV(UPLO,TRANS,DIAG,N,A,LDA,X,INCX)
   END SUBROUTINE JAGS_DTRSV
-  
+
+  SUBROUTINE JAGS_DCOPY(N,X,INCX,Y,INCY)&
+       & BIND(C, NAME="jags_dcopy")
+    REAL(c_double), INTENT(IN) :: X(*)
+    INTEGER(c_int), INTENT(IN) :: N,INCX,INCY
+    REAL(c_double), INTENT(INOUT) :: Y(*)
+    CALL DCOPY(N,X,INCX,Y,INCY)
+  END SUBROUTINE JAGS_DCOPY
+
 endmodule jags_blas
 

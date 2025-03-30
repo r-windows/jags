@@ -109,6 +109,4 @@ contains
     CALL DGEQRF(M, N, A, LDA, TAU, WORK, LWORK, INFO)
   END SUBROUTINE JAGS_DGEQRF
   
-endmodule jags_lapack
-   
-
+endmodule jags_lapack    
