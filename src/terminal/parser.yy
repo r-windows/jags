@@ -1472,22 +1472,28 @@ static void adaptstar(long niter, long refresh, int width, bool force)
 
 static void loadModule(std::string const &name)
 {
-    std::cout << "Loading module: " << name;
-    lt_dlhandle mod = lt_dlopenext(name.c_str());
+    //Work around renaming of dic module in JAGS 5.0.0
+    std::string mname = (name == "dic") ? "diag" : name;
+    
+    std::cout << "Loading module: " << mname;
+    lt_dlhandle mod = lt_dlopenext(mname.c_str());
     if (mod == NULL) {
 	std::cout << ": " << lt_dlerror() << std::endl;
     }
     else {
 	std::cout << ": ok" << std::endl;
 	_dyn_lib.push_front(mod);
-	jags::Console::loadModule(name);
+	jags::Console::loadModule(mname);
     }
 }
 
 static void unloadModule(std::string const &name)
 {
-    std::cout << "Unloading module: " << name << std::endl;
-    jags::Console::unloadModule(name);
+    //Work around renaming of dic module in JAGS 5.0.0
+    std::string mname = (name == "dic") ? "diag" : name;
+
+    std::cout << "Unloading module: " << mname << std::endl;
+    jags::Console::unloadModule(mname);
 }
 
 void exiting() {
