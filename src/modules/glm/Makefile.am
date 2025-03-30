@@ -17,6 +17,7 @@ glm_la_LIBADD = samplers/libglmsampler.la SSparse/ssparse.la	\
 glm_la_LDFLAGS = -module -avoid-version
 if WINDOWS
 glm_la_LDFLAGS += -no-undefined
+glm_la_LIBADD += -lgomp
 endif
 
 ### Test library 
