@@ -712,7 +712,7 @@ bool Console::loadModule(string const &name)
     list<Module*>::const_iterator p;
     for (p = Module::modules().begin(); p != Module::modules().end(); ++p)
     {
-	if ((*p)->name() == mname) {
+	if ((*p)->name() == name) {
 	    (*p)->load();
 	    if (rngSeed() != 0) {
 		// Set default seed of RNG factories
@@ -743,7 +743,7 @@ bool Console::unloadModule(string const &name)
     for (auto p = Module::loadedModules().begin(); 
 	 p !=  Module::loadedModules().end(); ++p)
     {
-	if ((*p)->name() == mname) {
+	if ((*p)->name() == name) {
 	    (*p)->unload();
 	    return true;
 	}
