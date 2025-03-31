@@ -26,7 +26,6 @@ libjags_la_LDFLAGS = -version-info $(JAGS_MAJOR):$(JAGS_MINOR):0
 if WINDOWS
 libjags_la_LDFLAGS += -no-undefined
 libjags_la_SOURCES += dllversion.rc
-libjags_la_LIBADD += -lgomp
 endif
 
 ### Test library 

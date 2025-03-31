@@ -17,6 +17,9 @@ AC_DEFINE_UNQUOTED([JAGS_MINOR], [$JAGS_MINOR], [Minor version of JAGS library])
 AC_SUBST(JAGS_PATCH)
 AC_DEFINE_UNQUOTED([JAGS_PATCH], [$JAGS_PATCH], [Patch level of JAGS])
 
+jagsmoddir=${libdir}/JAGS/modules-${JAGS_MAJOR}
+AC_SUBST(jagsmoddir)
+
 define([hgversion],
        esyscmd([sh -c 'hg parent --template "r{node|short} {date|shortdate}"']))
 AC_DEFINE(HG_VERSION, "hgversion", [Mercurial Version])
@@ -73,13 +76,12 @@ case "${host_os}" in
 esac
 AM_CONDITIONAL(WINDOWS, test x$win = xtrue)
 
-dnl fortran stuff
-AC_F77_LIBRARY_LDFLAGS
-AC_FC_LIBRARY_LDFLAGS
-AX_LAPACK([],[
-	AC_MSG_ERROR("You need to install the LAPACK library")
-])
-
+## Testing for OpenMP flags
+## We need to do this BEFORE testing for Fortran libraries with
+## AC_F77_LIBRARY_LDFLAGS so that FLIBS includes the omp and pthread
+## libraries. This only makes a material difference on Windows where
+## static linking to libgomp.a fails if these libraries are not
+## explicitly included in FLIBS.
 AC_LANG([C++])
 AC_OPENMP
 CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
@@ -94,8 +96,17 @@ AC_OPENMP
 FFLAGS="$FFLAGS $OPENMP_FFLAGS"
 AC_LANG([C])
 
-jagsmoddir=${libdir}/JAGS/modules-${JAGS_MAJOR}
-AC_SUBST(jagsmoddir)
+## Mixed C++ and Fortran libraries must be linked with C++, but
+## the C++ compiler knows nothing about the runtime Fortran
+## libraries. These macros find and store the appropriate libraries in
+## FLIBS/FCLIBS for use at link time
+AC_F77_LIBRARY_LDFLAGS
+AC_FC_LIBRARY_LDFLAGS
+
+## Testing for both blas and lapack
+AX_LAPACK([],[
+	AC_MSG_ERROR("You need to install the LAPACK library")
+])
 
 AC_C_BIGENDIAN
 
