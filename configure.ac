@@ -78,10 +78,10 @@ AM_CONDITIONAL(WINDOWS, test x$win = xtrue)
 
 ## Testing for OpenMP flags
 ## We need to do this BEFORE testing for Fortran libraries with
-## AC_F77_LIBRARY_LDFLAGS so that FLIBS includes the omp and pthread
-## libraries. This only makes a material difference on Windows where
-## static linking to libgomp.a fails if these libraries are not
-## explicitly included in FLIBS.
+## AC_F77/FC_LIBRARY_LDFLAGS so that FLIBS/FCLIBS will include the omp
+## and pthread libraries. This only makes a material difference on
+## Windows where static linking to libgomp.a fails if we reverse the order
+## of these autoconf macros.
 AC_LANG([C++])
 AC_OPENMP
 CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
@@ -98,8 +98,8 @@ AC_LANG([C])
 
 ## Mixed C++ and Fortran libraries must be linked with C++, but
 ## the C++ compiler knows nothing about the runtime Fortran
-## libraries. These macros find and store the appropriate libraries in
-## FLIBS/FCLIBS for use at link time
+## libraries. These macros find  the appropriate libraries and
+## store them in FLIBS/FCLIBS for use at link time.
 AC_F77_LIBRARY_LDFLAGS
 AC_FC_LIBRARY_LDFLAGS
 

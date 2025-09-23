@@ -15,7 +15,7 @@ namespace jags {
  * @short Analyze sampled values 
  *
  * This is an abstract class for objects that analyze and/or store sampled
- * values from a given node. 
+ * statistics from a given set of nodes.
  */
 class Monitor {
     std::vector<Node const *> _nodes;
@@ -89,13 +89,14 @@ public:
      */
     SArray dump(bool flat = false) const;
     /**
-     * Returns the names of individual elements
+     * Returns the names of individual elements, or an empty vector
+     * if setElementNames has not been called.
      */
     std::vector<std::string> const &elementNames() const;
     /**
      * Sets the element names. The length of the string must be
-     * conform to the dimensions of the monitor, as returned by the
-     * dim1 member function.
+     * match the length of the monitor as returned by the length
+     * member function.
      */
     void setElementNames(std::vector<std::string> const &names);
 };

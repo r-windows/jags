@@ -376,7 +376,7 @@ void Model::update(unsigned int niter)
     
     /* 
        We must catch and rethrow exceptions that are thrown from
-       indivual threads so they can be handled by the Console.
+       individual threads so they can be handled by the Console.
     */
     exception_ptr teptr = nullptr;
     
