@@ -1,5 +1,6 @@
 #include <config.h>
 #include <model/Monitor.h>
+#include <model/MonitorStat.h>
 #include <graph/Node.h>
 #include <util/dim.h>
 
@@ -12,13 +13,14 @@ using std::copy;
 
 namespace jags {
 
-    Monitor::Monitor(vector<Node const *> const &nodes)
-	: _nodes(nodes), _nchain(countChains(nodes)), _niter(0UL)
+    Monitor::Monitor(vector<Node const *> const &nodes, MonitorStat *stat)
+	: _nodes(nodes), _nchain(countChains(nodes)), _niter(0UL), _stat(stat)
     {
     }
 
     Monitor::~Monitor()
     {
+	delete _stat;
     }
 
     void Monitor::update()
@@ -49,17 +51,26 @@ namespace jags {
 	return _nchain;
     }
 
-    //FIXME: These should be in monitorinfo
-    vector<string> const &Monitor::elementNames() const
+    unsigned long Monitor::length() const
     {
-	return _elt_names;
+	return _stat->length();
     }
-    
-    void Monitor::setElementNames(vector<string> const &names)
+
+    vector<unsigned long> Monitor::dim() const
     {
-	_elt_names = names;
+	return _stat->dim();
     }
-    
+
+    vector<string> Monitor::elementNames() const
+    {
+	return _stat->names();
+    }
+
+    void Monitor::setStatNames(vector<string> const &names)
+    {
+	_stat->setNames(names);
+    }
+
 SArray Monitor::dump(bool flat) const
 {
     unsigned int nchain = poolChains() ? 1 : _nchain;
@@ -97,10 +108,9 @@ SArray Monitor::dump(bool flat) const
     ans.setValue(v);    
     ans.setDimNames(names);
     if (flat) {
-	ans.setSDimNames(_elt_names, 0);
+	ans.setSDimNames(elementNames(), 0);
     }
     return(ans);
 }
-
 
 } //namespace jags

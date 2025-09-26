@@ -12,7 +12,6 @@ namespace jags {
      */
     class WeightMonitor : public Monitor {
     protected:
-	MonitorStat *_stat;
 	const std::vector<bool> _missing;
     public:
 	/**
@@ -28,10 +27,6 @@ namespace jags {
 	 */
 	WeightMonitor(std::vector<Node const *> const &nodes,
 		      MonitorStat *stat);
-	/**
-	 * Desctructor, which deletes the stat object
-	 */
-	~WeightMonitor();
 	/**
 	 * If the stat has scalar weight then the length of the weight
 	 * monitor is 1, otherwise for vector weights the length is the
@@ -49,6 +44,11 @@ namespace jags {
 	 * Weight monitors do not pool chains
 	 */
 	bool poolChains() const override;
+	/**
+	 * If weight is scalar then returns an empty vector, otherwise returns
+	 * the elementNames of the stat.
+	 */
+	std::vector<std::string> elementNames() const override;
     };
 
 }

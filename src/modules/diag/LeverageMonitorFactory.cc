@@ -162,7 +162,7 @@ namespace jags {
 			elt_names.push_back(model->symtab().getName(*p));
 		    }
 		}
-		m->setElementNames(elt_names);
+		m->setStatNames(elt_names);
 	    }
 
 	    return m;

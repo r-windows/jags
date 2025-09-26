@@ -28,19 +28,13 @@ namespace jags {
     }
 
     MeanMonitor::MeanMonitor(vector<Node const *> const &nodes, MonitorStat *stat)
-	: Monitor(nodes),
-	  _stat(stat),
+	: Monitor(nodes, stat),
 	  _S(nchain(), vector<double>(stat->length(), 0.0)),
 	  _W(nchain(), vector<double>(weight_size(stat), 0.0)),
 	  _missing(stat->missing())
     {
     }
-
-    MeanMonitor::~MeanMonitor()
-    {
-	delete _stat;
-    }
-    
+  
     void MeanMonitor::update(unsigned int ch)
     {
 	vector<double> &S = _S[ch]; // Sum of (weighted) values
@@ -104,16 +98,6 @@ namespace jags {
 	}
 
 	return v;
-    }
-
-    unsigned long MeanMonitor::length() const
-    {
-	return _stat->length();
-    }
-
-    vector<unsigned long> MeanMonitor::dim() const
-    {
-	return _stat->dim();
     }
 
     bool MeanMonitor::poolChains() const

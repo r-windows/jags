@@ -9,6 +9,7 @@
 
 namespace jags {
 
+    class MonitorStat;
     class Node;
     
 /**
@@ -21,9 +22,10 @@ class Monitor {
     std::vector<Node const *> _nodes;
     unsigned int _nchain;
     unsigned int _niter;
-    std::vector<std::string> _elt_names;
+protected:
+    MonitorStat *_stat;
 public:
-    Monitor(std::vector<Node const *> const &nodes);
+    Monitor(std::vector<Node const *> const &nodes, MonitorStat *stat);
     virtual ~Monitor();
     /**
      * Updates the monitor. 
@@ -67,14 +69,16 @@ public:
     virtual std::vector<double> value(unsigned int chain) const = 0;
     /**
      * Returns the length of the monitored value corresponding to a
-     * single iteration in a single chain.
+     * single iteration in a single chain. The default implementation
+     * returns the length of the stat.
      */
-    virtual unsigned long length() const = 0;
+    virtual unsigned long length() const;
     /**
      * Returns the dimensions of the value corresponding to a single
-     * iteration in a single chain.
+     * iteration in a single chain. The default implementation returns
+     * the dimension of the stat.
      */
-    virtual std::vector<unsigned long> dim() const = 0;
+    virtual std::vector<unsigned long> dim() const;
     /**
      * Dumps the monitored values to an SArray. 
      *
@@ -89,16 +93,17 @@ public:
      */
     SArray dump(bool flat = false) const;
     /**
-     * Returns the names of individual elements, or an empty vector
-     * if setElementNames has not been called.
+     * Returns the names of individual elements of the monitored value.
+     * The default implementation copies these from the elements names
+     * of the stat.
      */
-    std::vector<std::string> const &elementNames() const;
+    virtual std::vector<std::string> elementNames() const;
     /**
-     * Sets the element names. The length of the string must be
-     * match the length of the monitor as returned by the length
-     * member function.
+     * Sets the names attribute of the stat. This is used to construct
+     * the element names of the monitor
      */
-    void setElementNames(std::vector<std::string> const &names);
+    void setStatNames(std::vector<std::string> const &names);
+    
 };
 
 } /* namespace jags */

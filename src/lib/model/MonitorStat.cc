@@ -4,6 +4,7 @@
 #include <util/dim.h>
 
 using std::vector;
+using std::string;
 
 namespace jags {
 
@@ -17,7 +18,6 @@ namespace jags {
 	: _dim(1, length), _length(length), _missing(length, false)
     {
     }
-
 
     MonitorStat::~MonitorStat()
     {
@@ -48,5 +48,14 @@ namespace jags {
 	return UNWEIGHTED;
     }
 
+    void MonitorStat::setNames(vector<string> const &names)
+    {
+	_names = names;
+    }
+    
+    vector<string> const &MonitorStat::names() const
+    {
+	return _names;
+    }
     
 }

@@ -84,7 +84,7 @@ namespace jags {
 	    else {
 		elt_names.push_back(name + printRange(range));
 	    }
-	    m->setElementNames(elt_names);
+	    m->setStatNames(elt_names);
 	
 	    return m;
 	}

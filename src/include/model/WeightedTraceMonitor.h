@@ -13,12 +13,10 @@ namespace jags {
      * @short Stores sampled values for a given stat
      */
     class WeightedTraceMonitor : public Monitor {
-	MonitorStat *_stat;
-	std::vector<std::vector<double>> _values; // sampled values
-	std::vector<std::vector<double>> _weight_sums; // sampled values
+	std::vector<std::vector<double>> _values; 
+	std::vector<std::vector<double>> _weight_sums;
     public:
 	WeightedTraceMonitor(std::vector<Node const *> const &nodes, MonitorStat *stat);
-	~WeightedTraceMonitor();
 	void update(unsigned int chain) override;
 	std::vector<double> value(unsigned int chain) const override;
 	bool poolChains() const override;

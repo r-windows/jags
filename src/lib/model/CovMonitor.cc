@@ -9,14 +9,13 @@
 
 using std::vector;
 using std::logic_error;
+using std::string;
 
 namespace jags {
 
-    class MonitorStat;
-    
     CovMonitor::CovMonitor(vector<Node const *> const &nodes,
 			   MonitorStat *stat)
-	: Monitor(nodes), _stat(stat),
+	: Monitor(nodes, stat),
 	  _S(nchain(), vector<double>(stat->length(), 0.0)),
 	  _SS(nchain(), vector<double>(stat->length() * stat->length(), 0.0)),
 	  _W(nchain(), 0.0),
@@ -28,11 +27,6 @@ namespace jags {
 	}
     }
     
-    CovMonitor::~CovMonitor()
-    {
-	delete _stat;
-    }
-
     static void update_value(vector<double> const &value, vector<bool> const &missing, double wt, double W, vector<double> &S, vector<double> &SS)
     {
 	unsigned long p = value.size();
@@ -132,7 +126,6 @@ namespace jags {
 	return dim;
     }
 
-
     bool CovMonitor::poolChains() const
     {
 	return false;
@@ -143,4 +136,17 @@ namespace jags {
 	return true;
     }
 
+    vector<string> CovMonitor::elementNames() const
+    {
+	vector<string> elt_names;
+
+	vector<string> const &statnames = _stat->names();
+	for (unsigned long i = 0; i < statnames.size(); ++i) {
+	    for (unsigned long j = 0; j < statnames.size(); ++j) {
+		elt_names.push_back(statnames[i] + ":" + statnames[j]);
+	    }
+	}
+
+	return elt_names;
+    }
 }

@@ -7,23 +7,17 @@
 
 namespace jags {
 
-    class MonitorStat;
-    
     /**
      * @short Stores running variance of a given stat
      */
     class VarMonitor : public Monitor {
-	MonitorStat *_stat;
 	std::vector<std::vector<double>> _S, _SS, _W, _WW;
 	std::vector<bool> _missing;
     public:
 	VarMonitor(std::vector<Node const *> const &nodes,
 		   MonitorStat *stat);
-	~VarMonitor();
 	void update(unsigned int chain) override;
 	std::vector<double> value(unsigned int chain) const override;
-	unsigned long length() const override;
-	std::vector<unsigned long> dim() const override;
 	bool poolChains() const override;
 	bool poolIterations() const override;
     };

@@ -7,19 +7,13 @@
 #include <model/MonitorStat.h>
 
 using std::vector;
-using std::string;
 
 namespace jags {
 
     WeightedTraceMonitor::WeightedTraceMonitor(vector<Node const *> const &nodes, MonitorStat *stat)
-	: Monitor(nodes), _stat(stat), _values(nchain()),
+	: Monitor(nodes, stat), _values(nchain()),
 	  _weight_sums(nchain(), vector<double>(stat->length(), 0.0))
     {
-    }
-
-    WeightedTraceMonitor::~WeightedTraceMonitor()
-    {
-	delete _stat;
     }
     
     void WeightedTraceMonitor::update(unsigned int ch)

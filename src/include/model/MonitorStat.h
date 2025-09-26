@@ -6,6 +6,7 @@
  */
 
 #include <vector>
+#include <string>
 
 namespace jags {
 
@@ -15,6 +16,7 @@ namespace jags {
 	const std::vector<unsigned long> _dim;
 	const unsigned long _length;
 	const std::vector<bool> _missing;
+	std::vector<std::string> _names;
     public:
 	/**
 	 * Constructor
@@ -78,6 +80,18 @@ namespace jags {
 	 * for vector weights.
 	 */
 	virtual std::vector<double> weight(unsigned int chain) const;
+	/**
+	 * Sets the names attribute of the MonitorStat.
+	 *
+	 * @param names Vector of names of length equal to the length of the stat.
+	 * Alternatively a vector of length zero unsets the names.
+	 * 
+	 */
+	void setNames(std::vector<std::string> const &names);
+	/**
+	 * Returns the name vector previously set by MonitorStat#setNames.
+	 */
+	std::vector<std::string> const &names() const;
     };
 
 }

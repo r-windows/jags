@@ -7,6 +7,7 @@
 
 using std::vector;
 using std::logic_error;
+using std::string;
 
 namespace jags {
 
@@ -30,7 +31,7 @@ namespace jags {
     }
 
     WeightMonitor::WeightMonitor(vector<Node const *> const &nodes, MonitorStat *stat)
-	: Monitor(nodes), _stat(stat), _missing(weight_missing(stat))
+	: Monitor(nodes, stat), _missing(weight_missing(stat))
     {
 	/*
 	  You should never need this so may as well make it a logic
@@ -40,11 +41,6 @@ namespace jags {
 	if(stat->weighted() == UNWEIGHTED) {
 	    throw logic_error("Cannot construct WeightMonitor for unweighted stat");
 	}
-    }
-
-    WeightMonitor::~WeightMonitor()
-    {
-	delete _stat;
     }
 
     unsigned long WeightMonitor::length() const
@@ -68,4 +64,11 @@ namespace jags {
 	return false;
     }
 
+    vector<string> WeightMonitor::elementNames() const
+    {
+	if (_stat->weighted() == VECTOR_WEIGHT) {
+	    return vector<string>();
+	}
+	return _stat->names();
+    }
 }
