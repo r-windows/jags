@@ -68,15 +68,15 @@ public:
      */
     virtual std::vector<double> value(unsigned int chain) const = 0;
     /**
-     * Returns the length of the monitored value corresponding to a
-     * single iteration in a single chain. The default implementation
-     * returns the length of the stat.
+     * Returns the length of the unit monitored value corresponding to
+     * a single iteration in a single chain. The default
+     * implementation returns the length of the stat.
      */
     virtual unsigned long length() const;
     /**
-     * Returns the dimensions of the value corresponding to a single
-     * iteration in a single chain. The default implementation returns
-     * the dimension of the stat.
+     * Returns the dimensions of the unit monitored value
+     * corresponding to a single iteration in a single chain. The
+     * default implementation returns the dimension of the stat.
      */
     virtual std::vector<unsigned long> dim() const;
     /**

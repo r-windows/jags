@@ -120,10 +120,7 @@ namespace jags {
     
     vector<unsigned long> CovMonitor::dim() const
     {
-	vector<unsigned long> d = _stat->dim();
-	vector<unsigned long> dim = d;
-	dim.insert(dim.end(), d.begin(), d.end());
-	return dim;
+	return vector<unsigned long>(2, _stat->length());
     }
 
     bool CovMonitor::poolChains() const
