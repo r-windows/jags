@@ -16,14 +16,16 @@
 
 using std::vector;
 using std::string;
+using std::pair;
 
 namespace jags {
 namespace diag {
 
     template<class S>
-    Monitor * newDensityMonitor(vector<Node const *> const &nodes,
-				DensityType density_type,
-				SummaryType summary_type)
+    pair<Monitor*,MonitorStat*>
+    newDensityMonitor(vector<Node const *> const &nodes,
+		      DensityType density_type,
+		      SummaryType summary_type)
     {
 	MonitorStat * stat = new  S(nodes, density_type);
 	Monitor *m = nullptr;
@@ -42,9 +44,10 @@ namespace diag {
 	    break;
 	case STUNSET:
 	    delete stat;
+	    stat = nullptr;
 	    break; //-Wswitch
 	}
-	return m;
+	return pair<Monitor*,MonitorStat*>(m,stat);
     }
 
     Monitor *NodeDensityMonitorFactory::getMonitor(string const &name, 
@@ -118,7 +121,7 @@ namespace diag {
 	/* Create the correct subtype of monitor */
 	SummaryType summary_type = getSummaryType(summary);
 	
-	Monitor *m = nullptr;
+	pair<Monitor*,MonitorStat*> m(nullptr, nullptr);
 	if (isWeighted(nstat)) {
 	    // loo_density, loo_logdensity, loo_deviance
 	    m = newDensityMonitor<LooDensityStat>(nodes, density_type, summary_type);
@@ -132,23 +135,23 @@ namespace diag {
 	    m = newDensityMonitor<DensityStat>(nodes, density_type, summary_type);
 	}
 
-	if (m) {
+	if (m.first) {
 	    // Set name attributes
-	    vector<string> elt_names;
+	    vector<string> stat_names;
 	    if (isTotal(nstat)) {
 		// Stats that are summarised between variables
-		elt_names.push_back(name + printRange(range));
+		stat_names.push_back(name + printRange(range));
 	    }
 	    else {
 		// Stats with a single entry for each node
 		for (auto p = nodes.begin(); p != nodes.end(); ++p) {
-		    elt_names.push_back(model->symtab().getName(*p));
+		    stat_names.push_back(model->symtab().getName(*p));
 		}
 	    }
-	    m->setStatNames(elt_names);
+	    m.second->setNames(stat_names);
 	}
 	
-	return m;
+	return m.first;
 		
     }
     

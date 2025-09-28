@@ -12,17 +12,20 @@
 #include <model/NodeArraySubset.h>
 #include <graph/Node.h>
 
+
 using std::string;
 using std::vector;
+using std::pair;
 
 namespace jags {
     namespace diag {
 
 	template<class S>
-	Monitor * newLeverageMonitor(vector<Node const *> const &nodes,
-				    SummaryType summary_type,
-				    vector<RNG*> &rngs,
-				    unsigned int nrep)
+	pair<Monitor*,MonitorStat*>
+	newLeverageMonitor(vector<Node const *> const &nodes,
+			   SummaryType summary_type,
+			   vector<RNG*> &rngs,
+			   unsigned int nrep)
 	{
 	    MonitorStat * stat = new  S(nodes, rngs, nrep);
 	    Monitor *m = nullptr;
@@ -37,9 +40,10 @@ namespace jags {
 	    case COV:
 	    case STUNSET:
 		delete stat;
+		stat = nullptr;
 		break; //-Wswitch
 	    }
-	    return m;
+	    return pair<Monitor*,MonitorStat*>(m,stat);
 	}
 	
 	Monitor *LeverageMonitorFactory::getMonitor(string const &name, 
@@ -135,7 +139,7 @@ namespace jags {
 	    SummaryType summary_type = getSummaryType(summary);
 	    if (summary_type != MEAN && summary_type != TRACE) return nullptr;
 	    
-	    Monitor *m = nullptr;
+	    pair<Monitor*, MonitorStat*> m(nullptr, nullptr);
 	    if (isWeighted(nstat)) {
 		// loo_leverage
 		m = newLeverageMonitor<LooLeverageStat>(nodes, summary_type, rngs, 10);
@@ -149,23 +153,23 @@ namespace jags {
 		m = newLeverageMonitor<LeverageStat>(nodes, summary_type, rngs, 10);
 	    }
     
-	    if (m) {
+	    if (m.first) {
 		/* Set name attributes */
-		vector<string> elt_names;	  
+		vector<string> stat_names;	  
 		if (isTotal(nstat)) {
 		    // Stats with only a single value
-		    elt_names.push_back(name + printRange(range));
+		    stat_names.push_back(name + printRange(range));
 		}
 		else {
 		    // Stats with a single entry for each node
 		    for (auto p = nodes.begin(); p != nodes.end(); ++p) {
-			elt_names.push_back(model->symtab().getName(*p));
+			stat_names.push_back(model->symtab().getName(*p));
 		    }
 		}
-		m->setStatNames(elt_names);
+		m.second->setNames(stat_names);
 	    }
 
-	    return m;
+	    return m.first;
 		
 	}
 

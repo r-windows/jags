@@ -10,6 +10,7 @@
 
 using std::string;
 using std::vector;
+using std::pair;
 
 namespace jags {
     namespace base {
@@ -20,11 +21,13 @@ namespace jags {
 	  Monitor subclass for each summary type.
 	*/
 	template <class T>
-	T * newValueMonitor(NodeArray *array, Range const &range)
+	pair<T*,ValueStat*>
+	newValueMonitor(NodeArray *array, Range const &range)
 	{
 	    NodeArraySubset subset(array, range);
 	    ValueStat *stat = new ValueStat(subset);
-	    return new T(subset.nodes(), stat);
+	    T *m = new T(subset.nodes(), stat);
+	    return pair<T*,ValueStat*>(m, stat);
 	}
 	
 	Monitor *ValueMonitorFactory::getMonitor(string const &name,
@@ -51,7 +54,7 @@ namespace jags {
 		return nullptr;
 	    }
 	    
-	    Monitor *m = nullptr;
+	    pair<Monitor*, MonitorStat*> m(nullptr, nullptr);
 	    if (summary == "trace") {
 		m = newValueMonitor<TraceMonitor>(array, range);
 	    }
@@ -65,7 +68,7 @@ namespace jags {
 		m = newValueMonitor<CovMonitor>(array, range);
 	    }
 
-	    if (!m) {
+	    if (!m.first) {
 		return nullptr;
 	    }
 
@@ -75,18 +78,18 @@ namespace jags {
 		//A null range corresponds to the whole array
 		node_range = array->range();
 	    }
-	    vector<string> elt_names;
+	    vector<string> stat_names;
 	    if (node_range.length() > 1) {
 		for (RangeIterator i(node_range); !i.atEnd(); i.nextLeft()) {
-		    elt_names.push_back(name + printIndex(i));
+		    stat_names.push_back(name + printIndex(i));
 		}
 	    }
 	    else {
-		elt_names.push_back(name + printRange(range));
+		stat_names.push_back(name + printRange(range));
 	    }
-	    m->setStatNames(elt_names);
+	    m.second->setNames(stat_names);
 	
-	    return m;
+	    return m.first;
 	}
 
 	string ValueMonitorFactory::name() const

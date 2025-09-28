@@ -78,11 +78,6 @@ namespace jags {
 	    return vector<vector<string>>(ndim, vector<string>());
 	}
     }
-    
-    void Monitor::setStatNames(vector<string> const &names)
-    {
-	_stat->setNames(names);
-    }
 
 SArray Monitor::dump(bool flat) const
 {

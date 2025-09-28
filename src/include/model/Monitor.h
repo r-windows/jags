@@ -108,11 +108,6 @@ public:
      * are the same as elementNames.
      */
     virtual std::vector<std::vector<std::string>> dimNames() const;
-    /**
-     * Sets the names attribute of the stat. This is used to construct
-     * the element names of the monitor
-     */
-    void setStatNames(std::vector<std::string> const &names);
     
 };
 
