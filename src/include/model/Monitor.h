@@ -94,10 +94,20 @@ public:
     SArray dump(bool flat = false) const;
     /**
      * Returns the names of individual elements of the monitored value.
-     * The default implementation copies these from the elements names
+     * The default implementation copies these from the element names
      * of the stat.
      */
     virtual std::vector<std::string> elementNames() const;
+    /**
+     * Returns a vector of length equal to the length of Monitor#dim giving
+     * the names of the corresponding dimension. These names may be null,
+     * represented by empty vectors.
+     *
+     * The default implementation returns non-null dimnames only in the
+     * case that the unit monitored value is a vector, when dimnames
+     * are the same as elementNames.
+     */
+    virtual std::vector<std::vector<std::string>> dimNames() const;
     /**
      * Sets the names attribute of the stat. This is used to construct
      * the element names of the monitor

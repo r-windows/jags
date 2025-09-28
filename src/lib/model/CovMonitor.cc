@@ -146,4 +146,9 @@ namespace jags {
 
 	return elt_names;
     }
+
+    vector<vector<string>> CovMonitor::dimNames() const
+    {
+	return vector<vector<string>>(2, _stat->names());
+    }
 }

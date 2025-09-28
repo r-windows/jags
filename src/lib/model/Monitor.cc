@@ -66,6 +66,19 @@ namespace jags {
 	return _stat->names();
     }
 
+    vector<vector<string>> Monitor::dimNames() const
+    {
+	unsigned long ndim = _stat->dim().size();
+	if (ndim == 1UL) {
+	    // Stat is a vector. Dimnames match element names.
+	    return vector<vector<string>>(1, _stat->names());
+	}
+	else {
+	    // Stat is an array. Leave dimnames empty.
+	    return vector<vector<string>>(ndim, vector<string>());
+	}
+    }
+    
     void Monitor::setStatNames(vector<string> const &names)
     {
 	_stat->setNames(names);
@@ -84,31 +97,38 @@ SArray Monitor::dump(bool flat) const
 	p = copy(x.begin(), x.end(), p);
     }
 
-    if (poolIterations() && niter != 1) {
-	throw logic_error("Invalid number of iterations in Monitor");
-    }
-
     vector<unsigned long> vdim = dim();
     if (flat) {
 	vdim = vector<unsigned long>(1, nvalue);
     }
 	
-    vector<string> names(vdim.size(), "");
-
+    vector<string> tags(vdim.size(), "");
+    
     if (!poolIterations()) {
 	vdim.push_back(niter);
-	names.push_back("iteration");
+	tags.push_back("iteration");
     }
     if (!poolChains()) {
 	vdim.push_back(nchain);
-	names.push_back("chain");
+	tags.push_back("chain");
     }
 	
     SArray ans(vdim);
     ans.setValue(v);    
-    ans.setDimNames(names);
+    ans.setDimNames(tags);
     if (flat) {
 	ans.setSDimNames(elementNames(), 0);
+    }
+    else {
+	vector<vector<string>> dimnames = dimNames();
+	if (dimnames.size() > vdim.size()) {
+	    throw logic_error("Size mismatch for Monitor dimnames");
+	}
+	for (unsigned long i = 0; i < dimnames.size(); ++i) {
+	    if (!dimnames[i].empty()) {
+		ans.setSDimNames(dimnames[i], i);
+	    }
+	}
     }
     return(ans);
 }

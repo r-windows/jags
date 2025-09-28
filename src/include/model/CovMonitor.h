@@ -38,7 +38,17 @@ namespace jags {
 	unsigned long length() const override;
 	bool poolChains() const override;
 	bool poolIterations() const override;
+	/**
+	 * Element [i,j] has name "n[i]:n[j]" where n[1:L]
+	 * is the vector of stat names.
+	 */
 	std::vector<std::string> elementNames() const override;
+	/**
+	 * Dim names are c(n, n])  where n[1:L] is the
+	 * vector of stat names.
+	 */
+	std::vector<std::vector<std::string>> dimNames() const override;
+
     };
     
 }
