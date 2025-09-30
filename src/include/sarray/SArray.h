@@ -18,8 +18,8 @@ class SArray
     const SimpleRange _range;
     std::vector<double> _value;
     bool _discrete;
-    std::vector<std::vector<std::string> > _s_dimnames;
-    std::vector<std::string> _dimnames;
+    std::vector<std::vector<std::string> > _dimnames;
+    std::vector<std::string> _dimtags;
     SArray &operator=(SArray const &rhs);
 public:
     /**
@@ -77,17 +77,18 @@ public:
      */
     SimpleRange const &range() const;
     /**
-     * Returns the names of the dimensions. A newly created SArray has
-     * no dimension names and this function returns an empty vector.
+     * Returns the dimension tags, corresponding to names(dimnames())
+     * in the R language. A newly created SArray has no dimension tags
+     * and this function returns an empty vector.
      */
-    std::vector<std::string> const &dimNames() const;
+    std::vector<std::string> const &dimTags() const;
     /**
      * Sets the names of the dimensions.
      *
-     * @param names A vector of names that is either empty, or of size
+     * @param names A vector of tags that is either empty, or of size
      * equal to the number of dimensions.
      */
-    void setDimNames(std::vector<std::string> const &names);
+    void setDimTags(std::vector<std::string> const &tags);
     /**
      * Returns the names of one of dimensions, corresponding to 
      * dimnames()[i+1] in the S language. A newly created SArray has
@@ -95,16 +96,16 @@ public:
      *
      * @param i Requested dimension.
      */
-    std::vector<std::string> const &getSDimNames(unsigned long i) const;
+    std::vector<std::string> const &dimNames(unsigned long i) const;
     /**
      * Sets the names of the ith dimension, corresponding to dimnames()[i+1]
      * in the S language.
      *
      * @param names A vector of names of size equal to the ith dimension
-     * value vector, or zero.
+     * value vector, or an empty vector.
      * @param i Requested dimension
      */
-    void setSDimNames(std::vector<std::string> const &names, unsigned long i);
+    void setDimNames(std::vector<std::string> const &names, unsigned long i);
     /**
      * It is convenient to inline these functions so that an SArray
      * can be thought of as having some of the dimension attributes of

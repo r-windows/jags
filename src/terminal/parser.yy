@@ -1038,7 +1038,7 @@ void dumpMonitors(std::string const &file, std::string const &stat,
 	out << "\"" << name << "\" = ";
 	std::vector<unsigned long> const &dim = sarray.dim(false);
 	bool discrete = sarray.isDiscreteValued();
-	bool named = !sarray.dimNames().empty();
+	bool named = !sarray.dimTags().empty();
 
 	if (dim.size() == 1 && !named) {
 	    // Vector 
@@ -1080,7 +1080,7 @@ void dumpMonitors(std::string const &file, std::string const &stat,
 	    }
 	    out << ")";
 	    if (named) {
-		std::vector<std::string> const &dnames = sarray.dimNames();
+		std::vector<std::string> const &dnames = sarray.dimTags();
 		out << ", .Names = c(";
 		for (unsigned int k = 0; k < dnames.size(); ++k) {
 		    if (k > 0) {

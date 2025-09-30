@@ -78,7 +78,7 @@ namespace jags {
 	    return vector<vector<string>>(ndim, vector<string>());
 	}
     }
-
+    
 SArray Monitor::dump(bool flat) const
 {
     unsigned int nchain = poolChains() ? 1 : _nchain;
@@ -110,9 +110,9 @@ SArray Monitor::dump(bool flat) const
 	
     SArray ans(vdim);
     ans.setValue(v);    
-    ans.setDimNames(tags);
+    ans.setDimTags(tags);
     if (flat) {
-	ans.setSDimNames(elementNames(), 0);
+	ans.setDimNames(elementNames(), 0);
     }
     else {
 	vector<vector<string>> dimnames = dimNames();
@@ -121,7 +121,7 @@ SArray Monitor::dump(bool flat) const
 	}
 	for (unsigned long i = 0; i < dimnames.size(); ++i) {
 	    if (!dimnames[i].empty()) {
-		ans.setSDimNames(dimnames[i], i);
+		ans.setDimNames(dimnames[i], i);
 	    }
 	}
     }
