@@ -13,6 +13,18 @@ using std::string;
 
 namespace jags {
 
+    char const * asChar(DimTag tag)
+    {
+	switch(tag) {
+	case DIM_VALUE:
+	    return "value";
+	case DIM_CHAIN:
+	    return "chain";
+	case DIM_ITER:
+	    return "iteration";
+	}
+    }
+	
 SArray::SArray(vector<unsigned long> const &dim)
     : _range(dim), _value(_range.length(), JAGS_NA), _discrete(false),
       _dimnames(dim.size())
@@ -61,12 +73,12 @@ bool SArray::isDiscreteValued() const
     return _discrete;
 }
 
-vector<string> const &SArray::dimTags() const
+vector<DimTag> const &SArray::dimTags() const
 {
     return _dimtags;
 }
 
-void SArray::setDimTags(vector<string> const &tags)
+void SArray::setDimTags(vector<DimTag> const &tags)
 {
     if (tags.empty() || tags.size() == _range.ndim(false)) {
 	_dimtags = tags;

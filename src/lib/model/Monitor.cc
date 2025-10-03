@@ -97,15 +97,15 @@ SArray Monitor::dump(bool flat) const
 	vdim = vector<unsigned long>(1, nvalue);
     }
 	
-    vector<string> tags(vdim.size(), "");
+    vector<DimTag> tags(vdim.size(), DIM_VALUE);
     
     if (!poolIterations()) {
 	vdim.push_back(niter);
-	tags.push_back("iteration");
+	tags.push_back(DIM_ITER);
     }
     if (!poolChains()) {
 	vdim.push_back(nchain);
-	tags.push_back("chain");
+	tags.push_back(DIM_CHAIN);
     }
 	
     SArray ans(vdim);

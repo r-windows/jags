@@ -1080,13 +1080,13 @@ void dumpMonitors(std::string const &file, std::string const &stat,
 	    }
 	    out << ")";
 	    if (named) {
-		std::vector<std::string> const &dnames = sarray.dimTags();
+		std::vector<jags::DimTag> const &dnames = sarray.dimTags();
 		out << ", .Names = c(";
 		for (unsigned int k = 0; k < dnames.size(); ++k) {
 		    if (k > 0) {
 			out << ",";
 		    }
-		    out << "\"" << dnames[k] << "\"";
+		    out << "\"" << asChar(dnames[k]) << "\"";
 		}
 		out << "))";
 	    }

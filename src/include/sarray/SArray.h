@@ -8,6 +8,10 @@
 
 namespace jags {
 
+    enum DimTag {DIM_VALUE, DIM_CHAIN, DIM_ITER};
+
+    char const * asChar(DimTag tag);
+
 /**
  * @short multi-dimensional real-valued array
  *
@@ -19,7 +23,7 @@ class SArray
     std::vector<double> _value;
     bool _discrete;
     std::vector<std::vector<std::string> > _dimnames;
-    std::vector<std::string> _dimtags;
+    std::vector<DimTag> _dimtags;
     SArray &operator=(SArray const &rhs);
 public:
     /**
@@ -77,18 +81,17 @@ public:
      */
     SimpleRange const &range() const;
     /**
-     * Returns the dimension tags, corresponding to names(dimnames())
-     * in the R language. A newly created SArray has no dimension tags
-     * and this function returns an empty vector.
+     * Returns the dimension tags. A newly created SArray has no
+     * dimension tags and this function returns an empty vector.
      */
-    std::vector<std::string> const &dimTags() const;
+    std::vector<DimTag> const &dimTags() const;
     /**
-     * Sets the names of the dimensions.
+     * Sets the dimension tags.
      *
-     * @param names A vector of tags that is either empty, or of size
+     * @param names A vector of DimTags that is either empty, or of size
      * equal to the number of dimensions.
      */
-    void setDimTags(std::vector<std::string> const &tags);
+    void setDimTags(std::vector<DimTag> const &tags);
     /**
      * Returns the names of one of dimensions, corresponding to 
      * dimnames()[i+1] in the S language. A newly created SArray has
