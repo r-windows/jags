@@ -23,6 +23,7 @@ namespace jags {
 	case DIM_ITER:
 	    return "iteration";
 	}
+	return ""; //-Wall
     }
 	
 SArray::SArray(vector<unsigned long> const &dim)
@@ -33,7 +34,7 @@ SArray::SArray(vector<unsigned long> const &dim)
 
 SArray::SArray(SArray const &orig)
     : _range(orig._range), _value(orig._value), _discrete(orig._discrete),
-      _dimnames(orig._dimnames), _dimtags(orig._dimtags)
+      _dimnames(orig._dimnames), _dimtags(orig._dimtags), _value_names(orig._value_names)
 {
 }
 
@@ -91,7 +92,7 @@ void SArray::setDimTags(vector<DimTag> const &tags)
 vector<string> const &SArray::dimNames(unsigned long i) const
 {
     if (i >= _range.ndim(false))
-	throw logic_error("Dimension out of range in setDimNames");
+	throw logic_error("Dimension out of range in SArray::dimNames");
 
     return _dimnames[i];
 }
@@ -99,7 +100,7 @@ vector<string> const &SArray::dimNames(unsigned long i) const
 void SArray::setDimNames(vector<string> const &names, unsigned long i)
 {
     if (i >= _range.ndim(false))
-	throw logic_error("Dimension out of range in setSDimNames");
+	throw logic_error("Dimension out of range in SArray::setSDimNames");
 
     if (names.empty() || names.size() == _range.dim(false)[i]) {
 	_dimnames[i] = names;
@@ -109,4 +110,28 @@ void SArray::setDimNames(vector<string> const &names, unsigned long i)
     }
 }
 
+    vector<string> const &SArray::valueNames() const
+    {
+	return _value_names;
+    }
+
+    void SArray::setValueNames(vector<string> const &names)
+    {
+	unsigned long vlen=0;
+	for (unsigned long i = 0; i < _dimtags.size(); ++i) {
+	    if (_dimtags[i] == DIM_VALUE) {
+		if (vlen == 0) {
+		    vlen = 1;
+		}
+		vlen *= _range.dim(false)[i];
+	    }
+	}
+	if (names.empty() || names.size() == vlen) {
+	    _value_names = names;
+	}
+	else {
+	    throw length_error("Invalid length in SArray::setValueNames");
+	}
+    }
+    
 } //namespace jags

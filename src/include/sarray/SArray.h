@@ -22,8 +22,9 @@ class SArray
     const SimpleRange _range;
     std::vector<double> _value;
     bool _discrete;
-    std::vector<std::vector<std::string> > _dimnames;
+    std::vector<std::vector<std::string>> _dimnames;
     std::vector<DimTag> _dimtags;
+    std::vector<std::string> _value_names;
     SArray &operator=(SArray const &rhs);
 public:
     /**
@@ -110,6 +111,20 @@ public:
      */
     void setDimNames(std::vector<std::string> const &names, unsigned long i);
     /**
+     * Returns a vector of unique names for each combination of the value
+     * dimensions, i.e. the dimensions with tag DIM_VALUE. A newly created
+     * SArray has an empty vector of value names.
+     */
+    std::vector<std::string> const &valueNames() const;
+    /**
+     * Sets the value names.
+     *
+     * @param names Vector of names which may be empty (which unsets
+     * the value names) or of length equal to the product of the value
+     * dimensions.
+     */
+    void setValueNames(std::vector<std::string> const &names);
+    /**
      * It is convenient to inline these functions so that an SArray
      * can be thought of as having some of the dimension attributes of
      * its associated range.
@@ -117,7 +132,7 @@ public:
     unsigned long length() const { return range().length(); }
     unsigned long ndim(bool drop) const { return range().ndim(drop); }
     std::vector<unsigned long> const &
-	dim(bool drop) const { return range().dim(drop); }
+    dim(bool drop) const { return range().dim(drop); }
 };
 
 } /* namespace jags */

@@ -111,6 +111,7 @@ SArray Monitor::dump(bool flat) const
     SArray ans(vdim);
     ans.setValue(v);    
     ans.setDimTags(tags);
+    ans.setValueNames(elementNames());
     if (flat) {
 	ans.setDimNames(elementNames(), 0);
     }
@@ -120,9 +121,7 @@ SArray Monitor::dump(bool flat) const
 	    throw logic_error("Size mismatch for Monitor dimnames");
 	}
 	for (unsigned long i = 0; i < dimnames.size(); ++i) {
-	    if (!dimnames[i].empty()) {
-		ans.setDimNames(dimnames[i], i);
-	    }
+	    ans.setDimNames(dimnames[i], i);
 	}
     }
     return(ans);
