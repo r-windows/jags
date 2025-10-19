@@ -25,22 +25,34 @@ namespace jags {
 	
 	vector<double> DensityTotalStat::value(unsigned int ch) const
 	{
-	    double loglik = 0.0;
+	    double logdensity = 0.0, loglik = 0.0;
 	    for (auto p = _nodes.begin(); p != _nodes.end(); ++p) {
-		loglik += (*p)->logDensity(ch, PDF_FULL);
+		double ld = (*p)->logDensity(ch, PDF_FULL);
+		logdensity += ld;
+		loglik += (*p)->isFixed() ? ld : 0.0;
 	    }
 
+	    double ans = 0.0;
 	    switch(_density_type) {
 	    case DENSITY:
-		loglik = exp(loglik);
+		ans = exp(logdensity);
+		break;
+	    case LOGDENSITY:
+		ans = logdensity;
+		break;
+	    case LIKELIHOOD:
+		ans = exp(loglik);
+		break;
+	    case LOGLIKELIHOOD:
+		ans = loglik;
 		break;
 	    case DEVIANCE:
-		loglik = -2.0 * loglik;
+		ans = -2.0 * loglik;
 		break;
-	    case LOGDENSITY: case DTUNSET:
+	    case DTUNSET:
 		break;
 	    }
-	    return vector<double>(1, loglik);
+	    return vector<double>(1, ans);
 	}
 	
     }

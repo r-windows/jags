@@ -13,7 +13,7 @@ namespace jags {
 	 * diagnostics module to generalise calculation of values
 	 * related to the deviance.
 	 */
-	enum DensityType {DTUNSET, DENSITY, LOGDENSITY, DEVIANCE};
+	enum DensityType {DTUNSET, DENSITY, LOGDENSITY, LIKELIHOOD, LOGLIKELIHOOD, DEVIANCE};
 
 	/**
 	 * @short Summary types for monitors in the diag module

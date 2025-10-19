@@ -14,6 +14,12 @@ namespace jags {
 	    else if (stat == "logdensity" || stat == "loo_logdensity" || stat == "logdensity_total") {
 		return LOGDENSITY;
 	    }
+	    else if (stat == "likelihood" || stat == "loo_likelihood" || stat == "likelihood_total") {
+		return LIKELIHOOD;
+	    }
+	    else if (stat == "loglikelihood" || stat == "loo_loglikelihood" || stat == "loglikelihood_total") {
+		return LOGLIKELIHOOD;
+	    }
 	    else if (stat == "deviance" || stat == "loo_deviance" || stat == "deviance_total") {
 		return DEVIANCE;
 	    }
@@ -42,6 +48,8 @@ namespace jags {
 	{
 	    return (stat == "loo_density" ||
 		    stat == "loo_logdensity" ||
+		    stat == "loo_likelihood" ||
+		    stat == "loo_loglikelihood" ||
 		    stat == "loo_deviance" ||
 		    stat == "loo_leverage");
 	}
@@ -50,6 +58,8 @@ namespace jags {
 	{
 	    return (stat == "density_total" ||
 		    stat == "logdensity_total" ||
+		    stat == "likelihood_total" ||
+		    stat == "loglikelihood_total" ||
 		    stat == "deviance_total" ||
 		    stat == "leverage_total");
 	}
