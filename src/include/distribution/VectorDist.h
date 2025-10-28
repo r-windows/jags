@@ -90,27 +90,6 @@ class VectorDist : public Distribution
 			      std::vector<unsigned long> const &lengths, 
 			      RNG *rng) const = 0;
     /**
-     * Draws a random sample from the distribution conditional on some elements
-     * being observed.
-     *
-     * @param x Array to which the sample values are written
-     *
-     * @param parameters Vector of parameter values
-     *
-     * @param lengths Vector of lengths of the arrays in the argument
-     * "parameters".
-     * 
-     * @param rng pseudo-random number generator to use.
-     *
-     * The default implementation throws an exception. A distribution
-     * that allows sampling from partially observed nodes must
-     * overload the default implemention.
-     */
-    virtual void randomSample(double *x, std::vector<bool> const &observed,
-			      std::vector<double const *> const &parameters,
-			      std::vector<unsigned long> const &lengths, 
-			      RNG *rng) const;
-    /**
      * Returns the support of an unbounded distribution
      */
     virtual void support(double *lower, double *upper,
@@ -176,6 +155,51 @@ class VectorDist : public Distribution
   virtual double KL(std::vector<double const *> const &par1,
 		    std::vector<double const *> const &par2,
 		    std::vector<unsigned long> const &lengths) const;
+    /**
+     * Draws a random sample from the distribution conditional on some elements
+     * being observed.
+     *
+     * @param x Array to which the sample values are written
+     *
+     * @param parameters Vector of parameter values
+     *
+     * @param lengths Vector of lengths of the arrays in the argument
+     * "parameters".
+     * 
+     * @param rng pseudo-random number generator to use.
+     *
+     * The default implementation throws an exception. A distribution
+     * that allows sampling from partially observed nodes must
+     * overload the default implemention.
+     */
+    virtual void randomSample(double *x, std::vector<bool> const &observed,
+			      std::vector<double const *> const &parameters,
+			      std::vector<unsigned long> const &lengths, 
+			      RNG *rng) const;
+    /**
+     * Calculates the conditional log density of observed parts of
+     * the value conditional on unobserved parts. For a fully observed
+     * node this should be equal to logDensity with type=PDF_LIKELIHOOD.
+     *
+     * @param x Value at which to evaluate the conditional density
+     * (assumed to be of the correct length).
+     *
+     * @param mask Boolean mask indicating which elements of x are observed
+     * (true) and which are unobserved (false).
+     * 
+     * @param parameters Vector of parameter values of the
+     * distribution.
+     * 
+     * @param lengths Vector of parameter lengths corresponding to the
+     * parameter vector.
+     *
+     * The default implementation returns JAGS_NA.
+     */
+    virtual double 
+    logLikelihood(double const *x, std::vector<bool> const &observed,
+		  std::vector<double const *> const &parameters,
+		  std::vector<unsigned long> const &lengths) const;
+
 };
 
 } /* namespace jags */

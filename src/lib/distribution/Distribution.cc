@@ -65,5 +65,10 @@ bool Distribution::checkParameterDiscrete(vector<bool> const &) const
     {
 	return false;
     }
+
+    bool Distribution::isPartObservable() const
+    {
+	return false;
+    }
     
 } //namespace jags

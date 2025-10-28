@@ -54,6 +54,12 @@ ArrayDist::ArrayDist(string const &name, unsigned int npar)
     {
 	return JAGS_NAN;
     }
-    
+
+    double ArrayDist::logLikelihood(double const *x, vector<bool> const &observed,
+				    vector<double const *> const &parameters,
+				    vector<vector<unsigned long>> const &dims) const
+    {
+	throw DistError(this, "Cannot calculate likelihood for partially observed node");
+    }
 
 } //namespace jags

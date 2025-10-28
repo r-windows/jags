@@ -151,7 +151,12 @@ public:
      * This function is used by StochasticNode#fullRank
      */
     virtual bool fullRank() const;
-    /*
+    /**
+     * Indicates whether the distribution can be partly observed.
+     * The default implementation returns false.
+     */
+    virtual bool isPartObservable() const;
+    /**
      * Returns true if the (log) density of the distribution is
      * differentiable with respect to its ith parameter. The default
      * implementation returns false.  Distributions with

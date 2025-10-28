@@ -2,6 +2,7 @@
 #include <graph/GraphMarks.h>
 #include <graph/Graph.h>
 #include <graph/StochasticNode.h>
+#include <graph/NodeError.h>
 #include <distribution/DistError.h>
 #include <distribution/Distribution.h>
 #include <util/nainf.h>
@@ -298,7 +299,11 @@ bool isParameter(StochasticNode const *node)
 	
 	vector<bool> mask(length);
 	for (unsigned long i = 0; i < length; ++i) {
-	    mask[i] = (!jags_isna(value[i]));
+	    mask[i] = !jags_isna(value[i]);
+	}
+	if (anyFalse(mask) && anyTrue(mask) && !_dist->isPartObservable()) {
+	    string msg = string("Distribution ") + _dist->name() + " cannot be partly observed";
+	    throw NodeError(this, msg);
 	}
 	_observed = getUnique(mask);
     }

@@ -53,5 +53,11 @@ VectorDist::VectorDist(string const &name, unsigned int npar)
     {
     }
 
+    double VectorDist::logLikelihood(double const *x, vector<bool> const &observed,
+				     vector<double const *> const &parameters,
+				     vector<unsigned long> const &lengths) const
+    {
+	throw DistError(this, "Cannot calculate likelihood for partially observed node");
+    }
     
 } //namespace jags

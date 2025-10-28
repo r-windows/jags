@@ -47,9 +47,9 @@ public:
      * is undefined.
      */
     virtual double 
-	logDensity(double const *x, PDFType type,
-		   std::vector<double const *> const &parameters,
-		   std::vector<std::vector<unsigned long> > const &dims)
+    logDensity(double const *x, PDFType type,
+	       std::vector<double const *> const &parameters,
+	       std::vector<std::vector<unsigned long> > const &dims)
 	const = 0;
     /**
      * Calculates the score function.
@@ -94,29 +94,6 @@ public:
 		     std::vector<double const *> const &parameters,
 		     std::vector<std::vector<unsigned long> > const  &dims,
 		     RNG *rng) 	const = 0;
-    /**
-     * Draws a random sample from the distribution conditional on some
-     * elements being observed.
-     *
-     * @param x Array to which the sample values are written
-     *
-     * @param parameters Parameters for the distribution. This vector
-     * should be of length npar().  Each element is a pointer to the
-     * start of an array containing the parameters. The size of the 
-     * array should correspond to the dims parameter. 
-     *
-     * @param dims Dimensions of the parameters
-     *
-     * @param rng pseudo-random number generator to use.
-     *
-     * The default implementation throws an exception. A distribution
-     * that allows sampling from partially observed nodes must
-     * overload the default implemention.
-     */
-    virtual void randomSample(double *x, std::vector<bool> const &observed,
-			      std::vector<double const *> const &parameters,
-			      std::vector<std::vector<unsigned long>> const &dims, 
-			      RNG *rng) const;
     /**
      * Checks that dimensions of the parameters are correct.
      */
@@ -181,6 +158,54 @@ public:
 		      std::vector<double const *> const &par2,
 		      std::vector<std::vector<unsigned long> > const &dims)
 	const;
+    /**
+     * Draws a random sample from the distribution conditional on some
+     * elements being fixed.
+     *
+     * @param x Array to which the sample values are written
+     *
+     * @param parameters Parameters for the distribution. This vector
+     * should be of length npar().  Each element is a pointer to the
+     * start of an array containing the parameters. The size of the 
+     * array should correspond to the dims parameter. 
+     *
+     * @param dims Dimensions of the parameters
+     *
+     * @param rng pseudo-random number generator to use.
+     *
+     * The default implementation throws an exception. A distribution
+     * that allows partially observed values (i.e. isPartObservable
+     * returns true) must overload the default implemention.
+     */
+    virtual void randomSample(double *x, std::vector<bool> const &fixed,
+			      std::vector<double const *> const &parameters,
+			      std::vector<std::vector<unsigned long>> const &dims, 
+			      RNG *rng) const;
+    /**
+     * Calculates the conditional log density of fixed parts of
+     * the value conditional on non-fixed parts. For a fully fixed
+     * node this should be equal to logDensity with type=PDF_LIKELIHOOD.
+     *
+     * @param x Value at which to evaluate the conditional density
+     * (assumed to be of the correct length).
+     *
+     * @param observed Boolean mask indicating which elements of x are
+     * observed (true) and which are unobserved (false).
+     * 
+     * @param parameters Vector of parameter values of the
+     * distribution.
+     *
+     * @param dims Vector of parameter dimensions.
+     *
+     * The default implementation throws an exception. A distribution
+     * that allows partially observed values must overload the default
+     * implemention.
+     */
+    virtual double 
+    logLikelihood(double const *x, std::vector<bool> const &observed,
+		  std::vector<double const *> const &parameters,
+		  std::vector<std::vector<unsigned long>> const &dims) const;
+
 };
 
 } /* namespace jags */
