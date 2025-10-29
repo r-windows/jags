@@ -2028,6 +2028,72 @@ is parameterized differently in BUGS and \R, and using the alias
 \texttt{dweibull} instead of the \BUGS\ name \texttt{dweib} does not
 change this.
 
+\chapter{Monitors}
+
+A {\em monitor} in \JAGS\ is an object that records statistics based
+on the current state of the Markov chain and summarizes them in a
+way that is useful for post-processing of the MCMC output. A monitor in
+\JAGS\ is defined by three components
+\begin{itemize}
+\item A set of {\bf nodes} to be monitored
+\item A statistic, or {\bf stat} to be calculated from the current state of the chain
+\item A {\bf summary} to produce as output
+\end{itemize}
+
+Prior to \JAGS\ 5.0.0, monitors were defined by two components: {\bf
+  nodes} and {\bf type}, but this proved to be too restrictive.  So
+{\bf type} was split into {\bf stat} and {\bf summary} to make it
+easier to define a wider range of monitors.
+
+\section{Nodes}
+
+
+\section{Summary}
+
+Suppose $d$ is the size of the stat being monitored, $n$ is the number
+of iterations and $t$ is the thinning interval.
+
+\subsection{Trace}
+
+Summary type \texttt{trace} is the default summary type for monitors
+in \JAGS. It records the current value of the monitored stat at each
+iteration and appends it to a matrix that grows at each iteration. The
+size of the summary is $n \times d/t$. If the Markov chain is not
+mixing well then specifying a large thinning interval $t$ can reduce
+the size of the summary while preserving most of the information about
+the posterior distribution of the stat.
+
+\subsection{Mean}
+
+Summary type \texttt{mean} records a running mean of the stat in a
+vector of size $d$. The size of the summary is independent of the
+number iterations $n$ or thinning interval $t$. If you are only
+interested in the posterior mean of the stat then \texttt{mean} is a
+much more memory-efficient sumamry than \texttt{trace}. This may be
+important when the size of the stat $d$ is very large.
+
+\subsection{Variance}
+
+Summary type \text{var} records the running variance of each element
+of the stat in a vector of size $d$. It may be be used in conjunction
+with another sampler with summary type \texttt{mean} to provide
+estimates of the posterior mean and variance. If the stat has a
+posterior normal distribution then these two monitors provide
+sufficient statistics for the marginal posterior of each element of
+the stat.
+
+\subsection{Covariance}
+
+Summary type \texttt{cov} records the running variance-covariance matrix of
+the stat in a symmetric matrix of size $d \times d$. 
+
+The difference between \texttt{var} and \text{cov} summaries is that
+\texttt{cov} records the covariances between different elements of the
+stat as the off-diagonal elements of the covariance matrix, wheras
+\texttt{var} only records the diagonal elements. 
+
+\section{Summary}
+
 %% \chapter{Topics in modelling}
 
 %Build models from simpler components
@@ -2200,30 +2266,8 @@ module.
 \subsection{Monitors in the base module}
 \label{section:base:monitors}
 
-\subsubsection{Trace monitor}
-
-A trace monitor records the current value of a given node at each
-iteration. It is the default monitor type in \JAGS, but it can be
-explicitly selected by choosing monitor type ``trace''.
-
-\subsubsection{Mean monitor}
-
-A mean monitor records a running mean of a given node. It is selected
-by choosing monitor type ``mean''. If you are only interested in the
-posterior mean of a node then a mean monitor is much more
-memory-efficient than a trace monitor. This is especially true if you
-want to estimate the posterior mean of thousands of nodes.
-
-If you use a mean monitor then it is important to run several parallel
-chains in order to assess the sample variance.
-
-\subsubsection{Variance monitor}
-
-A variance monitor records the running variance of a given node. It is
-selected by choosing type ``variance''. See also mean monitor, above.
-
-For a vector-valued node, a variance monitor records the variance of
-each element, but not the covariances between elements.
+The base module defines the stat type \texttt{value} which monitors
+the current value of an array defined by a subset FIXME
 
 \chapter{The bugs module}
 \label{chapter:bugsmod}
@@ -3789,8 +3833,10 @@ mu[i] <- alpha + beta * x[i]
 without affecting the mixing of the Markov chain.  
 
 
-\chapter{The dic module}
-\label{chapter:dic}
+\chapter{The diag module}
+\label{chapter:diag}
+
+The \texttt{diag} module provides
 
 \section{Monitors in the dic module}
 
