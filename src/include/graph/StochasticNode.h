@@ -46,12 +46,12 @@ class StochasticNode : public Node {
     Distribution const * const _dist;
     Node const * const _lower;
     Node const * const _upper;
-    std::vector<bool> const * _observed;
     const bool _discrete;
     const std::array<int, 2> _depth;
     virtual void sp(double *lower, double *upper, unsigned int chain) const = 0;
 protected:
-    std::vector<std::vector<double const*> > _parameters;
+    std::vector<std::vector<double const*>> _parameters;
+    std::vector<bool> const * _observed;
 public:
     /**
      * Constructs a new StochasticNode 

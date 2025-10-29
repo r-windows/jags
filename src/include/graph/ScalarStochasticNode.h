@@ -21,6 +21,7 @@ public:
 			 std::vector<Node const *> const &parameters,
 			 Node const *lower, Node const *upper);
     double logDensity(unsigned int chain, PDFType type) const override;
+    double logLikelihood(unsigned int chain) const override;
     void randomSample(RNG *rng, unsigned int chain) override;
     void truncatedSample(RNG *rng, unsigned int chain,
 			 double const *lower, double const *upper);

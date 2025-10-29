@@ -72,6 +72,26 @@ double VectorStochasticNode::logDensity(unsigned int chain, PDFType type) const
 			     _parameters[chain], _lengths);
 }
 
+    double VectorStochasticNode::logLikelihood(unsigned int chain) const
+    {
+	if (allTrue(*_observed)) {
+	    // Observed
+	    return logDensity(chain, PDF_FULL);
+	}
+	else if (allFalse(*_observed)) {
+	    // Unobserved
+	    return 0.0;
+	}
+	else {
+	    // Partly observed
+	    if (!_dist->checkParameterValue(_parameters[chain], _lengths))
+		return JAGS_NEGINF;
+	    
+	    return _dist->logLikelihood(_data + _length * chain, *_observed,
+					_parameters[chain], _lengths);
+	}
+    }
+    
 void VectorStochasticNode::randomSample(RNG *rng, unsigned int chain)
 {
     vector<bool> const &observed = *this->observedMask();

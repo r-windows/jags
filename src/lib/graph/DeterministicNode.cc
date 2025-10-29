@@ -97,6 +97,11 @@ bool DeterministicNode::isFixed() const
 	return 0.0;
     }
 
+    double DeterministicNode::logLikelihood(unsigned int) const
+    {
+	return 0.0;
+    }
+
     double DeterministicNode::KL(unsigned int, unsigned int,
 				 RNG *, unsigned int) const
     {

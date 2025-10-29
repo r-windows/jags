@@ -156,12 +156,13 @@ public:
     virtual void unlinkParents() = 0;
 	
     /**
-     * Returns the log of the density of a StochasticNode
-     * given the current parameter values. For a ConstantNode
-     * or a DeterministicNode this will simply return 0.
+     * Returns the log Density of a node.  For a StochasticNode, this
+     * is the log of the density of its distribution given the current
+     * parameter values. For a ConstantNode or a DeterministicNode
+     * the logDensity is defined as zero.
      *
      * @param chain Number of chain (starting from zero) for which
-     * to evaluate log density.
+     * to evaluate the log density.
      *
      * @param type Indicates whether the full probability density
      * function is required (PDF_FULL) or whether partial calculations
@@ -169,6 +170,46 @@ public:
      * details.
      */
     virtual double logDensity(unsigned int chain, PDFType type) const = 0;
+    /**
+     * Returns the log likelihood of a node. For an observed
+     * StochasticNode this is the same as LogDensity with
+     * type=PDF_FULL. For a partly observed StochasticNode it is the
+     * conditional logDensity of the observed components given the
+     * unobserved components and the parameters. For all other nodes
+     * the logLikelihood is defined as zero.
+     *
+     * @param chain Number of chain (starting from zero) for which
+     * to evaluate the log likelihood.
+     */
+    virtual double logLikelihood(unsigned int chain) const = 0;
+    /**
+     * Returns an unbiased estimate of the Kullback-Leibler divergence
+     * between two different chains.  For a StochasticNode this is the
+     * divergence between the predictive distributions for two
+     * replicate samples drawn from each chain: this is calculated
+     * from the parameter values and is independent of the value of
+     * the node. For all other nodes the Kullback-Leibler divergence
+     * is defined as zero.
+     *
+     * The posterior mean of the KL divergence is the leverage of a
+     * stochastic node. The penalty of the deviance information
+     * criterion is based on the sum of the leverages of all observed
+     * stochastic nodes. For unobserved stochastic nodes, high
+     * leverage indicates a node that would be highly informative if
+     * it were observed.
+     *
+     * @param chain1 Chain number starting from zero from which to take
+     * the first set of parameters.
+     *
+     * @param chain 2 Chain number starting from zero from which to take
+     * the second set of parameters.
+     *
+     * @param rng Random number generator to use for a Monte Carlo estimate
+     * of the KL divergence. This is used only if the distribution does not
+     * supply its own closed-form expression for the KL divergence.
+     *
+     * @param nrep Number of replicates to use for the Monte Carlo estimate
+     */
     virtual double KL(unsigned int chain1, unsigned int chain2, RNG *rng,
 		      unsigned int nrep) const = 0;
     /**

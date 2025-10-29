@@ -98,6 +98,12 @@ namespace jags {
 	return 0.0;
     }
 
+    double ConstantNode::logLikelihood(unsigned int) const
+    {
+	return 0.0;
+    }
+
+
     bool ConstantNode::isObserved(unsigned long index) const
     {
 	return index==0 && _observed;

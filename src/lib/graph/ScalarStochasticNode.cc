@@ -49,6 +49,11 @@ double ScalarStochasticNode::logDensity(unsigned int chain, PDFType type) const
     return _dist->logDensity(_data[chain], type, _parameters[chain], l, u);
 }
 
+    double ScalarStochasticNode::logLikelihood(unsigned int chain) const
+    {
+	return (*_observed)[0] ? logDensity(chain, PDF_FULL) : 0.0;
+    }
+    
 void ScalarStochasticNode::randomSample(RNG *rng, unsigned int chain)
 {
     double const *l = lowerLimit(chain);

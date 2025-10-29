@@ -184,7 +184,7 @@ public:
     /**
      * Calculates the conditional log density of fixed parts of
      * the value conditional on non-fixed parts. For a fully fixed
-     * node this should be equal to logDensity with type=PDF_LIKELIHOOD.
+     * node this should be equal to logDensity with type=PDF_FULL.
      *
      * @param x Value at which to evaluate the conditional density
      * (assumed to be of the correct length).
@@ -197,9 +197,8 @@ public:
      *
      * @param dims Vector of parameter dimensions.
      *
-     * The default implementation throws an exception. A distribution
-     * that allows partially observed values must overload the default
-     * implemention.
+     * The default implementation returns JAGS_NAN, indicating that the
+     * method is not implemented.
      */
     virtual double 
     logLikelihood(double const *x, std::vector<bool> const &observed,

@@ -23,6 +23,7 @@ public:
     ArrayStochasticNode(ArrayDist const *dist, unsigned int nchain,
 			std::vector<Node const *> const &parameters);
     double logDensity(unsigned int chain, PDFType type) const override;
+    double logLikelihood(unsigned int chain) const override;
     void randomSample(RNG *rng, unsigned int chain) override;
     bool checkParentValues(unsigned int chain) const override;
     //StochasticNode *clone(std::vector<Node const *> const &parents,

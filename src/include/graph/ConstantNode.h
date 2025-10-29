@@ -76,6 +76,7 @@ public:
     void unlinkParents() override;
 	
     double logDensity(unsigned int chain, PDFType type) const override;
+    double logLikelihood(unsigned int chain) const override;
     double KL(unsigned int chain1, unsigned int chain2, RNG *rng,
 	      unsigned int nrep) const override;
     /**

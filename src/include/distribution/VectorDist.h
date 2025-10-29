@@ -179,7 +179,7 @@ class VectorDist : public Distribution
     /**
      * Calculates the conditional log density of observed parts of
      * the value conditional on unobserved parts. For a fully observed
-     * node this should be equal to logDensity with type=PDF_LIKELIHOOD.
+     * node this should be equal to logDensity with type=PDF_FULL.
      *
      * @param x Value at which to evaluate the conditional density
      * (assumed to be of the correct length).
@@ -193,7 +193,8 @@ class VectorDist : public Distribution
      * @param lengths Vector of parameter lengths corresponding to the
      * parameter vector.
      *
-     * The default implementation returns JAGS_NA.
+     * The default implementation returns JAGS_NA, indicating that the method
+     * is not implemented.
      */
     virtual double 
     logLikelihood(double const *x, std::vector<bool> const &observed,
