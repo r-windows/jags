@@ -64,7 +64,7 @@ namespace jags {
 		if (model->symtab().getVariable("pD")) {
 		    return nullptr; //Quit if we have a user-defined pD variable
 		}
-		nname = "_observed_";
+		nname = "_observations_";
 		nstat = "leverage_total";
 	    }
 	    if (nstat != "leverage" && nstat != "loo_leverage" && nstat != "leverage_total") {
@@ -73,7 +73,7 @@ namespace jags {
 	    
 	    vector<Node const *> nodes;
 	    Range node_range = range;
-	    if (nname == "_observed_") {
+	    if (nname == "_observed_" || nname == "_observations_") {
 		if (!isNULL(range)) {
 		    msg = string("Cannot take a subset of ") + name;
 		    return nullptr;

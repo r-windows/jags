@@ -71,7 +71,7 @@ namespace diag {
 	    if (model->symtab().getVariable("deviance")) {
 		return nullptr; //Quit if we have a user-defined deviance variable
 	    }
-	    nname = "_observed_";
+	    nname = "_observations_";
 	    nstat = "deviance_total";
 	}
 
@@ -80,9 +80,9 @@ namespace diag {
 
 	
 	vector<Node const *> nodes;
-	if (nname == "_observed_") {
-	    /* The name _observed_ is used when monitoring all
-	       observed stochastic nodes.  The string _observed_ is
+	if (nname == "_observed_" || nname == "_observations_") {
+	    /* The name _observations_ is used when monitoring all
+	       observed stochastic nodes.  The string _observations_ is
 	       not a valid node name so is guaranteed not to clash
 	       with a node.  If changing it then see also scanner.ll
 	       and NodeDensityMonitorFactory.cc And also
