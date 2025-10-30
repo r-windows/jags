@@ -56,6 +56,8 @@ double ScalarStochasticNode::logDensity(unsigned int chain, PDFType type) const
     
 void ScalarStochasticNode::randomSample(RNG *rng, unsigned int chain)
 {
+    if ((*_observed)[0]) return;
+    
     double const *l = lowerLimit(chain);
     double const *u = upperLimit(chain);
     if (l && u && *l > *u) throw NodeError(this, "Inconsistent bounds");

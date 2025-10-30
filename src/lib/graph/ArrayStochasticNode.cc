@@ -91,20 +91,19 @@ double ArrayStochasticNode::logDensity(unsigned int chain, PDFType type) const
 	}
     }
 
-void ArrayStochasticNode::randomSample(RNG *rng, unsigned int chain)
-{
-    vector<bool> const &observed = *this->observedMask();
-    if (anyTrue(observed)) {
-	//Partly observed node
-	_dist->randomSample(_data + _length * chain, observed,
-			    _parameters[chain], _dims, rng);
+    void ArrayStochasticNode::randomSample(RNG *rng, unsigned int chain)
+    {
+	if (allFalse(*_observed)) {
+	    //Fully unobserved node
+	    _dist->randomSample(_data + _length * chain, 
+				_parameters[chain], _dims, rng);
+	}
+	else if (anyFalse(*_observed)) {
+	    //Partly observed node
+	    _dist->randomSample(_data + _length * chain, *_observed,
+				_parameters[chain], _dims, rng);
+	}
     }
-    else {
-	//Fully unobserved node
-	_dist->randomSample(_data + _length * chain, 
-			    _parameters[chain], _dims, rng);
-    }
-}
 
 bool ArrayStochasticNode::checkParentValues(unsigned int chain) const
 {
@@ -132,12 +131,10 @@ void ArrayStochasticNode::sp(double *lower, double *upper,
 	double kl = _dist->KL(_parameters[ch1], _parameters[ch2], _dims);
 
 	if (isnan(kl)) {
-	    return _dist->KL(_parameters[ch1], _parameters[ch2], _dims,
-			     rng, nrep);
+	    kl =  _dist->KL(_parameters[ch1], _parameters[ch2], _dims,
+			    rng, nrep);
 	}
-	else {
-	    return kl;
-	}
+	return kl;
 
     }
     
