@@ -49,7 +49,7 @@ namespace bugs {
 	int nf = asInteger(nfree);
 	int nr = asInteger(nrow);
 
-	//Solve A %*% x = b to get the posterior mean. The solution
+	//Solve A %*% x = b to get the conditional mean. The solution
 	//will be in b after the call to dposv.
 	jags_dposv("L", &nf, &one, A.data(), &nr, b.data(), &nr, &info);
 	if (info != 0) return info;
@@ -109,6 +109,65 @@ double DMNorm::logDensity(double const *x, PDFType type,
     
     return loglik;
 }
+
+    double DMNorm::logLikelihood(double const *x, vector<bool> const &observed,
+				 vector<double const *> const &parameters,
+				 vector<vector<unsigned long>> const &dims) const
+    {
+	double const * mu = parameters[0];
+	double const * T = parameters[1];
+	unsigned long nrow = dims[0][0];
+	
+	unsigned long nfixed = count(observed.begin(), observed.end(), true);
+	if (nfixed == 0) return 0.0;
+
+	// Calculate b = T %*% (Y - mu) but only for observed elements
+	vector<double> bf(nfixed);
+	for (unsigned long i = 0, k = 0; i < nrow; ++i) {
+	    if (observed[i]) {
+		for (unsigned long j = 0; j < nrow; ++j) {
+		    bf[k] += T[nrow * i + j] * (x[j] - mu[j]);
+		}
+		k++;
+	    }
+	}
+
+	// Pack subset of precision matrix for observed elements into
+	// new matrix Tf. This is the conditional precision of the
+	// observed elements given the unobserved elements.
+	vector<double> Tf(nfixed * nfixed);
+	for (unsigned long i = 0, k = 0; i < nrow; ++i) {
+	    if (observed[i]) {
+		for (unsigned long j = 0, l = 0; j < nrow; ++j) {
+		    if (observed[j]) {
+			Tf[nfixed * k + l] += T[nrow * i + j];
+			l++;
+		    }
+		}
+		k++;
+	    }
+	}
+	
+	int one = 1;
+	int info = 0;
+	int nf = asInteger(nfixed);
+	
+	//Cholesky decomposition of Tf
+	jags_dpotrf("L", &nf, Tf.data(), &nf, &info);
+	if (info != 0) return JAGS_NAN;
+	
+	/* After dpotrf, the lower triangle of Tf holds the Cholesky
+	   factor L where Tf = L %*% t(L). Use this to solve
+	   t(L) %*% x = bf. */
+	jags_dtrsv("L", "T", "N", &nf, Tf.data(), &nf, bf.data(), &one);
+
+	//We have now diagonalized the distribution
+	double loglik = 0.0;
+	for (unsigned long i = 0; i < nfixed; ++i) {
+	    loglik += - bf[i] * bf[i] / 2 + log(Tf[i * nfixed + i]) -  M_LN_SQRT_2PI;
+	}
+	return loglik;
+    }
 
 void DMNorm::randomSample(double *x,
 			  vector<double const *> const &parameters,
@@ -244,9 +303,9 @@ bool DMNorm::hasScore(unsigned long i) const
 }
 
 void DMNorm::score(double *s, double const *x,
-		     vector<double const *> const &parameters,
-		     vector<vector<unsigned long>> const &dims, 
-		     unsigned long i) const
+		   vector<double const *> const &parameters,
+		   vector<vector<unsigned long>> const &dims, 
+		   unsigned long i) const
 {
 
     double const * mu = parameters[0];

@@ -24,6 +24,11 @@ public:
 		    std::vector<double const *> const &parameters,
 		    std::vector<std::vector<unsigned long> > const &dims)
       const override;
+    double logLikelihood(double const *x, std::vector<bool> const &observed,
+			 std::vector<double const *> const &parameters,
+			 std::vector<std::vector<unsigned long>> const &dims)
+      const override;
+
   void randomSample(double *x,
 		    std::vector<double const *> const &parameters,
 		    std::vector<std::vector<unsigned long> > const &dims,
