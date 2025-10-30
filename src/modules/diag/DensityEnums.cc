@@ -46,22 +46,24 @@ namespace jags {
 	
 	bool isWeighted(string const &stat)
 	{
-	    return (stat == "loo_density" ||
-		    stat == "loo_logdensity" ||
-		    stat == "loo_likelihood" ||
-		    stat == "loo_loglikelihood" ||
-		    stat == "loo_deviance" ||
-		    stat == "loo_leverage");
+	    if (getDensityType(stat) == DTUNSET) {
+		return false;
+	    }
+	    //starts with "loo_"
+	    return stat.compare(0, 4, "loo_") == 0;
 	}
 
 	bool isTotal(string const &stat)
 	{
-	    return (stat == "density_total" ||
-		    stat == "logdensity_total" ||
-		    stat == "likelihood_total" ||
-		    stat == "loglikelihood_total" ||
-		    stat == "deviance_total" ||
-		    stat == "leverage_total");
+	    if (getDensityType(stat) == DTUNSET) {
+		return false;
+	    }
+	    //terminates with "_total"
+	    unsigned long pos = stat.find_last_of("_");
+	    if (pos == string::npos) {
+		return false;
+	    }
+	    return stat.compare(pos, string::npos, "_total") == 0;
 	}
 
     }
