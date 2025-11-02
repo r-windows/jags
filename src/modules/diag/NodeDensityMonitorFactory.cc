@@ -123,15 +123,15 @@ namespace diag {
 	
 	pair<Monitor*,MonitorStat*> m(nullptr, nullptr);
 	if (isWeighted(nstat)) {
-	    // loo_density, loo_logdensity, loo_deviance
+	    // loo_density, loo_logdensity, loo_likelihood, loo_loglikelihood, loo_deviance
 	    m = newDensityMonitor<LooDensityStat>(nodes, density_type, summary_type);
 	}
 	else if (isTotal(nstat)) {
-	    // density_total, logdensity_total, deviance_total
+	    // density_total, logdensity_total, likelihood_total, loglikelihood_total, deviance_total
 	    m = newDensityMonitor<DensityTotalStat>(nodes, density_type, summary_type);
 	}
 	else {
-	    // density, logdensity, deviance
+	    // density, logdensity, likelihood, loglikelihood, deviance
 	    m = newDensityMonitor<DensityStat>(nodes, density_type, summary_type);
 	}
 

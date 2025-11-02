@@ -14,10 +14,7 @@ namespace jags {
    	/**
    	 * @short Leave-one-out (LOO) weighted version of DensityStat
 	 *
-	 * Note that this is not a sub-class of DensityStat. Although
-	 * the value calculations are the same, the acceptable values
-	 * of DensityType are different for the two classes. LooDensityStat
-	 * accepts Density
+	 
    	 */
    	class LooDensityStat : public MonitorStat {
 	    const std::vector<Node const*> _nodes;

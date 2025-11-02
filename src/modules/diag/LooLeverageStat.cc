@@ -30,7 +30,7 @@ namespace jags {
 		double wsum = 0;
 		for (unsigned int j = 0; j < m; ++j) {
 		    if (j != ch) {
-			double wj = exp(- _nodes[k]->logDensity(j, PDF_FULL));
+			double wj = exp(- _nodes[k]->logLikelihood(j));
 			pdsum += wj * _nodes[k]->KL(ch, j, _rngs[ch], _nrep);
 			wsum += wj;
 		    }
@@ -54,10 +54,10 @@ namespace jags {
 	    for (unsigned int k = 0; k < n; ++k) {
 		for (unsigned int j = 0; j < m; ++j) {
 		    if (j != ch) {
-			w[k] += exp(-_nodes[k]->logDensity(j, PDF_FULL));
+			w[k] += exp(-_nodes[k]->logLikelihood(j));
 		    }
 		}
-		w[k] *= exp(-_nodes[k]->logDensity(ch, PDF_FULL));
+		w[k] *= exp(-_nodes[k]->logLikelihood(ch));
 	    }
 	    return w;
 	}
