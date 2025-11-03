@@ -492,19 +492,18 @@ can also be written:
 model {
    for (i in 1:nrow(Z)) {
       for (j in 1:ncol(Z)) {
-         Y[i,j] ~ dnorm(alpha[i] + beta[j], tau)
+         Z[i,j] ~ dnorm(alpha[i] + beta[j], tau)
       }
    }
    ...
 }
 \end{verbatim}
-It is an error to pass an array with 2 or more dimensions to
+It is an error to pass an array with more than 2 dimensions to
 \texttt{nrow()} or \texttt{ncol()}.
 
 From JAGS 5.0.0, these functions can act on general expressions. For
 example if \texttt{A} and \texttt{B} are conforming matrices then
 \verb+dim(A %*% B)+ returns the dimensions of their product.
-
 
 \chapter{Steps in running a model}
 \label{chapter:running}
@@ -552,9 +551,9 @@ when using \R\ and section \ref{load} using the command line.
 
 The two most useful optional modules are the \texttt{glm} module
 (chapter~\ref{chapter:glm}), which provides efficient samplers for
-generalized linear mixed modules, and the \texttt{dic} module
-(chapter~\ref{chapter:dic}), which provides novel monitors for
-assessing model fit using deviance statistics.
+generalized linear mixed modules, and the \texttt{diag} module
+(chapter~\ref{chapter:diag}), which provides novel monitors for
+assessing model fit using likelihood-based statistics.
 
 \section{Compilation}
 
@@ -846,14 +845,11 @@ longer adaptation period.
 \section{Monitoring}
 \label{section:monitoring}
 
-A {\em monitor} in \JAGS\ is an object that records sampled
-values. The simplest monitor is a {\em trace monitor}, which stores
-the sampled value of a node at each iteration. Other types of monitor
-are available: monitors of type ``mean'' and ``variance'' defined by
-the base module store the running mean and variance, respectively,
-of a given node (See section \ref{section:base:monitors}). The dic module
-defines various monitors based on deviance statistics for model
-criticism (See chapter~\ref{chapter:dic}).
+A {\em monitor} in \JAGS\ is an object that records sampled values for
+later use (post-processing) after the MCMC run has ended. The simplest
+monitor is a {\em value trace monitor}, which stores the sampled value
+of a node at each iteration. Monitors are explained in more detail in
+chapter~\ref{chapter:monitors}
 
 \section{Errors}
 
@@ -1185,7 +1181,7 @@ important to use the appropriate function argument shown in table
 \JAGS\ module.
 
 
-\chapter{Running \JAGS\ on the command line}
+\chapter{Command line interface}
 \label{chapter:cmdline}
 
 \JAGS\ has a command line interface. To invoke jags interactively,
@@ -1205,7 +1201,7 @@ parameters in "line-inits1.R", chain(1) # Read initial values from file for chai
 parameters in "line-inits2.R", chain(2) # Read initial values from file for chain 2
 initialize               # Initialize the model
 update 1000              # Adaptation (if necessary) and burnin for 1000 iterations
-monitor alpha            # Set trace monitor for node alpha ...
+monitor alpha            # Set value trace monitor for node alpha ...
 monitor beta             # ... and beta
 monitor sigma            # ... and sigma
 update 10000             # Update model for 10000 iterations
@@ -1359,27 +1355,22 @@ bar, but with plus signs instead of asterisks.
 \subsubsection{MONITOR}
 \label{section:monitor}
 
-In \JAGS, a monitor is an object that calculates summary statistics
-from a model.  The most commonly used monitor simply records the value
-of a single node at each iteration.  This is called a ``trace''
-monitor. 
 \begin{verbatim}
-. monitor <varname> [, thin(n)] [type(<montype>)]
+. monitor <varname> [, [thin(<n>)] [stat(<stat_type>)] [summary(<summary_type>)]]
 \end{verbatim}
 The \texttt{thin} option sets the thinning interval of the monitor so
-that it will only record every nth value. The \texttt{thin} option 
-selects the type of monitor to create. The default type is \texttt{trace}.
-
-More complex monitors can be defined that do additional calculations.
-For example, the \texttt{dic} module defines a ``deviance'' monitor that
-records the deviance of the model at each iteration, and a ``pD''
-monitor that calculates an estimate of the effective number of
-parameters on the model \citep{spiegelhalter:etal:2002}.  
+that it will only record every nth value. The \texttt{stat} option
+selects the stat type. If not supplied then \texttt{value} stat is
+assumed.  The \texttt{summary} option sets the summary type. The
+default summary type is \texttt{trace}.
 
 \begin{verbatim}
-. monitor clear <varname> [type(<montype>)]
+. monitor clear <varname> [stat(<stattype>)] [summary(<summarytype>)]
 \end{verbatim}
-Clears the monitor of the given type associated with variable
+Clears a monitor or monitors. The values of \texttt{<varname>},
+\texttt{<stattype>}
+
+of the given type associated with variable
 \texttt{<varname>}. 
 
 \subsubsection{CODA}
@@ -1392,14 +1383,11 @@ This dumps monitored values for a given node to file in a form that
 can be read by the \CODA\ package of \R.  The wild-card character
 ``*'' may be used to dump all monitored nodes
 
-Monitor types can be classified according to whether they pool values
-over iterations and whether they pool values over parallel chains (The
-standard trace monitor does neither). When monitor values are written
-out to file using the CODA command, the output files created depend on
-the pooling of the monitor, as shown in table \ref{table:coda}. By
-default, all of these files have the prefix CODA, but this may be
-changed to any other name using the ``stem'' option to the CODA
-command.
+When monitor values are written out to file using the CODA command,
+the output files created depend on the pooling of the monitor, as
+shown in table \ref{table:coda}. By default, all of these files have
+the prefix CODA, but this may be changed to any other name using the
+``stem'' option to the CODA command.
 
 \begin{table}[h]
 \begin{tabular}{ccl}
@@ -2031,27 +2019,39 @@ change this.
 \chapter{Monitors}
 
 A {\em monitor} in \JAGS\ is an object that records statistics based
-on the current state of the Markov chain and summarizes them in a
-way that is useful for post-processing of the MCMC output. A monitor in
-\JAGS\ is defined by three components
+on the current state of the Markov chain and summarizes them in a way
+that is useful for post-processing. A monitor in \JAGS\ is defined by
+three components
 \begin{itemize}
-\item A set of {\bf nodes} to be monitored
+\item A node or set of {\bf nodes} to be monitored
 \item A statistic, or {\bf stat} to be calculated from the current state of the chain
 \item A {\bf summary} to produce as output
 \end{itemize}
 
 Prior to \JAGS\ 5.0.0, monitors were defined by two components: {\bf
   nodes} and {\bf type}, but this proved to be too restrictive.  So
-{\bf type} was split into {\bf stat} and {\bf summary} to make it
-easier to define a wider range of monitors.
+{\bf type} was split into {\bf stat} type and {\bf summary} type to
+make it easier to define a wider range of monitors.
+
 
 \section{Nodes}
 
+The nodes to be monitored are defined by a node array ({\em e.g.}
+\texttt{a}) or a subset of a node array ({\em e.g.}
+\texttt{a[1:2,3]}).
 
-\section{Summary}
+\section{Stat type}
 
-Suppose $d$ is the size of the stat being monitored, $n$ is the number
-of iterations and $t$ is the thinning interval.
+The stat type 
+The default stat type is ``value''
+
+
+\section{Summary type}
+
+To discuss the differences between different summary types, it is
+useful to have some common notation. Let $d$ be the size of the stat
+being monitored, $n$ the number of iterations and $t$ the thinning
+interval.
 
 \subsection{Trace}
 
@@ -2065,22 +2065,23 @@ the posterior distribution of the stat.
 
 \subsection{Mean}
 
-Summary type \texttt{mean} records a running mean of the stat in a
-vector of size $d$. The size of the summary is independent of the
-number iterations $n$ or thinning interval $t$. If you are only
-interested in the posterior mean of the stat then \texttt{mean} is a
-much more memory-efficient sumamry than \texttt{trace}. This may be
-important when the size of the stat $d$ is very large.
+Summary type \texttt{mean} records a running mean of each element of
+the stat in a vector of size $d$. The size of the summary is
+independent of the number iterations $n$ or thinning interval $t$. If
+you are only interested in the posterior mean of the stat then
+\texttt{mean} is a much more memory-efficient sumamry than
+\texttt{trace}. This may be important when the size of the stat $d$ is
+very large.
 
 \subsection{Variance}
 
-Summary type \text{var} records the running variance of each element
-of the stat in a vector of size $d$. It may be be used in conjunction
-with another sampler with summary type \texttt{mean} to provide
-estimates of the posterior mean and variance. If the stat has a
-posterior normal distribution then these two monitors provide
-sufficient statistics for the marginal posterior of each element of
-the stat.
+Summary type \texttt{var} or \texttt{variance} records the running
+variance of each element of the stat in a vector of size $d$. It may
+be be used in conjunction with another sampler with summary type
+\texttt{mean} to provide estimates of the posterior mean and
+variance. If the stat has a posterior normal distribution then these
+two monitors provide sufficient statistics for the marginal posterior
+of each element of the stat.
 
 \subsection{Covariance}
 
@@ -3836,7 +3837,7 @@ without affecting the mixing of the Markov chain.
 \chapter{The diag module}
 \label{chapter:diag}
 
-The \texttt{diag} module provides
+The \texttt{diag} module provides monitors
 
 \section{Monitors in the dic module}
 
