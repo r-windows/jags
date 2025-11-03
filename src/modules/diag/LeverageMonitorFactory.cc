@@ -9,6 +9,7 @@
 #include <model/BUGSModel.h>
 #include <model/MeanMonitor.h>
 #include <model/TraceMonitor.h>
+#include <model/TraceWeight.h>
 #include <model/NodeArraySubset.h>
 #include <graph/Node.h>
 
@@ -35,6 +36,15 @@ namespace jags {
 		break;
 	    case MEAN:
 		m = new MeanMonitor(nodes, stat);
+		break;
+	    case TRACEWEIGHT:
+		if (stat->weighted() == UNWEIGHTED) {
+		    delete stat;
+		    stat = nullptr;
+		}
+		else {
+		    m = new TraceWeight(nodes, stat);
+		}
 		break;
 	    case VAR:
 	    case COV:
@@ -107,38 +117,13 @@ namespace jags {
 		return nullptr;
 	    }
 	    
-		
-		/* 
-		   We could limit pD/popt monitors to observed stochastic nodes only
-		   But it does (maybe?) make sense as long as the parents of a node are unfixed
-		   Otherwise it comes out as 0 anyway - which makes sense (no parents are estimated)
-		   Note that pv can be calculated for any node with a density - which doesn't make sense
-		   if the parents are fixed
-		   TODO: create a node->areParentsFixed method to give an error for pv (and pD/popt??)
-		       
-		   // To limit pD / popt to observed stochastic nodes only (and pv if included above):
-		   vector<Node const *> const &reqnodes = nodearray.allnodes();
-		   for(unsigned int i = 0; i < reqnodes.size(); i++){
-		   if ( !reqnodes[i]->isStochastic() ) {
-		   msg = "non-stochastic nodes cannot be included in an array subset for a pD or popt monitor";
-		   return 0;
-		   }
-		   if ( !reqnodes[i]->isFixed() ) {
-		   msg = "unobserved nodes cannot be included in an array subset for a pD or popt monitor";
-		   return 0;
-		   }
-		   }*/
-
 	    vector<RNG*> rngs;	    
 	    for (unsigned int i = 0; i < model->nchain(); ++i) {
 		rngs.push_back(model->rng(i));
 	    }
 
 	    /* Create the correct subtype of monitor */
-
-	    SummaryType summary_type = getSummaryType(summary);
-	    if (summary_type != MEAN && summary_type != TRACE) return nullptr;
-	    
+	    SummaryType summary_type = getSummaryType(summary);   
 	    pair<Monitor*, MonitorStat*> m(nullptr, nullptr);
 	    if (isWeighted(nstat)) {
 		// loo_leverage

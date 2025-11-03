@@ -18,7 +18,7 @@ namespace jags {
 	/**
 	 * @short Summary types for monitors in the diag module
 	 */
-	enum SummaryType {STUNSET, TRACE, MEAN, VAR, COV};
+	enum SummaryType {STUNSET, TRACE, MEAN, VAR, COV, TRACEWEIGHT};
       
 	/**
 	* @short Process a string to return density type

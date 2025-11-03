@@ -13,6 +13,7 @@
 #include <model/MeanMonitor.h>
 #include <model/VarMonitor.h>
 #include <model/CovMonitor.h>
+#include <model/TraceWeight.h>
 
 using std::vector;
 using std::string;
@@ -41,6 +42,15 @@ namespace diag {
 	    break;
 	case COV:
 	    m = new CovMonitor(nodes, stat);
+	    break;
+	case TRACEWEIGHT:
+	    if (stat->weighted() == UNWEIGHTED) {
+		delete stat;
+		stat = nullptr;
+	    }
+	    else {
+		m = new TraceWeight(nodes, stat);
+	    }
 	    break;
 	case STUNSET:
 	    delete stat;

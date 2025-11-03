@@ -37,8 +37,11 @@ namespace jags {
 	    else if (summary == "var" || summary == "variance") {
 		return VAR;
 	    }
-	    else if (summary == "cov") {
+	    else if (summary == "cov" || summary == "covariance") {
 		return COV;
+	    }
+	    else if (summary == "traceweight") {
+		return TRACEWEIGHT;
 	    }
 	    return STUNSET;
 	}
