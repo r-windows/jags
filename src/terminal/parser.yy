@@ -487,6 +487,15 @@ monitor_clear: MONITOR CLEAR var {
     clearMonitor($3, *$7, "trace");
     delete $7;
 }
+| MONITOR CLEAR var ',' SUMMARY '(' NAME ')' {
+    clearMonitor($3, "value", *$7);
+    delete $7;
+}
+| MONITOR CLEAR var ',' STAT '(' NAME ')' SUMMARY '(' NAME ')' {
+    clearMonitor($3, *$7, *$11);
+    delete $7;
+}
+
 ;
 
 monitors_to:  MONITORS TO file_name 
@@ -880,11 +889,11 @@ void clearMonitor(jags::ParseTree const *var, std::string const &stat, std::stri
 {
     std::string const &name = var->name();
     if (var->parameters().empty()) {
-	/* Requesting the whole node */
+	/* Requesting a whole array */
 	console->clearMonitor(name, jags::Range(), stat, summary);
     }
     else {
-	/* Requesting subset of a multivariate node */
+	/* Requesting subset of an array */
 	console->clearMonitor(name, getRange(var), stat, summary);
     }
 }
