@@ -3837,7 +3837,167 @@ without affecting the mixing of the Markov chain.
 \chapter{The diag module}
 \label{chapter:diag}
 
-The \texttt{diag} module provides monitors
+The \texttt{diag} module provides monitors that can be used to assess
+model fit, model complexity, local influence, and prior-data conflict.
+
+Table~\ref{tab:density_stats} summarizes the monitor stats provided
+by the \texttt{diag} module. These can divided into 3 groups:
+\begin{enumerate}
+\item Vector-valued stats. These return a vector with one element
+  for each monitored node.
+\item Scalar-valued stats. These return a single scalar value
+  summarizing the monitored values in an appropriate way:
+  \begin{itemize}
+  \item For \texttt{logdensity}, \texttt{loglikelihood}, \texttt{deviance},
+    and \texttt{leverage} the values for each node are summed;
+  \item For \texttt{density} and \texttt{likelihood} we take the product
+    of the individual values for each node.
+  \end{itemize}
+\item Weighted stats. These are variants of the vector-valued stats
+  that are inversely weighted by the likelihood of each node.
+  Weighted stats are used for leave-one-out (LOO)
+  diagnostics. See~\ref{section:loo} for more detailes.
+\end{enumerate}
+
+\begin{table}
+\begin{tabular}{lrl}
+  \hline
+  Vector        & \multicolumn{1}{l}{Scalar} & Weighted \\
+  \hline
+  logdensity    &    logdensity\_total & loo\_logdensity \\
+  density       &       density\_total & loo\_density \\
+  loglikelihood & loglikelihood\_total & loo\_loglikelihood \\
+  likelihood    &    likelihood\_total & loo\_likelihood \\
+  deviance      &      deviance\_total & loo\_deviance \\
+  leverage      &      leverage\_total & loo\_leverage \\
+  \hline
+\end{tabular}
+\caption{\label{table:diag_stats} Monitor stats defined by the 
+  \texttt{diag} module}
+\end{table}
+
+\section{Node density stats}
+
+Most of the monitor stats in the \texttt{diag} module are functions on
+the probability density function for stochastic nodes. Some notation
+is required to define this. Suppose that $y_1 \ldots y_n$ are the
+values of the observed nodes and that the nodes are {\em a priori}
+conditionally independent given paramters $\theta$. In a graphical
+model, $\theta$ is represented by the parent nodes of all observed
+stochastic nodes. The density of node $i$ is then $p(y_i \mid
+\theta)$.
+
+In \JAGS\ we extend the definition of log density to include
+deterministic and constant nodes, giving them a default log density of
+zero. This is done to allow density statistics to be aggregated over
+node arrays that contain both stochastic and non stochastic nodes by
+summing the log densities, so that the non-stochastic nodes make no
+contribution to the total.
+
+We also make a distinction between log density and log likelihood. The
+log likelihood of an observed stochastic node is the same as the log
+density; for all other nodes, including unobserved stochastic nodes,
+the log likelihoood is zero.
+
+Monitor state
+\begin{table}[h]
+\begin{tabular}{lrrc}
+  \hline
+  stat          & \multicolumn{2}{c}{Stochastic}          & Other \\
+  \cline{2-3}
+                & observed                  & unobserved            &    \\
+  \hline
+  logdensity    &  $\log p(y\mid\theta)$    & $\log p(y\mid\theta)$ &  0 \\
+  density       &  $p(y\mid\theta)$         & $p(y\mid\theta)$      &  1 \\
+  loglikelihood &  $\log p(y\mid\theta)$    & 0                     &  0 \\
+  likelihood    &  $p(y\mid\theta)$         & 1                     &  1 \\
+  deviance      &  $-2 \log p(y\mid\theta)$ & 0                     &  0 \\
+  \hline
+\end{tabular}
+\caption{\label{table:density_stats} Node density stats in the
+  \texttt{diag} module. For stochastic nodes these are functions of
+  the probability density $p(y\mid\theta)$ where $y$ is the value of
+  the node and $\theta$ the value of its parents. Non-stochastic
+  nodess return identity values. Unobserved stochastic nodes
+  return identity values for likelihood-based stats.}
+\end{table}
+
+\section{Leverage stat}
+
+Stat type \texttt{leverage} is used for model diagnostics to find
+observations with high leverage. It is also used in the construction
+of the penalty for the deviance information criterion
+(See~\ref{section:dic}).
+
+In regression models, observations come in pairs $(x_i,y_i)$ where
+$y_i$ is the outcome for observation $i$ and $x_i$ is a vector of
+fixed predictor variables.  Leverage is a measure of how unusual the
+predictor variables are compared with the rest of the observations.
+Observations with high leverage may be considered {\em influential by
+  design}, {\em i.e.} they will influence the parameter estimates for
+any value of the outcome variable $y$. A theory of Bayesian leverage
+is outlined by \citet{plummer2025}.
+
+Bayesian leverage is defined for both observed and unobserved
+stochastic nodes. In machine learning terms, it can be used as a
+diagnostic for both training data and test data. An observation in the
+test data with high leverage indicates {\em covariate shift} and the
+predictions for that observation should be considered unreliable
+because the predictor variables are outside of the context of the
+training data.
+
+In \JAGS\, the leverage of a stochastic node is estimated by the mean
+of the leverage stat over all iterations. The recommended summary type
+to use with stat type \texttt{leverage} is therefore
+\texttt{mean}. You can also use \texttt{trace} to inspect the mixing
+of leverage statistics, but summary types \texttt{var} and
+\texttt{cov} cannot be used because they do not give statistically
+meaningful information about the model. Following the extended
+definition of log density in \JAGS, the leverage for non-stochastic
+nodes is defined as zero.
+
+Stat type \texttt{leverage} is based on the Kullback-Leibler
+divergence between the predictive distributions of two parallel chains
+\citep{plummer:2025}. This means you must run at least two chains when
+using stat type \texttt{leverage}. Unlike other stat types, the
+summary statistics from parallel chains will not be statistically
+independent.
+
+Stat types \texttt{leverage\_total} and \texttt{loo\_leverage} are
+discussed in sections~\ref{section:dic} and \ref{section:loo}
+respectively.
+
+\section{Measures of model fit}
+
+There are two commonly used measures of model fit, the expected log-likelihood,
+and the log predictive density. The expected log likelihood for observation $i$
+is
+\[
+\text{E}_{\theta} \left( \log p(y_i \mid \theta) \mid y_{1:n}\right)
+\]
+The log predictive density is
+\[
+\log \text{E}_{\theta} \left( p(y_i \mid \theta) \mid y_{1:n} \right)
+\]
+When expressed in this form, the two measures of fit appear very
+similar; they differ only in the order of the expectation over
+$\theta$ and the log transformation.
+
+
+\vspace{12pt}
+\begin{tabular}{lllr}
+  \hline
+  Measure                 & stat                & summary    & post-processing \\
+  \hline
+  Gibbs training loss & {\tt loglikelihood}   & {\tt mean} & {\tt - mean(v)} \\
+  Expected deviance   & {\tt deviance}        & {\tt mean} & {\tt sum(v)} \\
+  Bayes training loss & {\tt likelihood}      & {\tt mean} & {\tt - mean(log(v))} \\
+  Log pointwise       & {\tt likelihood}      & {\tt mean} & {\tt - sum(log(v))} \\
+  predictive density  &                       &            &
+  \hline
+\end{tabular}
+\vspace{12pt}
+
 
 \section{Monitors in the dic module}
 
