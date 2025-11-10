@@ -3876,30 +3876,30 @@ by the \texttt{diag} module. These can divided into 3 groups:
   \texttt{diag} module}
 \end{table}
 
-\section{Node density stats}
+\section{Density and likelihood statistics}
 
-Most of the monitor stats in the \texttt{diag} module are functions on
-the probability density function for stochastic nodes. Some notation
-is required to define this. Suppose that $y_1 \ldots y_n$ are the
-values of the observed nodes and that the nodes are {\em a priori}
+Most of the monitor stats in the \texttt{diag} module are based on the
+probability density function for stochastic nodes. Some notation is
+required to define this. Suppose that $y_1 \ldots y_n$ are the values
+of the observed nodes and that the nodes are {\em a priori}
 conditionally independent given paramters $\theta$. In a graphical
 model, $\theta$ is represented by the parent nodes of all observed
 stochastic nodes. The density of node $i$ is then $p(y_i \mid
-\theta)$.
+\theta)$. Table~\ref{table:density_stats} provided formal definitions
+of the node density stats.
 
 In \JAGS\ we extend the definition of log density to include
 deterministic and constant nodes, giving them a default log density of
-zero. This is done to allow density statistics to be aggregated over
-node arrays that contain both stochastic and non stochastic nodes by
-summing the log densities, so that the non-stochastic nodes make no
-contribution to the total.
+zero. This allows density statistics to be aggregated over node arrays
+that contain both stochastic and non stochastic nodes by summing the
+log densities. The non-stochastic nodes make no contribution to the
+total.
 
 We also make a distinction between log density and log likelihood. The
 log likelihood of an observed stochastic node is the same as the log
 density; for all other nodes, including unobserved stochastic nodes,
 the log likelihoood is zero.
 
-Monitor state
 \begin{table}[h]
 \begin{tabular}{lrrc}
   \hline
@@ -3921,6 +3921,255 @@ Monitor state
   nodess return identity values. Unobserved stochastic nodes
   return identity values for likelihood-based stats.}
 \end{table}
+
+\subsection{Measures of model fit}
+\label{section:fit_measures}
+
+There are two commonly used measures of fit for a single observation:
+the expected log-likelihood, and the log predictive density. The
+expected log likelihood for observation $i$ is
+\[
+\overline{l}_i = \text{E}_{\theta} \left( \log p(y_i \mid \theta) \mid y_{1:n}\right)
+\]
+The log predictive density is
+\[
+\log q(y_i \mid y_{1:n}) = \log \text{E}_{\theta} \left( p(y_i \mid \theta) \mid y_{1:n} \right)
+\]
+When expressed in this form, the two measures of fit appear very
+similar; they differ only in the order of the expectation over
+$\theta$ and the log transformation.
+
+To calculate an overall measure of fit for the whole model, the
+individual fit measures are summed over all observations. Hence there
+are really only two commonly-used measures of overall model fit: one
+based on the expected log likelihood and one based on the log
+predictive density. However, in the literature, measures of model fit
+are scaled in different ways and called different names. We will go
+through the most popular choices. Table~\ref{table:fit_measures} shows
+how to calculate these in \JAGS.
+
+\begin{table}[h]
+\begin{tabular}{lllr}
+  \hline
+  Measure                 & stat                & summary    & post-processing \\
+  \hline
+  Gibbs training loss & {\tt loglikelihood}   & {\tt mean} & {\tt - mean(v)} \\
+  Expected deviance   & {\tt deviance}        & {\tt mean} & {\tt sum(v)} \\
+  Bayes training loss & {\tt likelihood}      & {\tt mean} & {\tt - mean(log(v))} \\
+  Log pointwise       & {\tt likelihood}      & {\tt mean} & {\tt - sum(log(v))} \\
+  predictive density  &                       &            &
+  \hline
+\end{tabular}
+\caption{\label{table:fit_measures} Measures of model fit and how to calculate them in \JAGS.
+  The last column (post-processing) shows how to calculate the finale statistic in R. Here
+  $v$ is the output vector corresponding to a single chain}
+\end{table}
+
+\subsubsection{Expected deviance}
+
+\citet{spiegelhalter:etal:2002} defined the {\em Bayesian deviance} as
+\[
+D(\theta) = -2 \sum_{i=1}^n \log p(y_i \mid \theta)
+\]
+and proposed that the posterior expectation of the deviance could be used
+as a measure of model adequacy
+\[
+\overline{D} = -2 \sum_{i=1}^n \overline{l}_i
+\]
+The Bayesian deviance should not be confused with the deviance of an
+exponential dispersion model (EDM), which plays an important role in
+theory of generalized linear models. The deviance for EDMs is always
+non-negative and is independent of the dispersion parameter. Neither
+of these properties hold for the Bayesian deviance. In fact the
+Bayesian deviance is a relative measure of model adequacy. It is
+defined only up to an arbitrary constant that cancels out when taking
+the difference in deviance between two models fitted to the same
+data. So the difference in deviance is always well defined but the
+absolute value cannot be interpreted.
+
+\subsubsection{Gibbs training loss}
+
+\citet{watanabe:2010} defined the Gibbs training loss as the empirical
+mean of minus the log density over all observations
+\[
+GL_t = - \frac{1}{n} \sum_{i=1}^n \overline{l}_i
+\]
+This is a rescaled version of the Bayesian deviance:
+\[
+\overline{D} = 2 n GL_t
+\]
+
+\subsubsection{Bayes training loss}
+
+\citet{watanabe:2010} defined the Bayes training loss as the empirical
+mean of minus the log predictive density over all observations
+\[
+BL_t = - \frac{1}{n} \sum_{i=1}^n \log q(y_i \mid y_{1:n})
+\]
+%The Bayes loss is the basis of the Widely Applicable Information Criterion (WAIC)
+%\citep{watanabe:2010}.
+
+\subsubsection{Log pointwise predictive density}
+
+\citet{gelman:etal:understanding} popularized the use of the Widely
+Applicable Information Criterion (WAIC) to a statistical audience but
+changed the terminology. Their summary of model fit is the log
+pointwise predictive density (lppd):
+\[
+\text{lppd} = \sum_{i=1}^n \log q(y_i \mid y_{1:n})
+\]
+which is a rescaled version of the Bayes training loss
+\[
+\text{lppd} = - n BL_t
+\]
+The adjective ``pointwise'' emphasizes that each element of the predictive density is
+evaluated independently, ignoring any correlation in the predictive distribution.
+
+distribution is ignored.
+
+\subsection{Measures of model complexity}
+
+%balance,
+
+\subsection{DIC penalty: $p_D$}
+
+\citet{spiegelhalter:dic} introduced the quantity $p_D$ as the
+difference between the deviance evaluated at the posterior mean
+$\overline{\theta}$ and the expected deviance $\overline{D}$.
+\[
+p_D = D(\overline{\theta}) - \overline{D}
+\]
+They called $p_D$ the effective number of parameters. For simple
+models with weak prior information $pD_$ tends to $k$, the number of
+parameters in the model. Conversely a strong prior on $\theta$
+concentrated on a point mass reduces $p_D$ down to zero.
+
+There are some technical problems with this definition of $p_D$: it
+depends on the parameterization of the model and it may be negative.
+To overcome these issues \citet{plummer} suggested an alternative
+definition. 
+
+\subsection{WAIC penalty: $p_W$}
+
+\citet{watanabe:book} introduced the quantity $p_W$ as an estimate
+of model dimension
+\[
+p_W = \sum_{i=1}^n \text{Var}_{\theta} \left( \log p(y_i \mid \theta) \mid y_{1:n} \right) 
+\]
+It is not hard to show that $p_W$ is always non-negative and invariant to changes
+in parameterization.
+
+Under singular learning theory, $p_W/2$ is an estimate of a quantity
+called the singular fluctuation. \citet{watanabe:book} also proposed an
+alternative estimate of the singular fluctuation based on the difference
+between Gibbs and Bayes training loss. This leads to the alternative quantity
+\[
+p^*_W = 2n \left(BL_t - GL_t)
+\]
+Although $p_W$ and $p^*_W$ are asymptotically equivalent, empirical
+investigations suggest that $p^*_W$ performs less well
+\citep{gelman:understanding}.
+
+\subsection{Variance penalty: $p_V$}
+
+Motivated by the previously mentioned problems with $p_D$,
+\cite{gelman book} proposed alternative definition of the effective
+number of parameters based on the variance of the log likelihood
+\[
+p_V = 2\, \text{Var}_{\theta} \left( \sum_{i=1}^n \log p(y_i \mid \theta) \mid y_{1:n} \right) 
+\]
+This is algebraically similar to $p_W$, but is based on the variance
+of the sum of the log likelihood contributions, whereas $p_W$ is the
+sum of the variances. Furthermore, in order to calibrate $p_V$ so that
+it tends to $k$ for weak priors, the variance must be multiplied by 2.
+
+It turns out that $p_V$ is useful as a measure of prior-data
+conflict. Large values of the ratio $p_V/p_W$ indicate that the
+posterior distribution is sensitive to local perturbations of the
+learning rate, which controls the relative contributions of the
+likelihood and prior.  This indicates conflict between these two
+sources of information about the parameters \citep{plummer:2025}.
+
+\begin{table}
+\begin{tabular}{lllr}
+  \hline
+  Measure  & stat                       & summary    & post-processing \\
+  \hline
+  $p^*_D$  & {\tt leverage}             & {\tt mean} & {\tt sum(v)} \\
+  $p_W$    & {\tt loglikelihood}        & {\tt var}  & {\tt sum(v)} \\
+  $p_V$    & {\tt loglikelihood\_total} & {\tt var}  & {\tt 2*v} \\
+  \hline
+\end{tabular}
+\caption{\label{table:xomplexity_measures} Measures of model
+  complexity and how to calculate them in \JAGS.  The last column
+  (post-processing) shows how to calculate the finale statistic in
+  R. Here $v$ is the output vector corresponding to a single chain}
+\end{table}
+
+\section{Predictive information criteria}
+
+The measures of model fit described in
+section~\ref{section:fit_measures} have a common problem. They all use
+the data twice: once for estimating the parameters and once for
+assessing model fit. This ``double dipping'' of the data means that
+these measures always give an optimistic assessment of the model
+fit. In machine learning culture, it is common practice to split the
+data into training and testing sets, using only the training data to
+fit the model and the test data to assess it.  In statistics culture
+there is a different tradition of using the full data to fit the model
+but then trying to compensate for double dipping by adding a penalty.
+This leads to predictive information criteria.
+
+\subsection{Deviance Information Criterion}
+
+\citet{spiegelhalter:dic} introduced the Deviance Information Criterion (DIC) as
+\begin{align*}
+  \text{DIC} & = \overline{D} + p_D \\
+             & = D(\overline{\theta}) + 2 p_D
+\end{align*}
+In the second form DIC can be seen as a Bayesian generalization of the
+Akaike Information Criterion (AIC) \citep{akaike}.
+\[
+\text{AIC} = D(\widehat{\theta}) + 2 k
+\]
+where $\widehat{\theta}$ is the maximum likelihood estimate and $k$ is the number
+of parameters.
+
+In \JAGS\ we use the modified definition:
+\[
+\text{DIC}  = \overline{D} + p^*_D
+\]
+Although this differs from the original definition due to
+\citet{spiegelhalter:dic}, we still refer to this as DIC, since
+$p^*_D$ was always meant to be a refinement of $p_D$ to overcome some
+of its technical problems and not a novel measure of model complexity.
+
+\subsection{Widely Applicable Information Criteria}
+
+\citet{watanabe:book} derived the Widely Applicable Information
+Criterion (WAIC) from a new asymptotic theory for Bayesian models
+called singular learning theory which lies at the intersection of
+algebraic geometry and probability theory. Singular learning theory is
+hard but the consequences are easy to understand.
+
+WAIC can be based on either the Bayes loss or the Gibbs loss. Both of
+these loss functions can be considered as biased estimates of an
+underlying generalization error which is the expected loss of a new
+observation. In both cases the bias is the same (asymptotically) and
+can be removed by adding a penalty based $p_W$. This leads to two
+definitions of WAIC:
+
+\begin{align*}
+WAIC_1 & = GL_t + \frac{p_W}{n}
+WAIC_2 & = BL_t + \frac{p_W}{n}
+\end{align*}
+
+\citet{gelman:understanding} popularized WAIC using terminology more
+familiar to a statistical audience. They also renamed it the
+Watanabe-Akaike Information Criterion.
+\[
+\text{W-AIC} = - 2 \text{lppd} + 2 p_W
+\]
 
 \section{Leverage stat}
 
@@ -3946,9 +4195,9 @@ predictions for that observation should be considered unreliable
 because the predictor variables are outside of the context of the
 training data.
 
-In \JAGS\, the leverage of a stochastic node is estimated by the mean
-of the leverage stat over all iterations. The recommended summary type
-to use with stat type \texttt{leverage} is therefore
+In \JAGS, the leverage of a stochastic node is estimated by the mean
+of the \texttt{leverage} stat over all iterations. The recommended
+summary type to use with stat type \texttt{leverage} is therefore
 \texttt{mean}. You can also use \texttt{trace} to inspect the mixing
 of leverage statistics, but summary types \texttt{var} and
 \texttt{cov} cannot be used because they do not give statistically
@@ -3967,38 +4216,7 @@ Stat types \texttt{leverage\_total} and \texttt{loo\_leverage} are
 discussed in sections~\ref{section:dic} and \ref{section:loo}
 respectively.
 
-\section{Measures of model fit}
-
-There are two commonly used measures of model fit, the expected log-likelihood,
-and the log predictive density. The expected log likelihood for observation $i$
-is
-\[
-\text{E}_{\theta} \left( \log p(y_i \mid \theta) \mid y_{1:n}\right)
-\]
-The log predictive density is
-\[
-\log \text{E}_{\theta} \left( p(y_i \mid \theta) \mid y_{1:n} \right)
-\]
-When expressed in this form, the two measures of fit appear very
-similar; they differ only in the order of the expectation over
-$\theta$ and the log transformation.
-
-
-\vspace{12pt}
-\begin{tabular}{lllr}
-  \hline
-  Measure                 & stat                & summary    & post-processing \\
-  \hline
-  Gibbs training loss & {\tt loglikelihood}   & {\tt mean} & {\tt - mean(v)} \\
-  Expected deviance   & {\tt deviance}        & {\tt mean} & {\tt sum(v)} \\
-  Bayes training loss & {\tt likelihood}      & {\tt mean} & {\tt - mean(log(v))} \\
-  Log pointwise       & {\tt likelihood}      & {\tt mean} & {\tt - sum(log(v))} \\
-  predictive density  &                       &            &
-  \hline
-\end{tabular}
-\vspace{12pt}
-
-
+  
 \section{Monitors in the dic module}
 
 The \texttt{dic} module defines new monitor classes for Bayesian model
