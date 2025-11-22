@@ -15,22 +15,29 @@ using std::sqrt;
 
 #define REG_PENALTY 0.001
 
-//Left truncated logistic distribution
+//Sample from the left-truncated logistic distribution
 static double llogit(double left, jags::RNG *rng, double mu)
 {
-    double qleft = 1/(1 + exp(mu-left));
-    double x = qleft + (1 - qleft) * rng->uniform();
-    return mu + log(x) - log(1 - x);
+    double u = rng->uniform();
+    if (left - mu <= 3) {
+	/* Sampling from the body. For left -> -Inf this tends to the
+	   unconstrained sampling algorithm used by the R math
+	   library */
+	return mu + log((u + exp(left - mu))/(1.0 - u));
+    }
+    else {
+	/* Sampling from the right tail. This algorithm is more stable
+	   for left - mu >> 1. It's not obvious what the optimal
+	   cutoff is but we use this branch for exp(left - mu) > 20 */
+	return left + log1p(u * exp(mu - left)) - log(1 - u);
+    }
 }
 
 //Right truncated logistic distribution
 static double rlogit(double right, jags::RNG *rng, double mu)
 {
-    double qright = 1/(1 + exp(mu-right));
-    double x = qright * rng->uniform();
-    return mu + log(x) - log(1 - x);
+    return - llogit(-right, rng, -mu);
 }
-
 
 namespace jags {
 namespace glm {
