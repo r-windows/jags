@@ -49,27 +49,26 @@ namespace jags {
 
 	void REGamma2::updateTau(RNG *rng)
 	{
-	    vector<Node const*> const &par = _tau->node()->parents();
-	    double shape = *par[0]->value(_chain); 
-	    double rate = *par[1]->value(_chain); //(1/scale)
+	    double shape = *SHAPE(_tau, _chain);
+	    double rate = *RATE(_tau, _chain); //(1/scale)
 
 	    // Likelihood
 	    vector<StochasticNode *> const &eps = _tau->stochasticChildren();
-	    for (unsigned int i = 0; i < eps.size(); ++i) {
-		double Y = *eps[i]->value(_chain);
-		double mu = *eps[i]->parents()[0]->value(_chain);
+	    for (auto p = eps.begin(); p != eps.end(); ++p) {
+		double Y = *(*p)->value(_chain);
+		double mu = *(*p)->parents()[0]->value(_chain);
 		shape += 0.5;
 		rate += (Y - mu) * (Y - mu) / 2.0;
 	    }
-
-	    double x = rgamma(shape, 1.0/rate, rng);
-	    _tau->setValue(&x, 1, _chain);  
+	    
+	    double tau1 = rgamma(shape, 1.0/rate, rng);
+	    _tau->setValue(&tau1, 1, _chain);  
 	}
 
 	void REGamma2::updateSigma(RNG *rng)
 	{
-	    double tau = _tau->node()->value(_chain)[0];
-	    double sigma0 = 1/sqrt(tau);
+	    double tau0 = _tau->node()->value(_chain)[0];
+	    double sigma0 = 1/sqrt(tau0);
 
 	    calDesignSigma();
 	    
@@ -78,8 +77,8 @@ namespace jags {
 	    double sigma1 = _slicer.value();
 
 	    //Set new value of precision parameter
-	    double x = 1/(sigma1 * sigma1);
-	    _tau->setValue(&x, 1, _chain);
+	    double tau1 = 1/(sigma1 * sigma1);
+	    _tau->setValue(&tau1, 1, _chain);
 	}
 
 	bool REGamma2::isAdaptive() const
