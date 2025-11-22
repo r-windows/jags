@@ -17,24 +17,38 @@ extern cholmod_common *glm_wk;
 namespace jags {
     namespace glm {
 
+	static double SCALE(SingletonGraphView const *tau, unsigned int chain)
+	{
+	    return *tau->node()->parents()[0]->value(chain);
+	}
+
+	static double DF(SingletonGraphView const *tau, unsigned int chain)
+	{
+	    return *tau->node()->parents()[1]->value(chain);
+	}
+
 	REScaledGamma2::REScaledGamma2(SingletonGraphView const *tau,
 				       GLMMethod const *glmmethod)
 	    : REMethod2(tau, glmmethod)
 	{
-	    //Initialize hyper-parameter _sigma 
-	    vector<Node const*> const &par = tau->node()->parents();
-	    double S = *par[0]->value(_chain); //Prior scale
-	    double df = *par[1]->value(_chain); //Prior degrees of freedom
+	    double S = SCALE(tau, _chain);
+	    double df = DF(tau, _chain);
 
-	    double x = tau->node()->value(_chain)[0];
-	    double a_shape = (1 + df)/2; // shape
-	    double a_rate = df * x + 1/(S*S); // 1/scale
-	    _sigma = sqrt(a_shape/a_rate);
+	    /*
+	      Using a hierarchical prior for tau:
+	      tau ~ dgamma(df * sigma^2/2, df/2)
+	      sigma ~ dnorm(0, 1/S^2)
+	      Initialize sigma^2 at its posterior mean given tau.
+	    */
+	    double tau0 = tau->node()->value(_chain)[0];
+	    double sigma2_shape2 = 1 + df; // 2 * shape
+	    double sigma2_rate2 = df * tau0 + 1/(S*S); // 2/scale
+	    _sigma = sqrt(sigma2_shape2/sigma2_rate2);
 	}
 
 	void REScaledGamma2::updateTau(RNG *rng)
 	{
-	    double df = *_tau->node()->parents()[1]->value(_chain);
+	    const double df = DF(_tau, _chain);
 
 	    // Prior
 	    double shape = df/2.0; 
@@ -49,34 +63,31 @@ namespace jags {
 		rate += (Y - mu) * (Y - mu) / 2.0;
 	    }
 	    
-	    double x = rgamma(shape, 1.0/rate, rng);
-	    _tau->setValue(&x, 1, _chain);  
+	    double tau1 = rgamma(shape, 1.0/rate, rng);
+	    _tau->setValue(&tau1, 1, _chain);  
 	}
 
 	void REScaledGamma2::updateSigma(RNG *rng)
 	{
-	    double sigma0 = _sigma;
-
+	    double tau = *_tau->node()->value(_chain);
+	    tau *= _sigma * _sigma;
+	    
 	    calDesignSigma();
 
-	    //Prior scale
-	    vector<Node const*> const &par = _tau->node()->parents();
-	    double S = *par[0]->value(_chain);
+	    //Prior 
+	    double S = SCALE(_tau, _chain);
+	    //Precision is A and mean is b/A relative to current value
+	    double A = 1.0/(S*S);
+	    double b = - _sigma * A;
 
-	    //Get parameters of posterior distribution for _sigma
-	    //Precision is A and mean is b/A
-	    double priorprec = 1.0/(S*S);
-	    double A = priorprec;
-	    double b = - _sigma * priorprec;
-
+	    //Add likelihood terms to A, b
 	    calCoefSigma(&A, &b, &_sigma, 1);
 
-	    //Set new value of sigma
-	    _sigma = lnormal(0, rng, _sigma + b/A, 1/sqrt(A));
+	    //Sample new value of sigma
+	    _sigma += rnorm(b/A, 1/sqrt(A), rng);
 
 	    //Rescale tau
-	    double tau = *_tau->node()->value(_chain);
-	    tau *= (sigma0 * sigma0)/(_sigma * _sigma);
+	    tau /= _sigma * _sigma;
 	    _tau->setValue(&tau, 1, _chain);
 	}
 	
