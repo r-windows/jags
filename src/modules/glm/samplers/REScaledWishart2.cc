@@ -10,6 +10,8 @@
 #include <module/ModuleError.h>
 #include <rng/RNG.h>
 #include <rng/TruncatedNormal.h>
+#include <matrix/lapack.h>
+#include <matrix/blas.h>
 #include <JRmath.h>
 
 #include <cmath>
@@ -19,6 +21,36 @@ using std::sqrt;
 
 namespace jags {
     namespace glm {
+
+	//FIXME: Various versions of this function exist elsewhere
+	static int MNormSample(vector<double> &x, 
+			       vector<double> &b, vector<double> &A,
+			       RNG *rng)
+	{
+	    int one = 1;
+	    int info = 0;
+	    int n = x.size();
+
+	    //Solve A %*% x = b to get the conditional mean. The solution
+	    //will be in b after the call to dposv.
+	    jags_dposv("L", &n, &one, A.data(), &n, b.data(), &n, &info);
+	    if (info != 0) return info;
+	    
+	    //After dposv, the leading nfree x nfree lower triangle of A
+	    //holds the Cholesky factorization. Use it to generate a
+	    //multivariate normal random vector with mean 0 and precision A
+	    vector<double> eps(x.size());
+	    for (auto p = eps.begin(); p != eps.end(); ++p) {
+		*p = rng->normal();
+	    }
+	    jags_dtrsv("L", "T", "N", &n, A.data(), &n, eps.data(), &one);
+	    
+	    // Copy back sampled values
+	    for (unsigned long i = 0; i < x.size(); ++i) {
+		x[i] += b[i] + eps[i];
+	    }
+	    return info;
+	}
 
 	REScaledWishart2::REScaledWishart2(SingletonGraphView const *tau,
 					   GLMMethod const *glmmethod)
@@ -97,21 +129,24 @@ namespace jags {
 		b[j] = - sigma0[j] * priorprec;
 	    }
 
-	    calCoefSigma(&A[0], &b[0], &sigma0[0], m);
+	    calCoefSigma(A.data(), b.data(), sigma0.data(), m);
+	    MNormSample(_sigma, b, A, rng);
 	    
+	    /*
 	    //Sample each sigma from its full conditional
 	    //Fixme: wouldn't it be better to do block sampling here?
 	    //Fixme: not reversible
 	    for (unsigned int j = 0; j < m; ++j) {
 		double sigma_mean  = _sigma[j] + b[j]/A[j*m+j];
 		double sigma_sd = sqrt(1.0/A[j*m+j]);
-		_sigma[j] = lnormal(0, rng, sigma_mean, sigma_sd);
+		_sigma[j] = rnorm(sigma_mean, sigma_sd, rng);//FIXME: Not truncating here?
 		double delta = _sigma[j] - sigma0[j];
 		for (unsigned int k = 0; k < m; ++k) {
 		    b[k] -= delta * A[m*j + k];
 		}
 	    }
-
+	    */
+	    
 	    //Rescale tau
 	    double const *tau0 = _tau->node()->value(_chain);
 	    vector<double> scale(m);
