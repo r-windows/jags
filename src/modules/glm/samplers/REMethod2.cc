@@ -119,6 +119,7 @@ namespace jags {
 
 	    updateTau(rng); //Sufficient parameterization
 	    updateSigma(rng); //Ancillary parameterization
+	    updateTau(rng); //Ancillary parameterization
 	}
 
 	void REMethod2::calCoefSigma(double *A, double *b, double const *sigma0,
