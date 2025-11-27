@@ -1268,12 +1268,14 @@ See also: DATA TO (page \pageref{data:to}).
 \subsubsection{COMPILE}
 
 \begin{verbatim}
-. compile [, nchains(<n>)]
+. compile [, nchains(<n>) nthreads(<n>)]
 \end{verbatim}
 Compiles the model using the information provided in the preceding
 model and data statements. By default, a single Markov chain is
 created for the model, but if the \texttt{nchains} option is given,
-then \texttt{n} chains are created 
+then \texttt{n} chains are created. If OpenMP support is enabled,
+there will be one thread per chain by default. This can be modified
+with the \texttt{nthreads} option.
 
 Following the compilation of the model, further DATA IN statements are
 legal, but have no effect.  A new model statement, on the other hand,

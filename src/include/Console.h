@@ -210,6 +210,7 @@
 	     std::string const &summary);
    BUGSModel const *model();
    unsigned int nchain() const;
+   unsigned int nthread() const;
    bool dumpMonitors(std::map<std::string,SArray> &data_table,
 		     std::string const &stat,
 		     std::string const &summary, bool flat);
@@ -222,6 +223,10 @@
    bool isAdapting() const;
    /** Clears the model */
    void clearModel();
+   /**
+    * Sets the number of threads for parallel updating
+    */
+   bool setNThread(unsigned int nthread);
    /**
     * Loads a module by name
     */

@@ -1,3 +1,4 @@
+
 #include <config.h>
 #include <model/Model.h>
 #include <model/MonitorFactory.h>
@@ -40,10 +41,10 @@ using std::ostringstream;
 using std::stable_sort;
 using std::copy;
 using std::min;
-using std::max;
 using std::reverse;
 using std::find;
 using std::isfinite;
+using std::max;
 
 using std::exception_ptr;
 using std::current_exception;
@@ -91,8 +92,8 @@ static bool checkClosure(vector<Node*> const &nodes)
 }
 
 Model::Model(unsigned int nchain)
-    : _samplers(0), _nchain(nchain), _rng(nchain, nullptr), _iteration(0),
-      _is_initialized(false), _adapt(false), _data_gen(false)
+    : _samplers(0), _nchain(max(1U, nchain)), _nthread(_nchain), _rng(nchain, nullptr),
+      _iteration(0), _is_initialized(false), _adapt(false), _data_gen(false)
 {
 }
 
@@ -382,7 +383,9 @@ void Model::update(unsigned int niter)
     
     for (unsigned int iter = 0; iter < niter; ++iter) {    
 
-        #pragma omp parallel for num_threads(_nchain)
+#ifdef _OPENMP	
+        #pragma omp parallel for num_threads(_nthread)
+#endif
 	for (unsigned int n = 0; n < _nchain; ++n) {
 	    try {
 		for (vector<Sampler*>::iterator i = _samplers.begin(); 
@@ -564,6 +567,22 @@ list<MonitorFactory *> &Model::monitorFactories()
 unsigned int Model::nchain() const
 {
   return _nchain;
+}
+
+unsigned int Model::nthread() const
+{
+#ifdef _OPENMP
+    return _nthread;
+#else
+    return 1U;
+#endif
+}
+
+void Model::setNThread(unsigned int nthread)
+{
+#ifdef _OPENMP
+    _nthread = nthread;
+#endif
 }
 
 RNG *Model::rng(unsigned int chain) const

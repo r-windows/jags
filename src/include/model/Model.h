@@ -30,6 +30,7 @@ protected:
   std::vector<Sampler*> _samplers;
 private:
   unsigned int _nchain;
+  unsigned int _nthread; 
   std::vector<RNG *> _rng;
   unsigned int _iteration;
   std::vector<Node*> _nodes;
@@ -185,6 +186,14 @@ public:
    * Returns a vector of all nodes in the model
    */ 
   std::vector<Node*> const &nodes() const;
+  /**
+   * Returns the number of threads for parallel computing
+   */
+  unsigned int nthread() const;
+  /**
+   * Sets the number of threads for parallel updating
+   */
+  void setNThread(unsigned int nthread);
 };
 
 } /* namespace jags */

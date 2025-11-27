@@ -84,6 +84,7 @@ AM_CONDITIONAL(WINDOWS, test x$win = xtrue)
 ## of these autoconf macros.
 AC_LANG([C++])
 AC_OPENMP
+AC_SUBST(_OPENMP)
 CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
 AC_LANG([C])
 AC_OPENMP

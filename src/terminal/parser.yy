@@ -142,6 +142,7 @@
 %token <intval> SUMMARY
 %token <intval> EXIT
 %token <intval> NCHAINS
+%token <intval> NTHREADS
 %token <intval> CHAIN
 %token <intval> LOAD
 %token <intval> UNLOAD
@@ -360,13 +361,19 @@ parameters: PARAMETERS IN file_name {
 ;
 
 compile: COMPILE {
-    Jtry(console->compile(_data_table, 1, true));
+    Jtry(console->compile(_data_table, 1U, true));
     print_unused_variables(_data_table, true);
  }
 | COMPILE ',' NCHAINS '(' INT ')' {
     Jtry(console->compile(_data_table, $5, true));
     print_unused_variables(_data_table, true);
 }
+| COMPILE ',' NCHAINS '(' INT ')' NTHREADS '(' INT ')' {
+    Jtry(console->compile(_data_table, $5, true));
+    console->setNThread($9);
+    print_unused_variables(_data_table, true);
+}
+
 ;
 
 initialize: INITIALIZE {

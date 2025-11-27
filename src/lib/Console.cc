@@ -178,7 +178,7 @@ bool Console::checkModel(FILE *file)
 bool Console::compile(map<string, SArray> &data_table, unsigned int nchain,
                       bool gendata)
 {
-    if (nchain == 0) {
+    if (nchain <= 0) {
 	_err << "You must have at least one chain" << endl;
 	return false;
     }
@@ -284,6 +284,7 @@ bool Console::compile(map<string, SArray> &data_table, unsigned int nchain,
 	    }
 	    _out << "   Unobserved stochastic nodes: " << nparam << "\n";
 	    _out << "   Total graph size: " << _model->nodes().size() << endl;
+
 	    if (datagen_rng) {
 		// Reuse the data-generation RNG, if there is one, for chain 0 
 		_model->setRNG(datagen_rng, 0);
@@ -631,6 +632,16 @@ unsigned int Console::nchain() const
   }
 }
 
+unsigned int Console::nthread() const
+{
+  if (_model == nullptr) {
+    return 0;
+  }
+  else {
+    return _model->nthread();
+  }
+}
+
 bool Console::checkAdaptation(bool &status) 
 {
     if (_model == nullptr) {
@@ -826,4 +837,19 @@ void Console::setRNGSeed(unsigned int seed)
     rngSeed() = seed;
 }
 
+    bool Console::setNThread(unsigned int nthread)
+    {
+	if (_model == nullptr) {
+	    _err << "Can't set number of threads. No model!" << endl;
+	    return false;
+	}
+#ifndef _OPENMP	
+	nthread = 1U;
+#endif
+	_model->setNThread(nthread);
+	return true;
+
+
+    }
+    
 } //namespace jags

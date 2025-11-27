@@ -35,6 +35,7 @@ parameters		zzlval.intval=PARAMETERS; return PARAMETERS;
 
 compile			zzlval.intval=COMPILE; return COMPILE;
 nchains                 zzlval.intval=NCHAINS; return NCHAINS;
+nthreads                zzlval.intval=NTHREADS; return NTHREADS;
 initialize              zzlval.intval=INITIALIZE; return INITIALIZE;
 chain                   zzlval.intval=CHAIN; return CHAIN;
 
