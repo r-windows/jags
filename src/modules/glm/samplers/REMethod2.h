@@ -28,6 +28,7 @@ namespace glm {
 	SingletonGraphView const *_tau;
 	GraphView const *_eps;
 	std::vector<Outcome*> const &_outcomes;
+	cholmod_common *_wk;
 	cholmod_sparse const *_x;
 	const unsigned int _chain;
 	cholmod_dense *_z;

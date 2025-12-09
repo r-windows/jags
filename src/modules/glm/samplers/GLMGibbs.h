@@ -33,17 +33,11 @@ namespace glm {
 	 * 
 	 * @param chain Number of the chain (starting from 0) to which
 	 * the sampling method will be applied.
-	 *
-	 * @param link Boolean flag that is passed to the utility
-	 * function checkLinear when checking to see if we have a
-	 * valid GLM. If link is true then the last deterministic
-	 * descendents in view (i.e. those with no deterministic
-	 * descendants) may be link nodes.
 	 */
 	GLMGibbs(GraphView const *view, 
 		 std::vector<SingletonGraphView const *> const &sub_views,
 		 std::vector<Outcome *> const &outcomes,
-		 unsigned int chain);
+		 unsigned int chain, cholmod_common *wk);
 	/**
 	 * Updates the regression parameters element-wise (i.e. with
 	 * Gibbs sampling).  Although Gibbs sampling less efficient

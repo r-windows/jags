@@ -34,8 +34,9 @@ namespace jags {
 			   GraphView const *eps,
 			   vector<SingletonGraphView const *> const &sub_eps,
 			   vector<Outcome *> const &outcomes,
-			   unsigned int chain)
-	    : GLMMethod(eps, sub_eps, outcomes, chain), _tau(tau), _eps(eps)
+			   unsigned int chain, cholmod_common *wk)
+	    : GLMMethod(eps, sub_eps, outcomes, chain, wk),
+	      _tau(tau), _eps(eps)
 	{
 	    calDesign();
 	    symbolic();

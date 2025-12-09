@@ -7,6 +7,11 @@
 
 using std::vector;
 
+extern "C" {
+#include <cholmod.h>
+}
+extern cholmod_common *glm_wk;
+
 namespace jags {
     namespace glm {
     
@@ -36,7 +41,7 @@ namespace jags {
 	    vector<Outcome *> const &outcomes,
 	    unsigned int chain) const
 	{
-	    return new REScaledWishart(tau, eps, sub_eps, outcomes, chain);
+	    return new REScaledWishart(tau, eps, sub_eps, outcomes, chain, glm_wk);
 	}
 
     } // namespace glm

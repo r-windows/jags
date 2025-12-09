@@ -14,6 +14,8 @@
 
 using std::vector;
 
+extern cholmod_common *glm_wk;
+
 namespace jags {
 namespace glm {
 
@@ -62,10 +64,11 @@ namespace glm {
 	}
 
 	if (gibbs) {
-	    return new HolmesHeldGibbs(view, subviews, outcomes, chain);
+	    return new HolmesHeldGibbs(view, subviews, outcomes, chain,
+				       glm_wk);
 	}
 	else {
-	    return new HolmesHeld(view, subviews, outcomes, chain);
+	    return new HolmesHeld(view, subviews, outcomes, chain, glm_wk);
 	}
 	
     }

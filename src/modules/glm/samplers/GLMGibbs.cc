@@ -14,17 +14,15 @@
 using std::vector;
 using std::sqrt;
 
-extern cholmod_common *glm_wk;
-
 namespace jags {
 
 namespace glm {
 
     GLMGibbs::GLMGibbs(GraphView const *view, 
-			 vector<SingletonGraphView const *> const &sub_views,
-			 vector<Outcome *> const &outcomes,
-			 unsigned int chain)
-	: GLMMethod(view, sub_views, outcomes, chain)
+		       vector<SingletonGraphView const *> const &sub_views,
+		       vector<Outcome *> const &outcomes,
+		       unsigned int chain, cholmod_common *wk)
+	: GLMMethod(view, sub_views, outcomes, chain, wk)
     {
 	if (_view->length() != _sub_views.size()) {
 	    throwLogicError("updateLMGibbs can only act on scalar nodes");
@@ -103,7 +101,7 @@ namespace glm {
 	}
 
 	#pragma omp critical 
-	cholmod_free_sparse(&A, glm_wk);
+	cholmod_free_sparse(&A, _wk);
 	delete [] b;
 	
 	_view->setValue(theta,  _chain);

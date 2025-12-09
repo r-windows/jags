@@ -19,8 +19,6 @@ using std::sqrt;
 using std::fill;
 using std::set;
 
-extern cholmod_common *glm_wk;
-
 namespace jags {
     namespace glm {
 
@@ -37,7 +35,7 @@ namespace jags {
 			     GLMMethod const *glmmethod)
 	    : _tau(tau), _eps(glmmethod->_view),
 	      _outcomes(glmmethod->_outcomes),
-	      _x(glmmethod->_x), _chain(glmmethod->_chain)
+	      _wk(glmmethod->workspace()), _x(glmmethod->_x), _chain(glmmethod->_chain)
 	{
 	    vector<StochasticNode*> const &enodes = _eps->nodes();
 	    vector<StochasticNode*> const &schild = tau->stochasticChildren();
@@ -64,12 +62,12 @@ namespace jags {
 	    unsigned long nrow = sumLengths(_outcomes);
 	    unsigned long ncol = tau->stochasticChildren()[0]->length();
 	    _z = cholmod_allocate_dense(nrow, ncol, nrow, CHOLMOD_REAL,
-					glm_wk);
+					_wk);
 	}
 
 	REMethod2::~REMethod2()
 	{
-	    cholmod_free_dense(&_z, glm_wk);
+	    cholmod_free_dense(&_z, _wk);
 	}
 	
 	void REMethod2::calDesignSigma()

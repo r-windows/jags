@@ -26,8 +26,6 @@ using std::set;
 using std::copy;
 using std::sqrt;
 
-extern cholmod_common *glm_wk;
-
 namespace jags {
 
 static void getIndices(set<StochasticNode *> const &schildren,
@@ -118,10 +116,10 @@ namespace glm {
     GLMMethod::GLMMethod(GraphView const *view, 
 			 vector<SingletonGraphView const *> const &sub_views,
 			 vector<Outcome *> const &outcomes,
-			 unsigned int chain)
+			 unsigned int chain, cholmod_common *wk)
 	: _view(view), _chain(chain), _sub_views(sub_views),
 	  _outcomes(outcomes),
-	  _x(nullptr), _factor(nullptr), _fixed(sub_views.size(), false), 
+	  _wk(wk), _x(nullptr), _factor(nullptr), _fixed(sub_views.size(), false), 
 	  _length_max(0), _nz_prior(0)
     {
 	view->checkFinite(chain); //Check validity of initial values
@@ -169,7 +167,7 @@ namespace glm {
 
 	//Set up sparse representation of the design matrix
 	#pragma omp critical
-	_x = cholmod_allocate_sparse(nrow, ncol, r, 1, 1, 0, CHOLMOD_REAL, glm_wk);
+	_x = cholmod_allocate_sparse(nrow, ncol, r, 1, 1, 0, CHOLMOD_REAL, wk);
 	int *_xp = static_cast<int*>(_x->p);
 	int *_xi = static_cast<int*>(_x->i);
 
@@ -196,7 +194,7 @@ namespace glm {
 	    _outcomes.pop_back();
 	}
 	#pragma omp critical
-	cholmod_free_sparse(&_x, glm_wk);
+	cholmod_free_sparse(&_x, _wk);
     }
     
     /* 
@@ -213,7 +211,7 @@ namespace glm {
 	unsigned int nrow = _view->length();
 
 	// Prior contribution 
-	cholmod_sparse *Aprior = cholmod_allocate_sparse(nrow, nrow, _nz_prior, 1, 1, 0, CHOLMOD_PATTERN, glm_wk); 
+	cholmod_sparse *Aprior = cholmod_allocate_sparse(nrow, nrow, _nz_prior, 1, 1, 0, CHOLMOD_PATTERN, _wk); 
 	int *Ap = static_cast<int*>(Aprior->p);
 	int *Ai = static_cast<int*>(Aprior->i);
 
@@ -242,19 +240,19 @@ namespace glm {
 	
 	// Likelihood contribution
 
-	cholmod_sparse *t_x = cholmod_transpose(_x, 0, glm_wk);
-	cholmod_sort(t_x, glm_wk);
-	cholmod_sparse *Alik = cholmod_aat(t_x, nullptr, 0, 0, glm_wk);
-	cholmod_sparse *A = cholmod_add(Aprior, Alik, nullptr, nullptr, 0, 0, glm_wk);
+	cholmod_sparse *t_x = cholmod_transpose(_x, 0, _wk);
+	cholmod_sort(t_x, _wk);
+	cholmod_sparse *Alik = cholmod_aat(t_x, nullptr, 0, 0, _wk);
+	cholmod_sparse *A = cholmod_add(Aprior, Alik, nullptr, nullptr, 0, 0, _wk);
 	
 	//Free working matrices
-	cholmod_free_sparse(&t_x, glm_wk);
-	cholmod_free_sparse(&Aprior, glm_wk);
-	cholmod_free_sparse(&Alik, glm_wk);
+	cholmod_free_sparse(&t_x, _wk);
+	cholmod_free_sparse(&Aprior, _wk);
+	cholmod_free_sparse(&Alik, _wk);
 	
 	A->stype = -1;
-	_factor = cholmod_analyze(A, glm_wk); 
-	cholmod_free_sparse(&A, glm_wk);
+	_factor = cholmod_analyze(A, _wk); 
+	cholmod_free_sparse(&A, _wk);
     }
 
     void GLMMethod::calCoef(double *&b, cholmod_sparse *&A) 
@@ -273,7 +271,7 @@ namespace glm {
 	cholmod_sparse *Aprior = nullptr;
 	#pragma omp critical
 	Aprior = cholmod_allocate_sparse(nrow, nrow, _nz_prior, 1, 1, 0,
-					 CHOLMOD_REAL, glm_wk); 
+					 CHOLMOD_REAL, _wk); 
     
 	// Set up prior contributions to A, b
 	int *Ap = static_cast<int*>(Aprior->p);
@@ -327,8 +325,8 @@ namespace glm {
 	cholmod_sparse *t_x = nullptr;
 	#pragma omp critical
 	{
-	    t_x = cholmod_transpose(_x, 1, glm_wk);
-	    cholmod_sort(t_x, glm_wk); //Needed for multivariate outcomes
+	    t_x = cholmod_transpose(_x, 1, _wk);
+	    cholmod_sort(t_x, _wk); //Needed for multivariate outcomes
 	}
 	
 	int *Tp = static_cast<int*>(t_x->p);
@@ -418,13 +416,13 @@ namespace glm {
 	#pragma omp critical
 	{
 	    cholmod_sparse *Alik = cholmod_ssmult(t_x, _x, CHOLMOD_REAL, 1, 0,
-						  glm_wk);
-	    cholmod_free_sparse(&t_x, glm_wk);
+						  _wk);
+	    cholmod_free_sparse(&t_x, _wk);
 	    double one[2] = {1, 0};
-	    A = cholmod_add(Aprior, Alik, one, one, 1, 0, glm_wk);
+	    A = cholmod_add(Aprior, Alik, one, one, 1, 0, _wk);
 	    
-	    cholmod_free_sparse(&Aprior, glm_wk);
-	    cholmod_free_sparse(&Alik, glm_wk);
+	    cholmod_free_sparse(&Aprior, _wk);
+	    cholmod_free_sparse(&Alik, _wk);
 	}
     }
 
@@ -440,6 +438,11 @@ namespace glm {
     bool GLMMethod::checkAdaptation() const
     {
 	return true;
+    }
+
+    cholmod_common *GLMMethod::workspace() const
+    {
+	return _wk;
     }
 
 }}

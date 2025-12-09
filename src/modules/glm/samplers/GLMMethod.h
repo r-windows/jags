@@ -42,6 +42,7 @@ namespace glm {
 	unsigned int _chain;
 	std::vector<SingletonGraphView const *> _sub_views;
 	std::vector<Outcome *> _outcomes;
+	cholmod_common *_wk;
 	cholmod_sparse *_x;
 	cholmod_factor *_factor; //???
 	void symbolic();
@@ -68,11 +69,13 @@ namespace glm {
 	 * 
 	 * @param chain Number of the chain (starting from 0) to which
 	 * the sampling method will be applied.
+	 *
+	 * @param wk pointer to the workspace used by the method
 	 */
 	GLMMethod(GraphView const *view, 
 		  std::vector<SingletonGraphView const *> const &sub_views,
 		  std::vector<Outcome *> const &outcomes,
-		  unsigned int chain);
+		  unsigned int chain, cholmod_common *wk);
 	/**
 	 * Virtual destructor
 	 */
@@ -107,6 +110,10 @@ namespace glm {
 	 * Returns the name of the sampler
 	 */
 	std::string name() const;
+	/**
+	 * Return the CHOLMOD workspace 
+	 */
+	cholmod_common * workspace() const;
     };
 
 }}

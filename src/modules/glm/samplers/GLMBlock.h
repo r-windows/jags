@@ -41,7 +41,7 @@ namespace glm {
 	GLMBlock(GraphView const *view, 
 		 std::vector<SingletonGraphView const *> const &sub_views,
 		 std::vector<Outcome *> const &outcomes,
-		 unsigned int chain);
+		 unsigned int chain, cholmod_common *wk);
 	/**
 	 * Updates the regression parameters by treating the GLM as a
 	 * linear model (LM).  All regression parameters are updated

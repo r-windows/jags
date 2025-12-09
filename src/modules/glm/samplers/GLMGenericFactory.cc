@@ -27,6 +27,11 @@
 
 using std::vector;
 
+extern "C" {
+#include <cholmod.h>
+}
+extern cholmod_common *glm_wk;
+
 namespace jags {
 namespace glm {
 
@@ -98,10 +103,10 @@ namespace glm {
 	}
 
 	if (gibbs) {
-	    return new GLMGibbs(view, sub_views, outcomes, chain);
+	    return new GLMGibbs(view, sub_views, outcomes, chain, glm_wk);
 	}
 	else {
-	    return new GLMBlock(view, sub_views, outcomes, chain);
+	    return new GLMBlock(view, sub_views, outcomes, chain, glm_wk);
 	}
     }
 

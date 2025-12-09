@@ -14,8 +14,6 @@ extern "C" {
 #include <cholmod.h>
 }
 
-extern cholmod_common *glm_wk;
-
 using std::string;
 using std::vector;
 using std::exp;
@@ -46,8 +44,8 @@ namespace glm {
     IWLS::IWLS(GraphView const *view, 
 	       vector<SingletonGraphView const *> const &sub_views,
 	       vector<Outcome *> const &outcomes,
-	       unsigned int chain)
-	: GLMBlock(view, sub_views, outcomes, chain)
+	       unsigned int chain, cholmod_common *wk)
+	: GLMBlock(view, sub_views, outcomes, chain, wk)
     {
     }
     
@@ -56,7 +54,7 @@ namespace glm {
 				double *b, cholmod_sparse *A)
     {
 	A->stype = -1;
-	int ok = cholmod_factorize(A, _factor, glm_wk);
+	int ok = cholmod_factorize(A, _factor, _wk);
 	if (!ok) {
 	    throwRuntimeError("Cholesky decomposition failure in IWLS");
 	}
@@ -70,7 +68,7 @@ namespace glm {
 
 	//Make permuted copy of b
 	cholmod_dense *w = cholmod_allocate_dense(n, 1, n, CHOLMOD_REAL, 
-						  glm_wk);
+						  _wk);
 	int *perm = static_cast<int*>(_factor->Perm);
 	double *wx = static_cast<double*>(w->x);
 	for (unsigned int i = 0; i < n; ++i) {
@@ -78,7 +76,7 @@ namespace glm {
 	}
 
 	//Posterior mean
-	cholmod_dense *mu = cholmod_solve(CHOLMOD_LDLt, _factor, w, glm_wk);
+	cholmod_dense *mu = cholmod_solve(CHOLMOD_LDLt, _factor, w, _wk);
 	double *mux = static_cast<double*>(mu->x);
 
 	//Setup pointers to sparse matrix A
@@ -96,8 +94,8 @@ namespace glm {
 	}
 	deviance -= logDet(_factor);
 
-	cholmod_free_dense(&w, glm_wk);
-	cholmod_free_dense(&mu, glm_wk);
+	cholmod_free_dense(&w, _wk);
+	cholmod_free_dense(&mu, _wk);
 
 	return -deviance/2;
     }
@@ -133,8 +131,8 @@ namespace glm {
 	logp -= logPTransition(xold, xnew, b1, A1);
 	logp += logPTransition(xnew, xold, b2, A2);
 
-	cholmod_free_sparse(&A1, glm_wk);
-	cholmod_free_sparse(&A2, glm_wk);
+	cholmod_free_sparse(&A1, _wk);
+	cholmod_free_sparse(&A2, _wk);
 	delete [] b1; delete [] b2;
 	
 	if (logp < 0 && rng->uniform() > exp(logp)) {

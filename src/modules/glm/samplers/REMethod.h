@@ -51,7 +51,7 @@ namespace glm {
 		 GraphView const *eps, 
 		 std::vector<SingletonGraphView const *> const &sub_eps,
 		 std::vector<Outcome *> const &outcomes,
-		 unsigned int chain);
+		 unsigned int chain, cholmod_common *wk);
 	~REMethod() override;
 	/**
 	 * Updates the random effects

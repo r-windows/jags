@@ -24,7 +24,7 @@ namespace glm {
 	HolmesHeldGibbs(GraphView const *view, 
 			std::vector<SingletonGraphView const *> const &sv,
 			std::vector<Outcome *> const &outcomes,
-			unsigned int chain);
+			unsigned int chain, cholmod_common *wk);
 	/**
 	 * Updates the regression parameters element-wise (i.e. with
 	 * Gibbs sampling).

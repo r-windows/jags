@@ -16,16 +16,14 @@
 using std::vector;
 using std::sqrt;
 
-extern cholmod_common *glm_wk;
-
 namespace jags {
     namespace glm {
 	
 	HolmesHeldGibbs::HolmesHeldGibbs(GraphView const *view,
 		 vector<SingletonGraphView const *> const &sv,
 		 vector<Outcome *> const &outcomes,
-		 unsigned int chain)
-	    : GLMMethod(view, sv, outcomes, chain)
+		 unsigned int chain, cholmod_common *wk)
+	    : GLMMethod(view, sv, outcomes, chain, wk)
 	{
 	}
 
@@ -70,7 +68,7 @@ namespace jags {
 	    //Transpose design matrix
 	    cholmod_sparse *t_x = nullptr;
 	    #pragma omp critical
-	    t_x = cholmod_transpose(_x, 1, glm_wk);
+	    t_x = cholmod_transpose(_x, 1, _wk);
 	
 	    double *xx = static_cast<double*>(t_x->x);
 	    int *xp = static_cast<int*>(t_x->p);
@@ -126,7 +124,7 @@ namespace jags {
 	    }
 
 	    #pragma omp critical
-	    cholmod_free_sparse(&A, glm_wk);
+	    cholmod_free_sparse(&A, _wk);
 	    delete [] b;
 	    
 	    _view->setValue(theta,  _chain);

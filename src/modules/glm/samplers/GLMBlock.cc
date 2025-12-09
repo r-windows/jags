@@ -13,17 +13,16 @@
 using std::vector;
 using std::sqrt;
 
-extern cholmod_common *glm_wk;
-
 namespace jags {
 
 namespace glm {
 
     GLMBlock::GLMBlock(GraphView const *view, 
-			 vector<SingletonGraphView const *> const &sub_views,
-			 vector<Outcome *> const &outcomes,
-			 unsigned int chain)
-	: GLMMethod(view, sub_views, outcomes, chain)
+		       vector<SingletonGraphView const *> const &sub_views,
+		       vector<Outcome *> const &outcomes,
+		       unsigned int chain,
+		       cholmod_common *wk)
+	: GLMMethod(view, sub_views, outcomes, chain, wk)
     {
 	calDesign();
 	symbolic();
@@ -57,8 +56,8 @@ namespace glm {
 	int ok = 1;
         #pragma omp critical
 	{
-	    ok = cholmod_factorize(A, _factor, glm_wk);
-	    cholmod_free_sparse(&A, glm_wk);
+	    ok = cholmod_factorize(A, _factor, _wk);
+	    cholmod_free_sparse(&A, _wk);
 	}
 	if (ok && _factor->is_ll == 0) {
 	    //LDL' decomposition
@@ -74,7 +73,7 @@ namespace glm {
 	}
 	if (!ok) {
 	    #pragma omp critical
-	    cholmod_free_sparse(&A, glm_wk);
+	    cholmod_free_sparse(&A, _wk);
 	    delete [] b;
 	    return false;
 	}
@@ -84,7 +83,7 @@ namespace glm {
 	
 	cholmod_dense *w = nullptr;
 	#pragma omp critical
-	w = cholmod_allocate_dense(nrow, 1, nrow, CHOLMOD_REAL, glm_wk);
+	w = cholmod_allocate_dense(nrow, 1, nrow, CHOLMOD_REAL, _wk);
 	
 	// Permute RHS
 	double *wx = static_cast<double*>(w->x);
@@ -96,8 +95,8 @@ namespace glm {
 	cholmod_dense *u1 = nullptr;
         #pragma omp critical
 	{
-	    u1 = cholmod_solve(CHOLMOD_L, _factor, w, glm_wk);
-	    cholmod_free_dense(&w, glm_wk);
+	    u1 = cholmod_solve(CHOLMOD_L, _factor, w, _wk);
+	    cholmod_free_dense(&w, _wk);
         }
 	
 	updateAuxiliary(u1, rng);
@@ -123,8 +122,8 @@ namespace glm {
         cholmod_dense *u2 = nullptr;
         #pragma omp critical
 	{
-            u2 = cholmod_solve(CHOLMOD_DLt, _factor, u1, glm_wk);
-            cholmod_free_dense(&u1, glm_wk);
+            u2 = cholmod_solve(CHOLMOD_DLt, _factor, u1, _wk);
+            cholmod_free_dense(&u1, _wk);
         } 
 
         // Permute solution
@@ -133,7 +132,7 @@ namespace glm {
 	    b[perm[i]] = u2x[i];
 	}
         #pragma omp critical
-        cholmod_free_dense(&u2, glm_wk);
+        cholmod_free_dense(&u2, _wk);
 
 	//Shift origin back to original scale
 	int r = 0;

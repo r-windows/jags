@@ -43,8 +43,8 @@ namespace jags {
 			 GraphView const *eps,
 			 vector<SingletonGraphView const *> const &sub_eps,
 			 vector<Outcome *> const &outcomes,
-			 unsigned int chain)
-	    : REMethod(tau, eps, sub_eps, outcomes, chain),
+			 unsigned int chain, cholmod_common *wk)
+	    : REMethod(tau, eps, sub_eps, outcomes, chain, wk),
 	      _slicer(this, SHAPE(tau, chain), RATE(tau, chain),
 		      SIGMA(tau, chain))
 	{
