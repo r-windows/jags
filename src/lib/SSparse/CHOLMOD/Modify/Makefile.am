@@ -4,8 +4,8 @@ cholmodmodify_la_SOURCES = cholmod_rowadd.c cholmod_updown.c	\
 cholmod_rowdel.c
 
 cholmodmodify_la_CPPFLAGS =				\
--I$(top_srcdir)/src/modules/glm/SSparse/config		\
--I$(top_srcdir)/src/modules/glm/SSparse/CHOLMOD/Include
+-I$(top_srcdir)/src/lib/SSparse/config		\
+-I$(top_srcdir)/src/lib/SSparse/CHOLMOD/Include
 
 cholmodmodify_la_LDFLAGS = -no-undefined -module -avoid-version
 

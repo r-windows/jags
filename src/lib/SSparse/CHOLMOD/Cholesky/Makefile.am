@@ -7,10 +7,10 @@ cholmod_rowcolcounts.c cholmod_rowfac.c cholmod_solve.c		\
 cholmod_spsolve.c 
 
 cholmodcholesky_la_CPPFLAGS = -DNPARTITION \
--I$(top_srcdir)/src/modules/glm/SSparse/config	\
--I$(top_srcdir)/src/modules/glm/SSparse/CHOLMOD/Include	\
--I$(top_srcdir)/src/modules/glm/SSparse/AMD/Include		\
--I$(top_srcdir)/src/modules/glm/SSparse/COLAMD/Include
+-I$(top_srcdir)/src/lib/SSparse/config	\
+-I$(top_srcdir)/src/lib/SSparse/CHOLMOD/Include	\
+-I$(top_srcdir)/src/lib/SSparse/AMD/Include		\
+-I$(top_srcdir)/src/lib/SSparse/COLAMD/Include
 
 cholmodcholesky_la_LDFLAGS = -no-undefined -module -avoid-version
 

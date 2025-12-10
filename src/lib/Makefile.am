@@ -1,5 +1,5 @@
 SUBDIRS = util sarray distribution function sampler graph model	\
-	compiler rng module matrix
+	compiler rng module matrix SSparse
 
 extra_dist = version.cc.in
 
@@ -20,7 +20,8 @@ libjags_la_LIBADD = model/libmodel.la		\
         rng/librng.la				\
 	module/libmodule.la			\
 	matrix/libmatrix.la			\
-	@LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
+	SSparse/ssparse.la                      \
+        @LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
 
 libjags_la_LDFLAGS = -version-info $(JAGS_MAJOR):$(JAGS_MINOR):0
 if WINDOWS

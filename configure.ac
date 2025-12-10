@@ -130,7 +130,21 @@ AC_CONFIG_FILES([
   src/lib/module/Makefile
   src/lib/compiler/Makefile
   src/lib/rng/Makefile
-  src/lib/matrix/Makefile	
+  src/lib/matrix/Makefile
+  src/lib/SSparse/Makefile
+  src/lib/SSparse/config/Makefile
+  src/lib/SSparse/AMD/Makefile
+  src/lib/SSparse/CAMD/Makefile
+  src/lib/SSparse/CCOLAMD/Makefile
+  src/lib/SSparse/COLAMD/Makefile
+  src/lib/SSparse/CHOLMOD/Makefile
+  src/lib/SSparse/CHOLMOD/Check/Makefile
+  src/lib/SSparse/CHOLMOD/Cholesky/Makefile
+  src/lib/SSparse/CHOLMOD/Core/Makefile
+  src/lib/SSparse/CHOLMOD/Include/Makefile
+  src/lib/SSparse/CHOLMOD/MatrixOps/Makefile
+  src/lib/SSparse/CHOLMOD/Modify/Makefile
+  src/lib/SSparse/CHOLMOD/Supernodal/Makefile
   src/jrmath/Makefile	
   src/include/Makefile
   src/include/version.h
@@ -165,20 +179,6 @@ AC_CONFIG_FILES([
   src/modules/diag/Makefile
   src/modules/lecuyer/Makefile
   src/modules/glm/Makefile
-  src/modules/glm/SSparse/Makefile
-  src/modules/glm/SSparse/config/Makefile
-  src/modules/glm/SSparse/AMD/Makefile
-  src/modules/glm/SSparse/CAMD/Makefile
-  src/modules/glm/SSparse/CCOLAMD/Makefile
-  src/modules/glm/SSparse/COLAMD/Makefile
-  src/modules/glm/SSparse/CHOLMOD/Makefile
-  src/modules/glm/SSparse/CHOLMOD/Check/Makefile
-  src/modules/glm/SSparse/CHOLMOD/Cholesky/Makefile
-  src/modules/glm/SSparse/CHOLMOD/Core/Makefile
-  src/modules/glm/SSparse/CHOLMOD/Include/Makefile
-  src/modules/glm/SSparse/CHOLMOD/MatrixOps/Makefile
-  src/modules/glm/SSparse/CHOLMOD/Modify/Makefile
-  src/modules/glm/SSparse/CHOLMOD/Supernodal/Makefile
   src/modules/glm/samplers/Makefile
   src/modules/glm/distributions/Makefile
   src/terminal/Makefile

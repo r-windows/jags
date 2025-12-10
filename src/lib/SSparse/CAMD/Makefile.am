@@ -14,8 +14,8 @@ Source/camd_postorder.c \
 Source/camd_preprocess.c \
 Source/camd_valid.c
 
-camd_la_CPPFLAGS = -I$(top_srcdir)/src/modules/glm/SSparse/config \
--I$(top_srcdir)/src/modules/glm/SSparse/CAMD/Include
+camd_la_CPPFLAGS = -I$(top_srcdir)/src/lib/SSparse/config \
+-I$(top_srcdir)/src/lib/SSparse/CAMD/Include
 
 noinst_HEADERS = \
 Include/camd.h \
