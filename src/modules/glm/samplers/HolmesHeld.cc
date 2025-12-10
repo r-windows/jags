@@ -85,15 +85,13 @@ namespace glm {
 	unsigned long nrow = schildren.size();
 
 	cholmod_sparse *pt_x = nullptr;
-	#pragma omp critical
-	{
-	    //Transpose and permute the design matrix
-	    cholmod_sparse *t_x = cholmod_transpose(_x, 1, _wk);
-	    int *fperm = static_cast<int*>(_factor->Perm);
-	    pt_x = cholmod_submatrix(t_x, fperm, t_x->nrow,
-				     nullptr, -1, 1, 1, _wk);
-	    cholmod_free_sparse(&t_x, _wk);
-	}
+
+	//Transpose and permute the design matrix
+	cholmod_sparse *t_x = cholmod_transpose(_x, 1, _wk);
+	int *fperm = static_cast<int*>(_factor->Perm);
+	pt_x = cholmod_submatrix(t_x, fperm, t_x->nrow,
+				 nullptr, -1, 1, 1, _wk);
+	cholmod_free_sparse(&t_x, _wk);
 	
 	unsigned long ncol = _x->ncol;
 	vector<double> d(ncol, 1);
@@ -112,9 +110,7 @@ namespace glm {
 	cholmod_dense *U = nullptr, *Y = nullptr, *E = nullptr;
 	cholmod_sparse *uset = nullptr;
 
-	cholmod_dense *X = nullptr;
-	#pragma omp critical
-	X = cholmod_allocate_dense(ncol, 1, ncol, CHOLMOD_REAL, _wk);
+	cholmod_dense *X = cholmod_allocate_dense(ncol, 1, ncol, CHOLMOD_REAL, _wk);
 	double *Xx = static_cast<double*>(X->x);
 
 	for (unsigned long r = 0; r < nrow; ++r) {
@@ -142,7 +138,6 @@ namespace glm {
 		Xx[c] = xx[j];
 	    }
 
-	    #pragma omp critical
 	    cholmod_solve2(CHOLMOD_L, _factor, X, &xset, &U, &uset, &Y, &E,
 			   _wk);
 
@@ -186,16 +181,13 @@ namespace glm {
 	    
 	//Free workspace
 
-	#pragma omp critical
-	{
-	    cholmod_free_sparse(&pt_x, _wk);
-	    cholmod_free_sparse(&uset, _wk);
+	cholmod_free_sparse(&pt_x, _wk);
+	cholmod_free_sparse(&uset, _wk);
 	    
-	    cholmod_free_dense(&U, _wk);
-	    cholmod_free_dense(&Y, _wk);
-	    cholmod_free_dense(&E, _wk);
-	    cholmod_free_dense(&X, _wk);
-	}
+	cholmod_free_dense(&U, _wk);
+	cholmod_free_dense(&Y, _wk);
+	cholmod_free_dense(&E, _wk);
+	cholmod_free_dense(&X, _wk);
     }
     
 }}

@@ -166,7 +166,6 @@ namespace glm {
 	Xp[c] = r;
 
 	//Set up sparse representation of the design matrix
-	#pragma omp critical
 	_x = cholmod_allocate_sparse(nrow, ncol, r, 1, 1, 0, CHOLMOD_REAL, wk);
 	int *_xp = static_cast<int*>(_x->p);
 	int *_xi = static_cast<int*>(_x->i);
@@ -193,7 +192,6 @@ namespace glm {
 	    delete _outcomes.back();
 	    _outcomes.pop_back();
 	}
-	#pragma omp critical
 	cholmod_free_sparse(&_x, _wk);
     }
     
@@ -269,7 +267,6 @@ namespace glm {
 	b = new double[nrow];
 
 	cholmod_sparse *Aprior = nullptr;
-	#pragma omp critical
 	Aprior = cholmod_allocate_sparse(nrow, nrow, _nz_prior, 1, 1, 0,
 					 CHOLMOD_REAL, _wk); 
     
@@ -323,11 +320,8 @@ namespace glm {
 	   it gives.
 	*/
 	cholmod_sparse *t_x = nullptr;
-	#pragma omp critical
-	{
-	    t_x = cholmod_transpose(_x, 1, _wk);
-	    cholmod_sort(t_x, _wk); //Needed for multivariate outcomes
-	}
+	t_x = cholmod_transpose(_x, 1, _wk);
+	cholmod_sort(t_x, _wk); //Needed for multivariate outcomes
 	
 	int *Tp = static_cast<int*>(t_x->p);
 	int *Ti = static_cast<int*>(t_x->i);
@@ -413,17 +407,14 @@ namespace glm {
 	    c += m;
 	}
 
-	#pragma omp critical
-	{
-	    cholmod_sparse *Alik = cholmod_ssmult(t_x, _x, CHOLMOD_REAL, 1, 0,
+	cholmod_sparse *Alik = cholmod_ssmult(t_x, _x, CHOLMOD_REAL, 1, 0,
 						  _wk);
-	    cholmod_free_sparse(&t_x, _wk);
-	    double one[2] = {1, 0};
-	    A = cholmod_add(Aprior, Alik, one, one, 1, 0, _wk);
-	    
-	    cholmod_free_sparse(&Aprior, _wk);
-	    cholmod_free_sparse(&Alik, _wk);
-	}
+	cholmod_free_sparse(&t_x, _wk);
+	double one[2] = {1, 0};
+	A = cholmod_add(Aprior, Alik, one, one, 1, 0, _wk);
+	
+	cholmod_free_sparse(&Aprior, _wk);
+	cholmod_free_sparse(&Alik, _wk);
     }
 
     bool GLMMethod::isAdaptive() const

@@ -53,12 +53,9 @@ namespace glm {
 
 	// Get LDL' decomposition of posterior precision
 	A->stype = -1;
-	int ok = 1;
-        #pragma omp critical
-	{
-	    ok = cholmod_factorize(A, _factor, _wk);
-	    cholmod_free_sparse(&A, _wk);
-	}
+	int ok = cholmod_factorize(A, _factor, _wk);
+	cholmod_free_sparse(&A, _wk);
+
 	if (ok && _factor->is_ll == 0) {
 	    //LDL' decomposition
 	    int *fp = static_cast<int*>(_factor->p);
@@ -72,7 +69,6 @@ namespace glm {
 	    }
 	}
 	if (!ok) {
-	    #pragma omp critical
 	    cholmod_free_sparse(&A, _wk);
 	    delete [] b;
 	    return false;
@@ -82,7 +78,6 @@ namespace glm {
 	// with mean mu such that A %*% mu = b and precision A. 
 	
 	cholmod_dense *w = nullptr;
-	#pragma omp critical
 	w = cholmod_allocate_dense(nrow, 1, nrow, CHOLMOD_REAL, _wk);
 	
 	// Permute RHS
@@ -92,12 +87,8 @@ namespace glm {
 	    wx[i] = b[perm[i]];
 	}
 
-	cholmod_dense *u1 = nullptr;
-        #pragma omp critical
-	{
-	    u1 = cholmod_solve(CHOLMOD_L, _factor, w, _wk);
-	    cholmod_free_dense(&w, _wk);
-        }
+	cholmod_dense *u1 = cholmod_solve(CHOLMOD_L, _factor, w, _wk);
+	cholmod_free_dense(&w, _wk);
 	
 	updateAuxiliary(u1, rng);
 
@@ -120,18 +111,14 @@ namespace glm {
 	}
     
         cholmod_dense *u2 = nullptr;
-        #pragma omp critical
-	{
-            u2 = cholmod_solve(CHOLMOD_DLt, _factor, u1, _wk);
-            cholmod_free_dense(&u1, _wk);
-        } 
+	u2 = cholmod_solve(CHOLMOD_DLt, _factor, u1, _wk);
+	cholmod_free_dense(&u1, _wk);
 
         // Permute solution
 	double *u2x = static_cast<double*>(u2->x);
 	for (unsigned int i = 0; i < nrow; ++i) {
 	    b[perm[i]] = u2x[i];
 	}
-        #pragma omp critical
         cholmod_free_dense(&u2, _wk);
 
 	//Shift origin back to original scale

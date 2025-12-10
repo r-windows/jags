@@ -67,7 +67,6 @@ namespace jags {
 
 	    //Transpose design matrix
 	    cholmod_sparse *t_x = nullptr;
-	    #pragma omp critical
 	    t_x = cholmod_transpose(_x, 1, _wk);
 	
 	    double *xx = static_cast<double*>(t_x->x);
@@ -123,7 +122,6 @@ namespace jags {
 		}
 	    }
 
-	    #pragma omp critical
 	    cholmod_free_sparse(&A, _wk);
 	    delete [] b;
 	    
