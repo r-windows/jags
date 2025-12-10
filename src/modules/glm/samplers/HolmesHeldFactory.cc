@@ -9,12 +9,12 @@
 #include "HolmesHeld.h"
 #include "HolmesHeldGibbs.h"
 
+#include <glm.h>
+
 #include <module/ModuleError.h>
 #include <sampler/SingletonGraphView.h>
 
 using std::vector;
-
-extern cholmod_common *glm_wk;
 
 namespace jags {
 namespace glm {
@@ -65,10 +65,11 @@ namespace glm {
 
 	if (gibbs) {
 	    return new HolmesHeldGibbs(view, subviews, outcomes, chain,
-				       glm_wk);
+				       workspace(chain));
 	}
 	else {
-	    return new HolmesHeld(view, subviews, outcomes, chain, glm_wk);
+	    return new HolmesHeld(view, subviews, outcomes, chain,
+				  workspace(chain));
 	}
 	
     }

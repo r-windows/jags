@@ -4,6 +4,8 @@ jagsmod_LTLIBRARIES = glm.la
 
 glm_la_SOURCES = glm.cc
 
+noinst_HEADERS = glm.h
+
 glm_la_CPPFLAGS = -I$(top_srcdir)/src/include	\
 -I$(top_srcdir)/src/lib/SSparse/config \
 -I$(top_srcdir)/src/lib/SSparse/CHOLMOD/Include

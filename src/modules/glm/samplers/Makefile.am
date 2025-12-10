@@ -1,7 +1,7 @@
 noinst_LTLIBRARIES = libglmsampler.la
 
 libglmsampler_la_CPPFLAGS = -I$(top_srcdir)/src/include \
-		-I$(top_srcdir)/src/modules/glm/CSparse \
+		-I$(top_srcdir)/src/modules/glm \
 		-I$(top_srcdir)/src/lib/SSparse/config \
 		-I$(top_srcdir)/src/lib/SSparse/CHOLMOD/Include
 

@@ -16,8 +16,6 @@ using std::vector;
 using std::sqrt;
 using std::fill;
 
-extern cholmod_common *glm_wk;
-
 namespace jags {
     namespace glm {
 
@@ -44,12 +42,12 @@ namespace jags {
 	    unsigned long nrow = sumLengths(_outcomes);
 	    unsigned long ncol = eps->nodes()[0]->length();
 	    _z = cholmod_allocate_dense(nrow, ncol, nrow, CHOLMOD_REAL,
-					glm_wk);
+					_wk);
 	}
 
 	REMethod::~REMethod()
 	{
-	    cholmod_free_dense(&_z, glm_wk);
+	    cholmod_free_dense(&_z, _wk);
 	}
 	
 	//FIXME: This is largely copy-pasted from GLMBlock. Surely no need
@@ -71,8 +69,8 @@ namespace jags {
 	
 	    // Get LDL' decomposition of posterior precision
 	    A->stype = -1;
-	    int ok = cholmod_factorize(A, _factor, glm_wk);
-	    cholmod_free_sparse(&A, glm_wk);
+	    int ok = cholmod_factorize(A, _factor, _wk);
+	    cholmod_free_sparse(&A, _wk);
 	    if (!ok) {
 		throwRuntimeError("Cholesky decomposition failure in REMethod");
 	    }
@@ -82,7 +80,7 @@ namespace jags {
 	
 	    unsigned int nrow = _view->length();
 	    cholmod_dense *w =
-		cholmod_allocate_dense(nrow, 1, nrow, CHOLMOD_REAL, glm_wk);
+		cholmod_allocate_dense(nrow, 1, nrow, CHOLMOD_REAL, _wk);
 
 	    // Permute RHS
 	    double *wx = static_cast<double*>(w->x);
@@ -91,7 +89,7 @@ namespace jags {
 		wx[i] = b[perm[i]];
 	    }
 
-	    cholmod_dense *u1 = cholmod_solve(CHOLMOD_L, _factor, w, glm_wk);
+	    cholmod_dense *u1 = cholmod_solve(CHOLMOD_L, _factor, w, _wk);
 	    double *u1x = static_cast<double*>(u1->x);
 	    if (_factor->is_ll) {
 		// LL' decomposition
@@ -109,7 +107,7 @@ namespace jags {
 		}
 	    }
 
-	    cholmod_dense *u2 = cholmod_solve(CHOLMOD_DLt, _factor, u1, glm_wk);
+	    cholmod_dense *u2 = cholmod_solve(CHOLMOD_DLt, _factor, u1, _wk);
 
 	    // Permute solution
 	    double *u2x = static_cast<double*>(u2->x);
@@ -117,9 +115,9 @@ namespace jags {
 		b[perm[i]] = u2x[i];
 	    }
 
-	    cholmod_free_dense(&w, glm_wk);
-	    cholmod_free_dense(&u1, glm_wk);
-	    cholmod_free_dense(&u2, glm_wk);
+	    cholmod_free_dense(&w, _wk);
+	    cholmod_free_dense(&u1, _wk);
+	    cholmod_free_dense(&u2, _wk);
 
 	    //Shift origin back to original scale
 	    int r = 0;

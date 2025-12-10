@@ -19,6 +19,8 @@
 #include "GLMBlock.h"
 #include "GLMGibbs.h"
 
+#include <glm.h>
+
 #include <graph/StochasticNode.h>
 #include <graph/LinkNode.h>
 #include <distribution/Distribution.h>
@@ -26,11 +28,6 @@
 #include <module/ModuleError.h>
 
 using std::vector;
-
-extern "C" {
-#include <cholmod.h>
-}
-extern cholmod_common *glm_wk;
 
 namespace jags {
 namespace glm {
@@ -103,10 +100,10 @@ namespace glm {
 	}
 
 	if (gibbs) {
-	    return new GLMGibbs(view, sub_views, outcomes, chain, glm_wk);
+	    return new GLMGibbs(view, sub_views, outcomes, chain, workspace(chain));
 	}
 	else {
-	    return new GLMBlock(view, sub_views, outcomes, chain, glm_wk);
+	    return new GLMBlock(view, sub_views, outcomes, chain, workspace(chain));
 	}
     }
 

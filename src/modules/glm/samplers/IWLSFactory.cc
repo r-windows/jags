@@ -5,13 +5,12 @@
 #include "NormalLinear.h"
 #include "IWLSOutcome.h"
 
+#include <glm.h>
 #include <graph/StochasticNode.h>
 #include <sampler/GraphView.h>
 
 using std::vector;
 using std::string;
-
-extern cholmod_common *glm_wk;
 
 namespace jags {
 namespace glm {
@@ -49,10 +48,10 @@ namespace glm {
         }
 
         if (linear) {
-            return new GLMBlock(view, sub_views, outcomes, chain, glm_wk);
+            return new GLMBlock(view, sub_views, outcomes, chain, workspace(chain));
         }
 	
-	return new IWLS(view, sub_views, outcomes, chain, glm_wk);
+	return new IWLS(view, sub_views, outcomes, chain, workspace(chain));
     }
     
     bool IWLSFactory::canSample(StochasticNode const *snode) const
