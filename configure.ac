@@ -53,8 +53,8 @@ LTDL_INIT([recursive])
 AC_PROG_CC
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX([11], [ext], [mandatory])
-AC_PROG_FC
 AC_PROG_F77
+AC_PROG_FC
 AC_PROG_LEX([noyywrap])
 AC_PROG_YACC
 
@@ -77,31 +77,27 @@ esac
 AM_CONDITIONAL(WINDOWS, test x$win = xtrue)
 
 ## Testing for OpenMP flags
-## We need to do this BEFORE testing for Fortran libraries with
-## AC_F77/FC_LIBRARY_LDFLAGS so that FLIBS/FCLIBS will include the omp
-## and pthread libraries. This only makes a material difference on
-## Windows where static linking to libgomp.a fails if we reverse the order
-## of these autoconf macros.
-AC_LANG([C++])
+AC_LANG_PUSH([C++])
 AC_OPENMP
-AC_SUBST(_OPENMP)
 CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
-AC_LANG([C])
+AC_LANG_POP([C++])
+AC_LANG_PUSH([C])
 AC_OPENMP
 CFLAGS="$CFLAGS $OPENMP_CFLAGS"
-AC_LANG([Fortran])
-AC_OPENMP
-FCFLAGS="$FCFLAGS $OPENMP_FCFLAGS"
-AC_LANG([Fortran 77])
-AC_OPENMP
-FFLAGS="$FFLAGS $OPENMP_FFLAGS"
-AC_LANG([C])
+AC_LANG_POP([C])
+
+## MinGW on Windows needs a nudge to correctly link the
+## OpenMP runtime library. This is a hack since none of the
+## Fortran source code uses OpenMP, but it triggers the
+## correct values for FCLIBS at link time. See below.
+if test "${win}" = "true"; then
+FCFLAGS="$FCFLAGS -fopenmp"
+fi
 
 ## Mixed C++ and Fortran libraries must be linked with C++, but
 ## the C++ compiler knows nothing about the runtime Fortran
-## libraries. These macros find  the appropriate libraries and
-## store them in FLIBS/FCLIBS for use at link time.
-AC_F77_LIBRARY_LDFLAGS
+## libraries. This macros finds  the appropriate libraries and
+## stores them in FCLIBS for use at link time.
 AC_FC_LIBRARY_LDFLAGS
 
 ## Testing for both blas and lapack

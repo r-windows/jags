@@ -2,8 +2,6 @@ lib_LTLIBRARIES = libjrmath.la
 
 libjrmath_la_CPPFLAGS = -I$(top_srcdir)/src/include -DMATHLIB_STANDALONE
 
-libjrmath_la_CFLAGS = -std=c99
-
 libjrmath_la_LDFLAGS = -no-undefined -version-info 0:0:0
 
 libjrmath_la_LIBADD = -lm
