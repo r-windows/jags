@@ -23,8 +23,8 @@
 \begin{document}
 
 \title{JAGS Version \release\ installation manual}
-\author{Martyn Plummer \and Bill Northcott \and Matt Denwood}
-\date{9 April 2022}
+\author{Martyn Plummer \and Matt Denwood}
+\date{15 December 2025}
 \maketitle
 
 \JAGS\ is distributed in binary format for Microsoft Windows, macOS, 
@@ -678,10 +678,10 @@ Windows. Rtools can be downloaded from your nearest CRAN mirror
 the same compiler for R and \JAGS\ to maintain binary compatibility.
 For R 4.5.0 and above, the \Rtools\ toolchain is used.
 
-\Rtools\ comes with its own version of MSYS, a minimal unix shell
-that we will use to build \JAGS. At the time of writing, the MSYS
-shell does not include the \Rtools\ compiler tools on the PATH,
-sot this must be added manually with
+\Rtools\ comes with its own version of MSYS, a minimal unix shell that
+we will use to build \JAGS. The MSYS shell does not include the
+\Rtools\ compiler tools on the PATH, so this must be added manually
+with
 \begin{verbatim}
 export PATH=/x86_64-w64-mingw32.static.posix/bin:$PATH
 \end{verbatim}
@@ -702,42 +702,6 @@ not correctly configured. Within the Plugins sub-folder of the NSIS
 installation directory, you will need to copy
 \texttt{i386-ansi/AccessControl.dll} into \texttt{x86-ansi} and
 \texttt{i386-unicode/AccessControl.dll} into \texttt{x86-unicode}.
-
-\subsection{Building LAPACK}
-
-\Rtools\ contains static libraries for BLAS and LAPACK. In order
-to use these with \JAGS\ we need to build dynamic libraries for them.
-
-First identify the location of the static libraries
-\begin{verbatim}
-TLIB=`which gcc | sed -e 's!bin/gcc$!!g'`"lib"
-\end{verbatim}
-Then create a directory where we will build the shared BLAS and LAPACK
-libraries
-\begin{verbatim}
-mkdir sharedlb
-cd sharedlb
-SHAREDLB=`pwd`
-\end{verbatim}
-Create a definition file \file{libblas.def} that exports all the
-symbols from the BLAS library
-\begin{verbatim}
-dlltool -z libblas.def --export-all-symbols $TLIB/libblas.a
-\end{verbatim}
-Then link this with the static library to create a DLL
-(\file{libblas.dll}) and an import library (\file{libblas.dll.a})
-\begin{verbatim}
-gfortran -shared -o libblas.dll -Wl,--out-implib=libblas.dll.a \
-libblas.def $TLIB/libblas.a
-\end{verbatim}
-
-Repeat the same steps for the LAPACK library, creating an import library
-(\file{liblapack.dll.a}) and DLL (\file{liblapack.dll})
-\begin{verbatim}
-dlltool -z liblapack.def --export-all-symbols $TLIB/liblapack.a
-gfortran -shared -o liblapack.dll -Wl,--out-implib=liblapack.dll.a \
-liblapack.def $TLIB/liblapack.a  -L. -lblas
-\end{verbatim}
 
 \subsection{Compiling \JAGS}
 
@@ -770,15 +734,9 @@ own.  The \texttt{win64-install} target resets the installation
 prefix, and this will cause an error if the source is already
 compiled.
 
-You can now create the installer.  Normally you will want to
-distribute the BLAS and LAPACK libraries with \JAGS.  In this case, put
-the DLLs and import libraries in the sub-directory
-\file{win/runtime64}. They will be detected and included with the
-distribution.
-
-Make sure that the file \file{makensis.exe}, provided by
-NSIS, is in your PATH. For a typical installation of NSIS, on 64-bit
-windows:
+You can now create the installer. Make sure that the file
+\file{makensis.exe}, provided by NSIS, is in your PATH. For a typical
+installation of NSIS, on 64-bit windows:
 \begin{verbatim}
 PATH=$PATH:/c/Program\ Files\ \(x86\)/NSIS
 \end{verbatim}
@@ -792,22 +750,23 @@ in the subdirectory \file{win}.
 \subsection{Running the unit tests}
 
 In order to run the unit tests on Windows you must first install the
-cppunit library from source. Download the file \file{cppunit-1.12.1.tar.gz}
-from Sourceforge (\url{http://sourceforge.net/projects/cppunit/files/cppunit/1.12.1/}) and
-unpack it:
+cppunit library from source. Download the file \file{cppunit-1.15.1.tar.gz}
+from (\url{http://dev-www.libreoffice.org/src/cppunit-1.15.1.tar.gz}
+and unpack it:
 \begin{verbatim}
-tar xfvz cppunit-1.12.1.tar.gz
-cd cppunit-1.12.1
+tar xfvz cppunit-1.15.1.tar.gz
+cd cppunit-1.15.1
 \end{verbatim}
 Then compile and install as follows:
 \begin{verbatim}
-./configure --prefix=/opt --build=x86_64-w64-mingw32.static.posix --disable-shared
+./configure --prefix=/opt --build=x86_64-w64-mingw32.static.posix \
+            --disable-shared
 make
 make install
 \end{verbatim}
 
-The configure option \texttt{--disable-shared} prevents the creation of
-the DLL \file{libccpunit.dll} and builds only the static library
+The configure option \texttt{--disable-shared} prevents the creation
+of the DLL \file{libccpunit.dll} and builds only the static library
 \file{libcppunit.a}. Without this option, the unit tests will fail.
 One of the major limitations of static linking to the C++ runtime is
 that you cannot throw exceptions across a DLL boundary.  Linking the
@@ -815,38 +774,38 @@ test programs against \file{libcppunit.dll} will result in uncaught
 exceptions and apparent failures for some of the tests, so it must be
 disabled.
 
-\JAGS\ relies on \texttt{pkg-config} to detect \texttt{libcppunit}, but
-\texttt{pkg-config} is not installed automatically with \Rtools. You
-can install it with
+\JAGS\ uses \texttt{pkg-config} to detect \texttt{libcppunit}. This
+does not seem to be reliable on Windows but the alternative implementation
+\texttt{pkgconf} does work. You need to set the environment variable
+\texttt{PKG\_CONFIG}
 \begin{verbatim}
-pacman -Sy pkg-config
+export PKG_CONFIG=pkgconf
 \end{verbatim}
+and then extend the search path
+\begin{verbatim}
+PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/opt/lib/pkgconfig
+\end{verbatim}
+before configuring \JAGS.
 
-Before configuring \JAGS, set the environment variable
-\texttt{PKG\_CONFIG\_PATH} so that \texttt{pkg-config} can find the
-configuration information for \texttt{libcppunit}.\footnote{You may
-wonder why we are using a non-standard prefix instead of installing
-\texttt{libcppunit} into the default prefix \texttt{/usr}. At the time
-of writing, \texttt{pkg-config} does not play nicely with the compiler
-toolchain. The toolchain does not look for headers in
-\texttt{/usr/include} and \texttt{pkg-config} will not add this
-directory to the header search path because it assumes that it is
-already there by default. Hence compilation of the unit tests will
-fail with an error message about missing headers.}
-\begin{verbatim}
-PKG_CONFIG_PATH=/opt/lib/pkgconfig
-\end{verbatim}
 Then run \code{make check} after \code{make win64-install}.
 
 \subsection{Installing rjags}
 
-To install the \textsf{rjags} package from source you need to let R know 
-where JAGS is installed. This is done via the \texttt{JAGS\_ROOT} make variable,
-which is set in the file \texttt{.R/Makevars.win}, e.g.
+To install the \textsf{rjags} package from source you need to let R
+know where JAGS is installed. The \texttt{rjags} package will assume
+that you have used the default installation directory for \JAGS. If
+you have not then you need to set the variable \texttt{JAGS\_ROOT} in
+the file \texttt{.R/Makevars.win} in your home directory. Home is
+usually the Documents folder on Windows but this can be checked by
+calling
 \begin{verbatim}
-JAGS_ROOT=c:\Progra~1\JAGS\JAGS-4.3.1
+Sys.getenv("HOME")
 \end{verbatim}
-
+within an R session. Then edit the file \texttt{.R/Makevars.win} to
+give an appropriate value for \texttt{JAGS\_ROOT}, {\em e.g.} 
+\begin{verbatim}
+JAGS_ROOT=c:\Progra~1\JAGS\JAGS-5.0.0
+\end{verbatim}
 Note that this is a Make variable, not an environment
 variable. Setting \texttt{JAGS\_ROOT} as an environment variable will
 have no effect.
@@ -861,9 +820,9 @@ of which are available from CRAN (\url{cran.r-project.org}).
 
 It is necessary to add R to the search path.
 \begin{verbatim}
-PATH=$PATH:/c/Program\ Files/R/R-4.2.0/bin
+PATH=$PATH:/c/Program\ Files/R/R-4.5.2/bin
 \end{verbatim}
-where \file{username} is your Windows user name. Then
+Then
 \begin{verbatim}
 tar xfvz classic-bugs.tar.gz
 cd classic-bugs
