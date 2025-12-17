@@ -4,14 +4,12 @@ if CANCHECK
 TESTS = base bugs mix glm
 check_PROGRAMS = $(TESTS)
 
-
 ## Base module
 
 base_SOURCES = base.cc 
 base_CXXFLAGS = $(CPPUNIT_CFLAGS)
-base_LDFLAGS = $(CPPUNIT_LIBS)
 
-base_LDADD = $(top_builddir)/src/modules/base/libbasetest.la
+base_LDADD = $(top_builddir)/src/modules/base/libbasetest.la $(CPPUNIT_LIBS)
 
 base_CPPFLAGS = -I$(top_srcdir)/src/include	\
 	-I$(top_srcdir)/src/modules
@@ -20,9 +18,8 @@ base_CPPFLAGS = -I$(top_srcdir)/src/include	\
 
 bugs_SOURCES = bugs.cc 
 bugs_CXXFLAGS = $(CPPUNIT_CFLAGS)
-bugs_LDFLAGS = $(CPPUNIT_LIBS)
 
-bugs_LDADD = $(top_builddir)/src/modules/bugs/libbugstest.la
+bugs_LDADD = $(top_builddir)/src/modules/bugs/libbugstest.la $(CPPUNIT_LIBS)
 
 bugs_CPPFLAGS = -I$(top_srcdir)/src/include	\
 	-I$(top_srcdir)/src/modules
@@ -31,9 +28,8 @@ bugs_CPPFLAGS = -I$(top_srcdir)/src/include	\
 
 mix_SOURCES = mix.cc 
 mix_CXXFLAGS = $(CPPUNIT_CFLAGS)
-mix_LDFLAGS = $(CPPUNIT_LIBS)
 
-mix_LDADD = $(top_builddir)/src/modules/mix/libmixtest.la
+mix_LDADD = $(top_builddir)/src/modules/mix/libmixtest.la $(CPPUNIT_LIBS)
 
 mix_CPPFLAGS = -I$(top_srcdir)/src/include	\
 	-I$(top_srcdir)/src/modules
@@ -42,9 +38,8 @@ mix_CPPFLAGS = -I$(top_srcdir)/src/include	\
 
 glm_SOURCES = glm.cc 
 glm_CXXFLAGS = $(CPPUNIT_CFLAGS)
-glm_LDFLAGS = $(CPPUNIT_LIBS)
 
-glm_LDADD = $(top_builddir)/src/modules/glm/libglmtest.la
+glm_LDADD = $(top_builddir)/src/modules/glm/libglmtest.la $(CPPUNIT_LIBS)
 
 glm_CPPFLAGS = -I$(top_srcdir)/src/include	\
 	-I$(top_srcdir)/src/modules
