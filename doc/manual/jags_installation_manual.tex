@@ -24,7 +24,7 @@
 
 \title{JAGS Version \release\ installation manual}
 \author{Martyn Plummer \and Matt Denwood}
-\date{15 December 2025}
+\date{18 December 2025}
 \maketitle
 
 \JAGS\ is distributed in binary format for Microsoft Windows, macOS, 
@@ -152,9 +152,13 @@ environment variable \code{LD\_LIBRARY\_PATH}, {\em e.g.}
 \begin{verbatim}
 LD_LIBRARY_PATH="/path/to/my/libs:${LD_LIBRARY_PATH}"
 \end{verbatim}
-Alternatively, you may hard-code the paths to the blas and lapack
-libraries at compile time. This is compiler and platform-specific,
-but is typically achieved with
+Since the configure script will attempt to compile and run test
+programs linked to BLAS and LAPACK, you may also need to set
+\code{LD\_LIBRARY\_PATH} at configure time.
+
+An alternative to setting \code{LD\_LIBRARY\_PATH} is to hard-code the
+paths to the blas and lapack libraries at compile time. This is
+compiler and platform-specific, but is typically achieved with
 \begin{verbatim}
 LDFLAGS="-L/path/to/my/libs -R/path/to/my/libs
 \end{verbatim}
@@ -177,16 +181,6 @@ If you attempt a configuration of the form
 then this will pass at configure time but ``make'' will not correctly
 build the JAGS modules.
 
-\subsubsection{Multithreaded BLAS and LAPACK}
-\label{section:blas:multithreaded}
-
-Some high-performance computing libraries offer multi-threaded
-versions of the BLAS and LAPACK libraries. Although instructions for
-linking against some of these libraries are given below, this should
-not be taken as encouragement to use multithreaded BLAS.  Testing
-shows that using multiple threads in BLAS can lead to significantly
-{\em worse} performance while using up substantially more computing
-resources.
 
 \subsection{GNU/Linux}
 \label{section:gnulinux}
@@ -195,215 +189,133 @@ GNU/Linux is the development platform for \JAGS, and a variety of
 different build options have been explored, including the use of
 third-party compilers and linear algebra libraries.
 
-\subsubsection{Fortran compiler}
-
-The GNU FORTRAN compiler changed between gcc 3.x and gcc 4.x from
-\code{g77} to \code{gfortran}. Code produced by the two compilers is
-binary incompatible. If your BLAS and LAPACK libraries are linked
-against \code{libgfortran}, then they were built with \code{gfortran}
-and you must also use this to compile \JAGS. 
-
-Most recent GNU/Linux distributions have moved completely to gcc 4.x.
-However, some older systems may have both compilers installed.
-Unfortunately, if \code{g77} is on your path then the configure script
-will find it first, and will attempt to use it to build \JAGS. This
-results in a failure to recognize the installed BLAS and LAPACK
-libraries. In this event, set the \code{F77} variable at configure time.
-\begin{verbatim}
-F77=gfortran ./configure
-\end{verbatim}
-
 \subsubsection{BLAS and LAPACK}
 
 The {\bf BLAS} and {\bf LAPACK} libraries from Netlib
 (\url{http://www.netlib.org}) should be provided as part of your Linux
 distribution. If your Linux distribution splits packages into ``user''
 and ``developer'' versions, then you must install the developer
-package ({\em e.g.}  \texttt{blas-devel} and \texttt{lapack-devel}).
+package ({\em e.g.}  \texttt{blas-devel} and \texttt{lapack-devel}, or
+\texttt{blas-dev} and \texttt{lapack-dev}).
 
-On {\bf Red Hat Enterprise Linux (RHEL)} you need to activate an
-optional repository in order to have access to BLAS and LAPACK.  The
-repository is called is called \texttt{rhel-<v>-<type>-optional-rpms},
-where \texttt{<v>} is the RHEL release version and \texttt{<type>} is
-the type of installation (server or workstation). Find the
-corresponding entry in the file \file{/etc/yum.repos.d/redhat.repo}
-and change the line \texttt{enabled = 0} to \texttt{enabled = 1}.
+{\bf OpenBLAS} is an optimized BLAS library that may be used as a
+replacement for Netlib BLAS.
 
-{\bf Suse Linux Enterprise Server (SLES)} does not include BLAS and
-LAPACK in the main distribution. They are included in the SLES SDK, on
-a set of CD/DVD images which can be downloaded from
-\url{https://download.suse.com/index.jsp} (subscription and login
-required).
+{\bf BLIS} is a portable framework for instantiating BLAS-like
+libraries for dense linear algebra operations. While BLIS has its own
+API it also includes a BLAS compatibility layer and can be used as a
+drop-in replacement for BLAS. The same team that created BLIS also
+created {\bf libflame}, which provides much of the functionality of
+LAPACK and can also be used with \JAGS.
 
-\subsubsection{ATLAS}
+OpenBLAS and BLIS may come in serial and parallel versions on your
+Linux distribution. We recommend using the serial versions for \JAGS.
 
-On Fedora Linux, pre-compiled atlas libraries are available via the
-\texttt{atlas} and \texttt{atlas-devel} RPMs.  These RPMs install the
-atlas libraries in the non-standard directory \texttt{/usr/lib/atlas}
-(or \texttt{/usr/lib64/atlas} for 64-bit builds) to avoid conflicts
-with the standard \texttt{blas} and \texttt{lapack} RPMs. To use the
-atlas libraries, you must supply their location using the
-\code{LDFLAGS} variable (see section \ref{section:blas:lapack})
+\subsubsection{FlexiBLAS}
+
+FlexiBLAS is a front end for BLAS/LAPACK. FlexiBLAS is the default for
+current RedHat based Linux distributions (Fedora and RHEL).
+
+At configuration time, \JAGS\ will look for FlexiBLAS first before any
+other BLAS implementation.  If \JAGS\ is linked against FlexiBLAS then
+different BLAS/LAPACK backends can be chosen at runtime. A list of
+available backends can be obtained with the command line interface:
 \begin{verbatim}
-./configure LDFLAGS="-L/usr/lib/atlas"
+flexiblas list
 \end{verbatim}
-Runtime linking to the correct libraries is ensured by the automatic
-addition of \texttt{/usr/lib/atlas} to the linker path (see the directory
-\texttt{/etc/ld.so.conf.d}), so you do not need to set the
-environment variable \code{LD\_LIBRARY\_PATH} at run time.
-
-\subsubsection{AMD Core Math Library}
-\label{section:acml:linux}
-
-The AMD Core Math Library (acml) provides optimized BLAS and LAPACK
-routines for AMD processors. To link \JAGS\ with \texttt{acml}, you must
-supply the \texttt{acml} library as the argument to \texttt{--with-blas}.
-It is not necessary to set the \texttt{--with-lapack} argument
-as \texttt{acml} provides both sets of functions. See also
-section~\ref{section:blas:lapack} for run-time instructions.
-
-For example, to link to the 64-bit acml using gcc 4.0+:
+You can then set the default BLAS backend from this list, {\em e.g.}
 \begin{verbatim}
-LDFLAGS="-L/opt/acml4.3.0/gfortran64/lib" \
-./configure --with-blas="-lacml -lacml_mv" 
+flexiblas default ATLAS
 \end{verbatim}
-The \code{acmv\_mv} library is a vectorized math library that
-exists only for the 64-bit version and is omitted when linking against
-32-bit acml.
-
-On multi-core systems, you may wish to use the threaded acml library
-(See the warning in section \ref{section:blas:multithreaded} however).
-To do this, link to \code{acml\_mp} and add the compiler flag
-\option{-fopenmp}:
+Or you can temporarily set the backend with the environment variable
+\texttt{FLEXIBLAS}, {\em e.g.}
 \begin{verbatim}
-LDFLAGS="-L/opt/acml4.3.0/gfortran64_mp/lib" \
-CXXFLAGS="-O2 -g -fopenmp" ./configure --with-blas="-lacml_mp -lacml_mv" 
+export FLEXIBLAS=NETLIB
 \end{verbatim}
-The number of threads used by multi-threaded acml may be controlled
-with the environment variable \code{OMP\_NUM\_THREADS}.
+If using an R interface to \texttt{JAGS}, you can use the functions in
+the \texttt{flexiblas} package, which is available from CRAN, to set
+the backend and to control the number of threads used by multithreaded
+backends.
 
-\subsubsection{Intel Math Kernel Library}
+\subsubsection{AMD Optimizing CPU Libraries}
+\label{section:aocl:linux}
 
-The Intel Math Kernel library (MKL) provides optimized BLAS and LAPACK
-routines for Intel processors.  MKL is designed to be linked to
-executables, not shared libraries. This means that it can only be
-linked to a static version of \JAGS, in which the \JAGS\ library and
-modules are linked into the main executable. To build a static version
-of \JAGS, use the configure option \option{--disable-shared}.
+The AMD Optimizing CPU Libraries (AOCL) include a version of the BLIS
+and libflame libraries for AMD processors. To link \JAGS\ with
+\texttt{AOCL}, you must supply \texttt{--with-blas=-lblis} and
+\texttt{--with-lapack=-lflame}.  Since AOCL is by default installed
+into a private location you will also need to set the environment
+variables \texttt{LD\_LIBRARY\_PATH} and \texttt{LDFLAGS}
+appropriately, {\em e.g.}
 
-MKL version 10.0 and above uses a ``pure layered'' model for linking.
-The layered model gives the user fine-grained control over four
-different library layers: interface, threading, computation, and
-run-time. Some examples of linking to MKL using this layered model are
-given below. These examples are for GCC compilers on
-\code{x86\_64}. The choice of interface layer is important on
-\code{x86\_64} since the Intel Fortran compiler returns complex values
-differently from the GNU Fortran compiler. You must therefore use the
-interface layer that matches your compiler (\code{mkl\_intel*} or
-\code{mkl\_gf*}).
-
-For further guidance, consult the MKL Link Line advisor at
-\url{http://software.intel.com/en-us/articles/intel-mkl-link-line-advisor}.
-
-Recent versions of MKL include a shell script that sets up the
-environment variables necessary to build an application with MKL.
 \begin{verbatim}
-source /opt/intel/composerxe-2011/mkl/bin/mklvars.sh intel64
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HOME}/aocl/5.1.0/gcc/lib
+LDFLAGS="-L${HOME}/aocl/5.1.0/gcc/lib \
+./configure --with-blas="-lblis" --with-lapack="-lflame"
+\end{verbatim}
+
+\subsubsection{Intel oneAPI Math Kernel Library}
+
+The Intel oneAPI Math Kernel library (MKL) provides optimized BLAS and
+LAPACK routines for Intel processors.
+
+MKL uses a layered model for linking which gives the user fine-grained
+control over four different library layers: interface, threading,
+computation, and run-time. Some examples of linking to MKL using this
+layered model are given below. For further guidance, consult the MKL
+Link Line advisor at
+\url{https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html}
+
+MKL includes a shell script that sets up the environment variables
+necessary to build an application with MKL.
+\begin{verbatim}
+source /opt/intel/oneapi/setvars.sh
 \end{verbatim}
 
 After calling this script, you can link \JAGS\ with a sequential
 version of MKL as follows:
 \begin{verbatim}
-./configure --disable-shared \
-  --with-blas="-lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread"
+./configure \
+--with-blas="-lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl"
 \end{verbatim}
 Note that \code{libpthread} is still required, even when linking
 to sequential MKL.
 
-Threaded MKL may be used with:
+MKL with OpenMP threads may be used with:
 \begin{verbatim}
 ./configure --disable-shared \
-  --with-blas="-lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -liomp5 -lpthread"
+ --with-blas="-lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp5 -lpthread -lm -ldl"
 \end{verbatim}
 The default number of threads will be chosen by the OpenMP software,
 but can be controlled by setting \code{OMP\_NUM\_THREADS} or
-\code{MKL\_NUM\_THREADS}.  (See the warning in section
-\ref{section:blas:multithreaded} however).
+\code{MKL\_NUM\_THREADS}.
 
 \subsubsection{Using Intel Compilers}
 
-\JAGS\ has been successfully built with the Intel Composer XE
-compilers. To set up the environment for using these compilers call
-the \file{compilervars.sh} shell script, {\em e.g.}
+\JAGS\ has been successfully built with the Intel oneAPI compilers. To
+set up the environment for using these compilers call the
+\file{setvar.sh} shell script, {\em e.g.}
 \begin{verbatim}
-source /opt/intel/composerxe-2011/bin/compilervars.sh intel64
+source /opt/intel/oneapi/setvars.sh
 \end{verbatim}
 Then call the configure script with the Intel compilers:
 \begin{verbatim}
-CC=icc CXX=icpc F77=ifort ./configure 
+CC=icx CXX=icpx F77=ifx ./configure 
 \end{verbatim}
 
 \subsubsection{Using Clang}
 
-\JAGS\ has been built with the clang compiler for C and C++ (version 3.1).
+\JAGS\ has been built with the clang compiler for C and C++ (version 21.4).
 The configuration was
 \begin{verbatim}
-LD="llvm-ld" CC="clang" CXX="clang++" ./configure
+CC="clang" CXX="clang++ -stdlib=libc++" ./configure
 \end{verbatim}
-In this configuration, the gfortran compiler was used for Fortran and
-the C++ code was linked to the GNU standard C++ library (libstdc++)
-rather than the version supplied by the LLVM project (libc++).
-
-\subsection{Solaris}
-
-\JAGS\ has been successfully built and tested on the Intel x86
-platform under Solaris 11.3 using the Oracle Developer Studio 12.6
-compilers.
-
-I experienced some difficulty with the libtool dynamic linker ltdl on
-Solaris. This is due to the fact that output from the solaris utility
-nm does not match what libtool expects. This can be overcome by
-exporting the environment variable NM:
+This configuration will use the GNU Fortran compiler \code{gfortran}.
+Alternatively, you can the flang compiler by also specifying
 \begin{verbatim}
-export NM=gnm
+FC=flang F77=flang
 \end{verbatim}
-to use the GNU version of nm.
-
-The C++ library \file{libCstd} is not supported. You must therefore
-add the option \option{-library=stlport4} to \option{CXXFLAGS} to use
-the alternative STLPort4 library,
-\begin{verbatim}
-export LEX=flex
-CC=cc CXX="CC -std=sun03" F77=f95 ./configure \
-CFLAGS="-O3 -xarch=sse2" \
-CXXFLAGS="+w -O3 -xarch=sse2 -library=stlport4 -lCrun"
-\end{verbatim}
-or \option{-library=-stdcpp} for the libstdc++ library.
-\begin{verbatim}
-./configure CC=cc CXX="CC -std=c++03"  F77=f95 \
-CFLAGS="-O3 -xarch=sse2" \
-CXXFLAGS="+w -O3 -xarch=sse2 -library=stdcpp"
-\end{verbatim}
-
-The Sun Studio compiler is not optimized by default. Use the option
-\option{-xO3} for optimization (NB This is the letter ``O'' not the
-number 0) In order to use the optimization flag \option{-xO3} you
-must specify the architecture with the \option{-xarch} flag. The options
-above are for an Intel processor with SSE2 instructions. This must be
-adapted to your own platform.
-
-%C++11?
-
-To compile a 64-bit version of JAGS, add the option \option{-m64} to
-all the compiler flags. On Solaris, 64-bit files are generally
-installed in an architecture-specific sub-directory (e.g.
-\file{amd64} on the x86 platform). If you wish to conform to this
-convention for 64-bit JAGS then you should set the configure options
-\option{--libdir}, \option{--libexecdir}, and \option{--bindir}
-appropriately.
-
-The configure script automatically detects the Sun Performance library,
-which implements the BLAS/LAPACK functions.  
+on the configure line.
 
 \clearpage
 \section{macOS}
