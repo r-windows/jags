@@ -140,25 +140,19 @@ options \texttt{--with-blas} and \texttt{--with-lapack}
 \end{verbatim}
 
 If the BLAS and LAPACK libraries are in a directory that is not on the
-default linker path, you must set the \code{LDFLAGS} environment variable
-to point to this directory at configure time:
+default linker path, you must set the \code{LDFLAGS} \nd
+\code{LD\_LIBRARY_PATH} environment variables to point to this
+directory at configure time:
 \begin{verbatim}
-LDFLAGS="-L/path/to/my/libs" ./configure ...
+LDFLAGS="-L/path/to/my/libs" \
+LD_LIBRARY_PATH="/path/to/my/libs:${LD_LIBRARY_PATH}" \
+./configure
 \end{verbatim}
 
-At runtime, if you have linked \JAGS\ against BLAS or LAPACK in
-a non-standard location, you must supply this location with the
-environment variable \code{LD\_LIBRARY\_PATH}, {\em e.g.}
-\begin{verbatim}
-LD_LIBRARY_PATH="/path/to/my/libs:${LD_LIBRARY_PATH}"
-\end{verbatim}
-Since the configure script will attempt to compile and run test
-programs linked to BLAS and LAPACK, you may also need to set
-\code{LD\_LIBRARY\_PATH} at configure time.
-
-An alternative to setting \code{LD\_LIBRARY\_PATH} is to hard-code the
-paths to the blas and lapack libraries at compile time. This is
-compiler and platform-specific, but is typically achieved with
+You also need to set \code{LD\_LIBRARY\_PATH} when you want to run
+\JAGS.  Alternatively, you may be able to hard-code the paths to the
+blas and lapack libraries at compile time. This is compiler and
+platform-specific, but is typically achieved with
 \begin{verbatim}
 LDFLAGS="-L/path/to/my/libs -R/path/to/my/libs
 \end{verbatim}
@@ -191,25 +185,40 @@ third-party compilers and linear algebra libraries.
 
 \subsubsection{BLAS and LAPACK}
 
-The {\bf BLAS} and {\bf LAPACK} libraries from Netlib
-(\url{http://www.netlib.org}) should be provided as part of your Linux
-distribution. If your Linux distribution splits packages into ``user''
-and ``developer'' versions, then you must install the developer
-package ({\em e.g.}  \texttt{blas-devel} and \texttt{lapack-devel}, or
-\texttt{blas-dev} and \texttt{lapack-dev}).
+BLAS and LAPACK define the standard API for dense linear algebra
+operations. There are now several competing implementations of BLAS
+and LAPACK that can be linked against \JAGS. Previous versions of the
+\JAGS\ manual gave explicit instructions on how to link to these
+alternatives. We no longer do this because most Linux distributions
+provide a mechanism for changing the BLAS and LAPACK implementations
+dynamically at runtime (See below). We make an exception for AOCL and
+MKL which are two commercially libraries that are not included in
+Linux distributions by default.
 
-{\bf OpenBLAS} is an optimized BLAS library that may be used as a
-replacement for Netlib BLAS.
-
-{\bf BLIS} is a portable framework for instantiating BLAS-like
-libraries for dense linear algebra operations. While BLIS has its own
-API it also includes a BLAS compatibility layer and can be used as a
-drop-in replacement for BLAS. The same team that created BLIS also
-created {\bf libflame}, which provides much of the functionality of
-LAPACK and can also be used with \JAGS.
+\begin{itemize}
+\item The {\bf BLAS} and {\bf LAPACK} libraries from Netlib
+  (\url{https://www.netlib.org}) should be provided as part of your
+  Linux distribution.
+\item {\bf OpenBLAS} is an optimized BLAS library that may be used as
+  a replacement for Netlib BLAS.
+\item {\bf ATLAS} (Automatically Tuned Linear Algebra System) is an
+  optimized linear algebra library that implements all of BLAS and
+  most of LAPACK.
+\item {\bf BLIS} is a portable framework for instantiating BLAS-like
+  libraries for dense linear algebra operations. While BLIS has its
+  own API it also includes a BLAS compatibility layer and can be used
+  as a drop-in replacement for BLAS. The same team that created BLIS
+  also created {\bf libflame}, which provides much of the
+  functionality of LAPACK.
+\end{itemize}
 
 OpenBLAS and BLIS may come in serial and parallel versions on your
 Linux distribution. We recommend using the serial versions for \JAGS.
+
+In all cases, if your Linux distribution splits packages into ``user''
+and ``developer'' versions, then you must install the developer
+package with suffix \texttt{-devel} (for RedHat derivatives) or
+\texttt{-dev} (for Debian derivatives).
 
 \subsubsection{FlexiBLAS}
 
@@ -232,10 +241,45 @@ Or you can temporarily set the backend with the environment variable
 \begin{verbatim}
 export FLEXIBLAS=NETLIB
 \end{verbatim}
-If using an R interface to \texttt{JAGS}, you can use the functions in
-the \texttt{flexiblas} package, which is available from CRAN, to set
-the backend and to control the number of threads used by multithreaded
-backends.
+If you are using an R interface to \texttt{JAGS}, you can use the
+functions in the CRAN package \texttt{flexiblas} to set the backend
+and, for multithreaded backends, to control the number of threads.
+
+\subsubsection{Alternatives mechanism}
+
+The alternatives mechanism on Debian and Ubuntu is an operating system
+layer that allows you to change (among other things) the working backend
+for BLAS/LAPACK without recompiling \JAGS.
+
+To use the alternatives mechanism you must explicitly link \JAGS\ to
+\code{libblas} and \code{liblapack}.
+\begin{verbatim}
+./configure --with-blas="-lblas" --with-lapack="-llapack"
+\end{verbatim}
+The configure script will not do this by default because it assumes
+that \code{libblas} and \code{liblapack} are the default Netlib
+implementations, which are inefficient compared to other options. In
+fact, on Debian and Ubuntu these libraries are symbolic links to
+backend libraries that can be modified using the
+\code{update-alternatives} command line interface.
+
+First see which version BLAS and LAPACK the \JAGS\ library is actually
+linked against, {\em e.g.}:
+\begin{verbatim}
+$ ldd /usr/local/lib/libjags.so | grep -e "libblas" -e "liblapack"
+	liblapack.so.3 => /lib/x86_64-linux-gnu/liblapack.so.3 (0x000071625d000000)
+	libblas.so.3 => /lib/x86_64-linux-gnu/libblas.so.3 (0x000071625cf93000)
+\end{verbatim}
+Then see the list of alternatives available
+\begin{verbatim}
+update-alternatives --display liblapack.so.3-x86_64-linux-gnu
+\end{verbatim}
+Or, as super-user, interactively choose the backend from a menu
+\begin{verbatim}
+update-alternatives --config liblapack.so.3-x86_64-linux-gnu
+\end{verbatim}
+You can choose manually, or use auto mode (the default) so that the most efficient
+library will be linked among currently installed alternatives.
 
 \subsubsection{AMD Optimizing CPU Libraries}
 \label{section:aocl:linux}
@@ -266,14 +310,15 @@ layered model are given below. For further guidance, consult the MKL
 Link Line advisor at
 \url{https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html}
 
-MKL includes a shell script that sets up the environment variables
+Intel oneAPI includes a shell script that sets up the environment variables
 necessary to build an application with MKL.
 \begin{verbatim}
 source /opt/intel/oneapi/setvars.sh
 \end{verbatim}
+You should only call this once.
 
-After calling this script, you can link \JAGS\ with a sequential
-version of MKL as follows:
+After calling the \code{setvars.sh} script, you can link \JAGS\ with a
+sequential version of MKL as follows:
 \begin{verbatim}
 ./configure \
 --with-blas="-lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl"
@@ -294,7 +339,7 @@ but can be controlled by setting \code{OMP\_NUM\_THREADS} or
 
 \JAGS\ has been successfully built with the Intel oneAPI compilers. To
 set up the environment for using these compilers call the
-\file{setvar.sh} shell script, {\em e.g.}
+\file{setvars.sh} shell script, {\em e.g.}
 \begin{verbatim}
 source /opt/intel/oneapi/setvars.sh
 \end{verbatim}
