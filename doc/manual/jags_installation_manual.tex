@@ -32,9 +32,13 @@ and most Linux distributions.  The following instructions are for
 those who wish to build \JAGS\ from source. The manual is divided
 into three sections with instructions for Linux/Unix, macOS, and Windows.
 
-\section{Linux and UNIX}
+\clearpage
+\section{Linux}
 
-\JAGS\ follows the usual GNU convention of 
+The instructions below are based on Linux. They may also be applicable
+to UNIX but have not been tested on other platforms.
+
+\JAGS\ follows the usual convention of 
 \begin{verbatim}
 ./configure
 make
@@ -44,10 +48,10 @@ which is described in more detail in the file \texttt{INSTALL} in
 the top-level source directory. On some UNIX platforms, you may
 be required to use GNU make (gmake) instead of the native make
 command. On systems with multiple processors, you may use the option 
-\option{-j} to speed up compilation, {\em e.g.} for a quad-core PC you
+\option{-j} to speed up compilation, {\em e.g.} to use 8 cores you
 may use:
 \begin{verbatim}
-make -j4
+make -j8
 \end{verbatim}
 If you have the cppunit library installed then you can test the build with
 \begin{verbatim}
@@ -59,8 +63,9 @@ link against the {\bf installed} library and not the one in your build
 directory. So if the test suite includes a regression test for a bug
 that was fixed in the version you are building but a previous version
 of JAGS is already installed then the unit tests will fail. Best
-practice is to run the tests after \code{make install} so the build
-and installed versions are the same.
+practice is to build \JAGS\ on a platform without an existing
+installation.  Otherwise, run the tests after \code{make install} so
+the build and installed versions are the same.
 
 \subsection{Configure options}
 
@@ -83,11 +88,9 @@ By default, JAGS will install all libraries into
 \file{/usr/local/lib}.  If you are building a 64-bit version of \JAGS,
 this may not be appropriate for your system. On Fedora and other
 RPM-based distributions, for example, 64-bit libraries should be
-installed in \file{lib64}, and on Solaris, 64-bit libraries are in a
-subdirectory of \file{lib} ({\em e.g.} \file{lib/amd64} if you are
-using a x86-64 processor), whereas on Debian, and other Linux
-distributions that conform to the FHS, the correct installation
-directory is \file{lib}.
+installed in \file{lib64}, whereas on Debian, and other Linux
+distributions that conform to the Filesystem Hierarchy Standard (FHS),
+the correct installation directory is \file{lib}.
 
 To ensure that \JAGS\ libraries are installed in the correct
 directory, you should supply the \option{--libdir} argument to the
@@ -117,88 +120,21 @@ and read the section ``Fine-tuning of the installation directories.''
 
 With a private installation, you need to modify your PATH environment
 variable to include \file{\$JAGS\_HOME/bin}. You may also need to set
-\code{LD\_LIBRARY\_PATH} to include \file{\$JAGS\_HOME/lib} (On Linux this
-is not necessary as the location of libjags and libjrmath is hard-coded
-into the \JAGS\ binary).
+\code{LD\_LIBRARY\_PATH} to include \file{\$JAGS\_HOME/lib}.
 
 \subsection{BLAS and LAPACK}
 \label{section:blas:lapack}
 
 BLAS (Basic Linear Algebra System) and LAPACK (Linear Algebra Pack)
-are two libraries of routines for linear algebra. They are used by the
-multivariate functions and distributions in the \texttt{bugs} module.
-Most unix-like operating system vendors supply shared libraries that
-provide the BLAS and LAPACK functions, although the libraries may not
-literally be called ``blas'' and ``lapack''.  During configuration, a
-default list of these libraries will be checked. If \texttt{configure}
-cannot find a suitable library, it will stop with an error message.
+are two libraries used by \JAGS\ for dense linear algebra.  There now
+several competing implementations of BLAS and LAPACK that can be
+linked against \JAGS.
 
-You may use alternative BLAS and LAPACK libraries using the configure
-options \texttt{--with-blas} and \texttt{--with-lapack}
-\begin{verbatim}
-./configure --with-blas="-lmyblas" --with-lapack="-lmylapack"
-\end{verbatim}
-
-If the BLAS and LAPACK libraries are in a directory that is not on the
-default linker path, you must set the \code{LDFLAGS} \nd
-\code{LD\_LIBRARY_PATH} environment variables to point to this
-directory at configure time:
-\begin{verbatim}
-LDFLAGS="-L/path/to/my/libs" \
-LD_LIBRARY_PATH="/path/to/my/libs:${LD_LIBRARY_PATH}" \
-./configure
-\end{verbatim}
-
-You also need to set \code{LD\_LIBRARY\_PATH} when you want to run
-\JAGS.  Alternatively, you may be able to hard-code the paths to the
-blas and lapack libraries at compile time. This is compiler and
-platform-specific, but is typically achieved with
-\begin{verbatim}
-LDFLAGS="-L/path/to/my/libs -R/path/to/my/libs
-\end{verbatim}
-
-JAGS can also be linked to static BLAS and LAPACK if they have both
-been compiled with the \texttt{-fPIC} flag. You will probably need to
-do a custom build of BLAS and LAPACK if you require this. The
-configure options for JAGS are then:
-\begin{verbatim}
-./configure --with-blas="-L/path/to/my/libs -lmyblas -lgfortran -lquadmath" \
-            --with-lapack="-L/path/to/my/libs -lmylapack"
-\end{verbatim}
-Note that with static linking you must add the dependencies of the BLAS
-library manually. The LAPACK library will pick up the same dependencies.
-Note also that libtool does not like linking directly to archive files.
-If you attempt a configuration of the form
-\begin{verbatim}
---with-blas="/path/to/my/libs/myblas.a"
-\end{verbatim}
-then this will pass at configure time but ``make'' will not correctly
-build the JAGS modules.
-
-
-\subsection{GNU/Linux}
-\label{section:gnulinux}
-
-GNU/Linux is the development platform for \JAGS, and a variety of
-different build options have been explored, including the use of
-third-party compilers and linear algebra libraries.
-
-\subsubsection{BLAS and LAPACK}
-
-BLAS and LAPACK define the standard API for dense linear algebra
-operations. There are now several competing implementations of BLAS
-and LAPACK that can be linked against \JAGS. Previous versions of the
-\JAGS\ manual gave explicit instructions on how to link to these
-alternatives. We no longer do this because most Linux distributions
-provide a mechanism for changing the BLAS and LAPACK implementations
-dynamically at runtime (See below). We make an exception for AOCL and
-MKL which are two commercially libraries that are not included in
-Linux distributions by default.
-
+These are the open source implementations that are likely to be available
+for a Linux distribution:
 \begin{itemize}
 \item The {\bf BLAS} and {\bf LAPACK} libraries from Netlib
-  (\url{https://www.netlib.org}) should be provided as part of your
-  Linux distribution.
+  (\url{https://www.netlib.org}) are the reference implementations.
 \item {\bf OpenBLAS} is an optimized BLAS library that may be used as
   a replacement for Netlib BLAS.
 \item {\bf ATLAS} (Automatically Tuned Linear Algebra System) is an
@@ -211,7 +147,6 @@ Linux distributions by default.
   also created {\bf libflame}, which provides much of the
   functionality of LAPACK.
 \end{itemize}
-
 OpenBLAS and BLIS may come in serial and parallel versions on your
 Linux distribution. We recommend using the serial versions for \JAGS.
 
@@ -220,7 +155,37 @@ and ``developer'' versions, then you must install the developer
 package with suffix \texttt{-devel} (for RedHat derivatives) or
 \texttt{-dev} (for Debian derivatives).
 
-\subsubsection{FlexiBLAS}
+\subsubsection{Choosing BLAS and LAPACK at configure time}
+
+During configuration, a default list of possible BLAS and LAPACK
+implementations will be checked. If \texttt{configure} cannot find a
+suitable library, it will stop with an error message.
+
+You may manually choose the BLAS and LAPACK libraries using the
+configure options \texttt{--with-blas} and \texttt{--with-lapack}
+\begin{verbatim}
+./configure --with-blas="-lmyblas" --with-lapack="-lmylapack"
+\end{verbatim}
+
+If the BLAS and LAPACK libraries are in a directory that is not on the
+default linker path, you must set the \code{LDFLAGS} and
+\code{LD\_LIBRARY\_PATH} environment variables to point to this
+directory at configure time:
+\begin{verbatim}
+LDFLAGS="-L/path/to/my/libs" \
+LD_LIBRARY_PATH="/path/to/my/libs:${LD_LIBRARY_PATH}" \
+./configure
+\end{verbatim}
+
+You also need to set \code{LD\_LIBRARY\_PATH} when you want to run
+\JAGS.  Alternatively, you may be able to hard-code the paths to the
+blas and lapack libraries at compile time. This is compiler and
+platform-specific, but is typically achieved with
+\begin{verbatim}
+LDFLAGS="-L/path/to/my/libs -R/path/to/my/libs"
+\end{verbatim}
+
+\subsubsection{Using FlexiBLAS to choose BLAS/LAPACK at run time}
 
 FlexiBLAS is a front end for BLAS/LAPACK. FlexiBLAS is the default for
 current RedHat based Linux distributions (Fedora and RHEL).
@@ -245,10 +210,10 @@ If you are using an R interface to \texttt{JAGS}, you can use the
 functions in the CRAN package \texttt{flexiblas} to set the backend
 and, for multithreaded backends, to control the number of threads.
 
-\subsubsection{Alternatives mechanism}
+\subsubsection{Using alternatives to choose BLAS/LAPACK at run time}
 
 The alternatives mechanism on Debian and Ubuntu is an operating system
-layer that allows you to change (among other things) the working backend
+feature that allows you to change (among other things) the working backend
 for BLAS/LAPACK without recompiling \JAGS.
 
 To use the alternatives mechanism you must explicitly link \JAGS\ to
@@ -335,6 +300,18 @@ The default number of threads will be chosen by the OpenMP software,
 but can be controlled by setting \code{OMP\_NUM\_THREADS} or
 \code{MKL\_NUM\_THREADS}.
 
+\subsection{Alternative compilers}
+
+When building \JAGS\ with GNU compilers (\code{gcc}, \code{g++},
+\code{gfortran}), the configure script automatically adds the
+optimization flag ``-O2'' to make the compiled code run faster. It
+will not do this for other compilers.  Therefore, when building
+\JAGS\ with alternative compilers you must add the appropriate
+optimization flags via the environment variables \code{CFLAGS},
+\code{CXXFLAGS}, \code{FCFLAGS}, and \code{FFLAGS}. Suitable values
+are given below for Intel and clang compilers. For other compilers
+consult the compiler manual.
+
 \subsubsection{Using Intel Compilers}
 
 \JAGS\ has been successfully built with the Intel oneAPI compilers. To
@@ -345,7 +322,9 @@ source /opt/intel/oneapi/setvars.sh
 \end{verbatim}
 Then call the configure script with the Intel compilers:
 \begin{verbatim}
-CC=icx CXX=icpx F77=ifx ./configure 
+CC=icx CXX=icpx FC=ifx F77=ifx \
+CFLAGS="-O2" CXXFLAGS="-O2", FFLAGS="-02" FCFLAGS="-O2" \
+./configure 
 \end{verbatim}
 
 \subsubsection{Using Clang}
@@ -353,7 +332,9 @@ CC=icx CXX=icpx F77=ifx ./configure
 \JAGS\ has been built with the clang compiler for C and C++ (version 21.4).
 The configuration was
 \begin{verbatim}
-CC="clang" CXX="clang++ -stdlib=libc++" ./configure
+CC="clang" CXX="clang++ -stdlib=libc++" \
+CFLAGS="-O2" CXXFLAGS="-O2", FFLAGS="-02" FCFLAGS="-O2" \
+./configure
 \end{verbatim}
 This configuration will use the GNU Fortran compiler \code{gfortran}.
 Alternatively, you can the flang compiler by also specifying
