@@ -11,9 +11,15 @@ namespace jags {
     
 namespace bugs {
 
-/**
- * Slice sampler for real-valued distributions
- */
+    /**
+     * Slice sampler for use when all observed stochastic children
+     * have a binomial distribution.
+     *
+     * Ths is a quick fix for a more fundamental problem that the
+     * likelihood for the binomial distribution is expensive to
+     * calculate. This sampler will be obsolete when that problem is
+     * solved.
+     */
     class BinomSlicer : public Slicer 
     {
 	SingletonGraphView const *_gv;
