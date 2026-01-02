@@ -173,6 +173,7 @@ AC_CONFIG_FILES([
   src/modules/mix/distributions/Makefile	
   src/modules/mix/samplers/Makefile	
   src/modules/diag/Makefile
+  src/modules/dic/Makefile	
   src/modules/lecuyer/Makefile
   src/modules/glm/Makefile
   src/modules/glm/samplers/Makefile

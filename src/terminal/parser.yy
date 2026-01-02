@@ -1488,28 +1488,28 @@ static void adaptstar(long niter, long refresh, int width, bool force)
 
 static void loadModule(std::string const &name)
 {
-    //Work around renaming of dic module in JAGS 5.0.0
-    std::string mname = (name == "dic") ? "diag" : name;
+    if (name == "dic") {
+	// For backward-compatibility. Turn this into a warning later.
+	std::cout << "The dic module is now a stub." << std::endl;
+	std::cout << "Deviance-based diagnostics are in the pre-loaded diag module." << std::endl;
+    }
     
-    std::cout << "Loading module: " << mname;
-    lt_dlhandle mod = lt_dlopenext(mname.c_str());
+    std::cout << "Loading module: " << name;
+    lt_dlhandle mod = lt_dlopenext(name.c_str());
     if (mod == NULL) {
 	std::cout << ": " << lt_dlerror() << std::endl;
     }
     else {
 	std::cout << ": ok" << std::endl;
 	_dyn_lib.push_front(mod);
-	jags::Console::loadModule(mname);
+	jags::Console::loadModule(name);
     }
 }
 
 static void unloadModule(std::string const &name)
 {
-    //Work around renaming of dic module in JAGS 5.0.0
-    std::string mname = (name == "dic") ? "diag" : name;
-
-    std::cout << "Unloading module: " << mname << std::endl;
-    jags::Console::unloadModule(mname);
+    std::cout << "Unloading module: " << name << std::endl;
+    jags::Console::unloadModule(name);
 }
 
 void exiting() {
@@ -1574,7 +1574,8 @@ int main (int argc, char **argv)
             << std::endl;
   loadModule("basemod");
   loadModule("bugs");
-
+  loadModule("diag");
+  
   console = new jags::Console(std::cout, std::cerr);
 
   zzparse();
