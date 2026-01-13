@@ -39,7 +39,10 @@ namespace jags {
 
     array<int, 2> const &ConstantNode::depth() const
     {
+	// ConstantNodes are root nodes and therefore has both stochastic depth
+	// and deterministic depth of zero
 	static const std::array<int, 2> _depth = {0, 0};
+
 	return _depth;
     }
     

@@ -56,12 +56,15 @@ static vector<Node const *> mkParents(vector<Node const *> const &parameters,
 
     static array<int, 2> mkDepth(vector<Node const *> const &parameters)
     {
-	int sd = 1;
+	// Find maximum stochastic depth of parents
+	int sdmax = 0;
 	for (unsigned long i = 0; i < parameters.size(); ++i) {
-	    int sdi = parameters[i]->depth()[0];
-	    if (sdi >= sd) sd = sdi + 1;
+	    int pdepth = parameters[i]->depth()[0];
+	    if (pdepth > sdmax) sdmax = pdepth;
 	}
-	array<int, 2> depth = {sd, 0};
+	// Stochastic node has stochastic depth one greater than its deepest
+	// parent and deterministic depth zero.
+	array<int, 2> depth = {sdmax + 1, 0};
 	return depth;
     }
 

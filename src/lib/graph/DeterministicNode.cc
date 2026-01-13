@@ -9,18 +9,24 @@ namespace jags {
 
 static array<int, 2> mkDepth(vector<Node const *> const &parents)
 {
-    int sd = 0;
+    // Find the maximum stochastic depth of any parent
+    int sdmax = 0;
     for (unsigned long i = 0; i < parents.size(); ++i) {
-	int sdi = parents[i]->depth()[0];
-	if (sdi > sd) sd = sdi;
+	int pdepth = parents[i]->depth()[0];
+	if (pdepth > sdmax) sdmax = pdepth;
     }
-    int dd = 1;
+
+    // Among parents with the maximal stochastic depth, find the
+    // maximum deterministic depth
+    int ddmax = 0;
     for (unsigned long i = 0; i < parents.size(); ++i) {
 	array<int, 2> const &pdepth = parents[i]->depth();
-	if (pdepth[0] == sd && pdepth[1] >= dd) dd = pdepth[1] + 1;
+	if (pdepth[0] == sdmax && pdepth[1] > ddmax) ddmax = pdepth[1];
     }
-    
-    array<int, 2> depth = {sd, dd};
+
+    // Deterministic node has same stochastic depth but one greater
+    // deterministic depth of its deepest parent 
+    array<int, 2> depth = {sdmax, ddmax + 1};
     return depth;
 }
 
