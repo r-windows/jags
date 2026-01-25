@@ -5,6 +5,21 @@
    ancillary routines, without investigating the error analysis as we
    do need very high relative accuracy.  This version has about
    14 digits accuracy.
+
+   More specifically,  Brown & Levy (1994) "Certification of Algorithm 708" write
+   "
+    The number of significant digits of accuracy [..] was calculated [..] as
+
+                       - log10 (2 RelativeError),
+    [....]
+    Accuracy ranged from 9.64 significant digits to 15.65 with a
+    median of 14.65 and a lower quartile of 13.81.
+    [...]
+    ... overall accuracy increases slightly as a/b moves away from 1.
+        Linear regression indicates that
+    (1) an average of 13.71 significant digits are obtained in cases in which a = b and
+    (2) the number increases 0.14 significant digits for each unit change in log10(a/b).
+   "
 */
 
 #undef min
@@ -12,22 +27,17 @@
 #undef max
 #define max(a,b) ((a > b)?a:b)
 
-#include "nmath.h"
+#include "nmath.h" /* includes config.h, math.h */
 #include "dpq.h"
 /* after config.h to avoid warning on Solaris */
 #include <limits.h>
-/* <math.h> is included by above, with suitable defines in glibc systems
-   to make log1p and expm1 declared */
 
 /**----------- DEBUGGING -------------
- *
- *	make CFLAGS='-DDEBUG_bratio  ...'
- *MM (w/ Debug, w/o Optimization):
- (cd `R-devel-pbeta-dbg RHOME`/src/nmath ; gcc -I. -I../../src/include -I../../../R/src/include  -DHAVE_CONFIG_H -fopenmp -g -pedantic -Wall --std=gnu99 -DDEBUG_q -DDEBUG_bratio -Wcast-align -Wclobbered  -c ../../../R/src/nmath/toms708.c -o toms708.o; cd ../..; make R)
+    (cd `R-devel-pbeta-dbg RHOME`/src/nmath ;
+ 	make -B CFLAGS='-DDEBUG_bratio' toms708.o ; cd ../..; make R )
 */
 #ifdef DEBUG_bratio
-# include <R_ext/Print.h>
-# define R_ifDEBUG_printf(...) JREprintf(__VA_ARGS__)
+# define R_ifDEBUG_printf(...) REprintf(__VA_ARGS__)
 #else
 # define R_ifDEBUG_printf(...)
 #endif
@@ -65,14 +75,15 @@ static double gsumln(double, double);
 
 /*      ALGORITHM 708, COLLECTED ALGORITHMS FROM ACM.
  *      This work published in  Transactions On Mathematical Software,
- *      vol. 18, no. 3, September 1992, pp. 360-373z.
+ *      vol. 18, no. 3, September 1992, pp. 360-373.
  */
 
 /* Changes by R Core Team :
- * add log_p  and work towards gaining precision in that case
+ * add log_p  and work towards gaining precision in that case;
+ * work for very large (but finite) {a,b}
  */
 
-void attribute_hidden
+attribute_hidden void
 bratio(double a, double b, double x, double y, double *w, double *w1,
        int *ierr, int log_p)
 {
@@ -101,7 +112,14 @@ bratio(double a, double b, double x, double y, double *w, double *w1,
  *	  ierr = 5  if x + y != 1
  *	  ierr = 6  if x = a = 0
  *	  ierr = 7  if y = b = 0
- *	  ierr = 8  "error" in bgrat()
+ *	  ierr = 8	(not used currently)
+ *	  ierr = 9  NaN in a, b, x, or y
+ *	  ierr = 10     (not used currently)
+ *	  ierr = 11  bgrat() error code 1 [+ warning in bgrat()]
+ *	  ierr = 12  bgrat() error code 2   (no warning here)
+ *	  ierr = 13  bgrat() error code 3   (no warning here)
+ *	  ierr = 14  bgrat() error code 4 [+ WARNING in bgrat()]
+
 
  * --------------------
  *     Written by Alfred H. Morris, Jr.
@@ -112,38 +130,44 @@ bratio(double a, double b, double x, double y, double *w, double *w1,
 
     Rboolean do_swap;
     int n, ierr1 = 0;
-    double z, a0, b0, x0, y0, eps, lambda;
+    double z, a0, b0, x0, y0, lambda;
 
 /*  eps is a machine dependent constant: the smallest
- *      floating point number for which   1.0 + eps > 1.0 */
-    eps = 2.0 * jags_d1mach(3); /* == DBL_EPSILON (in R, Rmath) */
+ *      floating point number for which   1. + eps > 1.
+ * NOTE: for almost all purposes it is replaced by 1e-15 (~= 4.5 times larger) below */
+    double eps = 2. * jags_d1mach(3); // == DBL_EPSILON (in R, Rmath), but then set to  1e-15  below
 
 /* ----------------------------------------------------------------------- */
     *w  = R_D__0;
     *w1 = R_D__0;
 
-    if (a < 0.0 || b < 0.0)   { *ierr = 1; return; }
-    if (a == 0.0 && b == 0.0) { *ierr = 2; return; }
-    if (x < 0.0 || x > 1.0)   {	*ierr = 3; return; }
-    if (y < 0.0 || y > 1.0)   { *ierr = 4; return; }
+#ifdef IEEE_754
+    // safeguard, preventing infinite loops further down
+    if (ISNAN(x) || ISNAN(y) ||
+	ISNAN(a) || ISNAN(b)) { *ierr = 9; return; }
+#endif
+    if (a < 0. || b < 0.)   { *ierr = 1; return; }
+    if (a == 0. && b == 0.) { *ierr = 2; return; }
+    if (x < 0. || x > 1.)   { *ierr = 3; return; }
+    if (y < 0. || y > 1.)   { *ierr = 4; return; }
 
     /* check that  'y == 1 - x' : */
     z = x + y - 0.5 - 0.5;
 
-    if (fabs(z) > eps * 3.0) { *ierr = 5; return; }
+    if (fabs(z) > eps * 3.) { *ierr = 5; return; }
 
     R_ifDEBUG_printf("bratio(a=%g, b=%g, x=%9g, y=%9g, .., log_p=%d): ",
 		     a,b,x,y, log_p);
     *ierr = 0;
-    if (x == 0.0) goto L200;
-    if (y == 0.0) goto L210;
+    if (x == 0.) goto L200;
+    if (y == 0.) goto L210;
 
-    if (a == 0.0) goto L211;
-    if (b == 0.0) goto L201;
+    if (a == 0.) goto L211;
+    if (b == 0.) goto L201;
 
-    eps = max(eps, 1e-15);
+    eps = max(eps, 1e-15); // = 1e-15 (for IEEE 754)
     Rboolean a_lt_b = (a < b);
-    if (/* max(a,b) */ (a_lt_b ? b : a) < eps * .001) { /* procedure for a and b < 0.001 * eps */
+    if (/* max(a,b) */ (a_lt_b ? b : a) < eps * .001) { /* procedure for a and b < 0.001 * eps = 1e-18 */
 	// L230:  -- result *independent* of x (!)
 	// *w  = a/(a+b)  and  w1 = b/(a+b) :
 	if(log_p) {
@@ -190,22 +214,22 @@ bratio(double a, double b, double x, double y, double *w, double *w1,
 	    goto L_end;
 	}
 
-	if (a0 < min(eps, eps * b0) && b0 * x0 <= 1.0) { /* L90: */
+	if (a0 < min(eps, eps * b0) && b0 * x0 <= 1.) { /* L90: */
 	    *w1 = apser(a0, b0, x0, eps);
 	    R_ifDEBUG_printf("  a0 small -> w1 := apser(*) = %.15g\n", *w1);
 	    goto L_end_from_w1;
 	}
 
 	Rboolean did_bup = FALSE;
-	if (max(a0,b0) > 1.0) { /* L20:  min(a,b) <= 1 < max(a,b)  */
+	if (max(a0,b0) > 1.) { /* L20:  min(a,b) <= 1 < max(a,b)  */
 	    R_ifDEBUG_printf("\n L20:  min(a,b) <= 1 < max(a,b); ");
-	    if (b0 <= 1.0) goto L_w_bpser;
+	    if (b0 <= 1.) goto L_w_bpser;
 
 	    if (x0 >= 0.29) /* was 0.3, PR#13786 */	goto L_w1_bpser;
 
 	    if (x0 < 0.1 && pow(x0*b0, a0) <= 0.7)	goto L_w_bpser;
 
-	    if (b0 > 15.0) {
+	    if (b0 > 15.) {
 		*w1 = 0.;
 		goto L131;
 	    }
@@ -225,10 +249,10 @@ bratio(double a, double b, double x, double y, double *w, double *w1,
 	R_ifDEBUG_printf(" L131: bgrat(*, w1=%.15g) ", *w1);
 	bgrat(b0, a0, y0, x0, w1, 15*eps, &ierr1, FALSE);
 #ifdef DEBUG_bratio
-	JREprintf(" ==> new w1=%.15g", *w1);
-	if(ierr1) JREprintf(" ERROR(code=%d)\n", ierr1) ; else JREprintf("\n");
+	REprintf(" ==> new w1=%.15g", *w1);
+	if(ierr1) REprintf(" ERROR(code=%d)\n", ierr1) ; else REprintf("\n");
 #endif
-	if(*w1 == 0 || (0 < *w1 && *w1 < 1e-310)) { // w1=0 or very close:
+	if(*w1 == 0 || (0 < *w1 && *w1 < DBL_MIN)) { // w1=0 or very close:
 	    // "almost surely" from underflow, try more: [2013-03-04]
 // FIXME: it is even better to do this in bgrat *directly* at least for the case
 //  !did_bup, i.e., where *w1 = (0 or -Inf) on entry
@@ -238,15 +262,15 @@ bratio(double a, double b, double x, double y, double *w, double *w1,
 	    }
 	    else *w1 = ML_NEGINF; // = 0 on log-scale
 	    bgrat(b0, a0, y0, x0, w1, 15*eps, &ierr1, TRUE);
-	    if(ierr1) *ierr = 8;
+	    if(ierr1) *ierr = 10 + ierr1;
 #ifdef DEBUG_bratio
-	    JREprintf(" ==> new log(w1)=%.15g", *w1);
-	    if(ierr1) JREprintf(" Error(code=%d)\n", ierr1) ; else JREprintf("\n");
+	    REprintf(" ==> new log(w1)=%.15g", *w1);
+	    if(ierr1) REprintf(" Error(code=%d)\n", ierr1) ; else REprintf("\n");
 #endif
 	    goto L_end_from_w1_log;
 	}
 	// else
-	if(ierr1) *ierr = 8;
+	if(ierr1) *ierr = 10 + ierr1;
 	if(*w1 < 0)
 	    MATHLIB_WARNING4("bratio(a=%g, b=%g, x=%g): bgrat() -> w1 = %g",
 			     a,b,x, *w1);
@@ -254,12 +278,12 @@ bratio(double a, double b, double x, double y, double *w, double *w1,
     }
     else { /* L30: -------------------- both  a, b > 1  {a0 > 1  &  b0 > 1} ---*/
 
-	if (a > b)
-	    lambda = (a + b) * y - b;
-	else
-	    lambda = a - (a + b) * x;
-
-	do_swap = (lambda < 0.0);
+	/* lambda := a y - b x  =  (a + b)y - b  =  a - (a+b)x    {using x + y == 1},
+	 * ------ using the numerically best version : */
+	lambda = R_FINITE(a+b)
+	    ? ((a > b) ? (a + b) * y - b : a - (a + b) * x)
+	    : a*y - b*x;
+	do_swap = (lambda < 0.);
 	if (do_swap) {
 	    lambda = -lambda;
 	    SET_0_swap;
@@ -270,20 +294,20 @@ bratio(double a, double b, double x, double y, double *w, double *w1,
 	R_ifDEBUG_printf("  L30:  both  a, b > 1; |lambda| = %#g, do_swap = %d\n",
 			 lambda, do_swap);
 
-	if (b0 < 40.0) {
+	if (b0 < 40.) {
 	    R_ifDEBUG_printf("  b0 < 40;");
 	    if (b0 * x0 <= 0.7
-		|| (log_p && lambda > 650.)) /* << added 2010-03-18 */
+		|| (log_p && lambda > 650.)) // << added 2010-03; svn r51327
 		goto L_w_bpser;
 	    else
 		goto L140;
 	}
 	else if (a0 > b0) { /* ----  a0 > b0 >= 40  ---- */
 	    R_ifDEBUG_printf("  a0 > b0 >= 40;");
-	    if (b0 <= 100.0 || lambda > b0 * 0.03)
+	    if (b0 <= 100. || lambda > b0 * 0.03)
 		goto L_bfrac;
 
-	} else if (a0 <= 100.0) {
+	} else if (a0 <= 100.) {
 	    R_ifDEBUG_printf("  a0 <= 100; a0 <= b0 >= 40;");
 	    goto L_bfrac;
 	}
@@ -293,7 +317,7 @@ bratio(double a, double b, double x, double y, double *w, double *w1,
 	}
 
 	/* else if none of the above    L180: */
-	*w = basym(a0, b0, lambda, eps * 100.0, log_p);
+	*w = basym(a0, b0, lambda, eps * 100., log_p);
 	*w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
 	R_ifDEBUG_printf("  b0 >= a0 > 100; lambda <= a0 * 0.03: *w:= basym(*) =%.15g\n",
 			 *w);
@@ -316,7 +340,7 @@ L_w1_bpser:  // was L110
     goto L_end;
 
 L_bfrac:
-    *w = bfrac(a0, b0, x0, y0, lambda, eps * 15.0, log_p);
+    *w = bfrac(a0, b0, x0, y0, lambda, eps * 15., log_p);
     *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
     R_ifDEBUG_printf(" L_bfrac: *w := bfrac(*) = %g\n", *w);
     goto L_end;
@@ -331,12 +355,13 @@ L140:
 
     *w = bup(b0, a0, y0, x0, n, eps, FALSE);
 
-    R_ifDEBUG_printf(" L140: *w := bup(b0=%g,..) = %.15g; ", b0, *w);
     if(*w < DBL_MIN && log_p) { /* do not believe it; try bpser() : */
+	R_ifDEBUG_printf(" L140: bup(b0=%g,..)=%.15g < DBL_MIN - not used;\n --> ", b0, *w);
 	/*revert: */ b0 += n;
 	/* which is only valid if b0 <= 1 || b0*x0 <= 0.7 */
 	goto L_w_bpser;
-    }
+    } // else :
+    R_ifDEBUG_printf(" L140: *w := bup(b0=%g,..) = %.15g; ", b0, *w);
     if (x0 <= 0.7) {
 	/* log_p :  TODO:  w = bup(.) + bpser(.)  -- not so easy to use log-scale */
 	*w += bpser(a0, b0, x0, eps, /* log_p = */ FALSE);
@@ -344,7 +369,7 @@ L140:
 	goto L_end_from_w;
     }
     /* L150: */
-    if (a0 <= 15.0) {
+    if (a0 <= 15.) {
 	n = 20;
 	*w += bup(a0, b0, x0, y0, n, eps, FALSE);
 	R_ifDEBUG_printf("\n a0 <= 15: *w := *w + bup(*) = %.15g;", *w);
@@ -352,10 +377,10 @@ L140:
     }
     R_ifDEBUG_printf(" bgrat(*, w=%.15g) ", *w);
     bgrat(a0, b0, x0, y0, w, 15*eps, &ierr1, FALSE);
-    if(ierr1) *ierr = 8;
+    if(ierr1) *ierr = 10 + ierr1;
 #ifdef DEBUG_bratio
-    JREprintf("==> new w=%.15g", *w);
-    if(ierr1) JREprintf(" Error(code=%d)\n", ierr1) ; else JREprintf("\n");
+    REprintf("==> new w=%.15g", *w);
+    if(ierr1) REprintf(" Error(code=%d)\n", ierr1) ; else REprintf("\n");
 #endif
     goto L_end_from_w;
 
@@ -363,12 +388,12 @@ L140:
 /* TERMINATION OF THE PROCEDURE */
 
 L200:
-    if (a == 0.0) { *ierr = 6;    return; }
+    if (a == 0.) { *ierr = 6;    return; }
     // else:
 L201: *w  = R_D__0; *w1 = R_D__1; return;
 
 L210:
-    if (b == 0.0) { *ierr = 7;    return; }
+    if (b == 0.) { *ierr = 7;    return; }
     // else:
 L211: *w  = R_D__1; *w1 = R_D__0; return;
 
@@ -431,7 +456,7 @@ double fpser(double a, double b, double x, double eps, int log_p)
     } else if (a > eps * 0.001) {
 	t = a * log(x);
 	if (t < exparg(1)) { /* exp(t) would underflow */
-	    return 0.0;
+	    return 0.;
 	}
 	ans = exp(t);
     } else
@@ -445,11 +470,11 @@ double fpser(double a, double b, double x, double eps, int log_p)
 	ans *= b / a;
 
     tol = eps / a;
-    an = a + 1.0;
+    an = a + 1.;
     t = x;
     s = t / an;
     do {
-	an += 1.0;
+	an += 1.;
 	t = x * t;
 	c = t / an;
 	s += c;
@@ -458,7 +483,7 @@ double fpser(double a, double b, double x, double eps, int log_p)
     if (log_p)
 	ans += log1p(a * s);
     else
-	ans *= a * s + 1.0;
+	ans *= a * s + 1.;
     return ans;
 } /* fpser */
 
@@ -478,14 +503,14 @@ static double apser(double a, double b, double x, double eps)
     t = x - bx;
     if (b * eps <= 0.02)
 	c = log(x) + psi(b) + g + t;
-    else
+    else // b > 2e13 : psi(b) ~= log(b)
 	c = log(bx) + g + t;
 
-    tol = eps * 5.0 * fabs(c);
+    tol = eps * 5. * fabs(c);
     j = 1.;
     s = 0.;
     do {
-	j += 1.0;
+	j += 1.;
 	t *= x - bx / j;
 	aj = t / j;
 	s += aj;
@@ -499,10 +524,9 @@ static double bpser(double a, double b, double x, double eps, int log_p)
 /* -----------------------------------------------------------------------
  * Power SERies expansion for evaluating I_x(a,b) when
  *	       b <= 1 or b*x <= 0.7.   eps is the tolerance used.
+ * NB: if log_p is TRUE, also use it if   (b < 40  & lambda > 650)   where
+ *                       lambda := a y - b x = (a + b)y - b  = a - (a+b)x   {x + y == 1}
  * ----------------------------------------------------------------------- */
-
-    int i, m;
-    double ans, c, n, t, u, w, z, a0, b0, apb, tol, sum;
 
     if (x == 0.) {
 	return R_D__0;
@@ -510,33 +534,35 @@ static double bpser(double a, double b, double x, double eps, int log_p)
 /* ----------------------------------------------------------------------- */
 /*	      compute the factor  x^a/(a*Beta(a,b)) */
 /* ----------------------------------------------------------------------- */
-    a0 = min(a,b);
-    if (a0 >= 1.0) { /*		 ------	 1 <= a0 <= b0  ------ */
+    double ans, c, z, a0 = min(a,b);
+    if (a0 >= 1.) { /*		 ------	 1 <= a0 <= b0  ------ */
 	z = a * log(x) - betaln(a, b);
 	ans = log_p ? z - log(a) : exp(z) / a;
     }
     else {
-	b0 = max(a,b);
+	double t, u, apb, b0 = max(a,b);
+	if (b0 < 8.) {
 
-	if (b0 < 8.0) {
-
-	    if (b0 <= 1.0) { /*	 ------	 a0 < 1	 and  b0 <= 1  ------ */
+	    if (b0 <= 1.) { /*	------  a0 < 1  and  a0 <= b0 <= 1  ------ */
 
 		if(log_p) {
 		    ans = a * log(x);
 		} else {
 		    ans = pow(x, a);
-		    if (ans == 0.) /* once underflow, always underflow .. */
+		    if (ans == 0.) { /* once underflow, always underflow .. */
+			R_ifDEBUG_printf(" bpser(a=%g, b=%g, x=%g): x^a underflows to 0",
+					 a,b,x);
 			return ans;
+		    }
 		}
 		apb = a + b;
-		if (apb > 1.0) {
+		if (apb > 1.) {
 		    u = a + b - 1.;
-		    z = (gam1(u) + 1.0) / apb;
+		    z = (gam1(u) + 1.) / apb;
 		} else {
-		    z = gam1(apb) + 1.0;
+		    z = gam1(apb) + 1.;
 		}
-		c = (gam1(a) + 1.0) * (gam1(b) + 1.0) / z;
+		c = (gam1(a) + 1.) * (gam1(b) + 1.) / z;
 
 		if(log_p) /* FIXME ? -- improve quite a bit for c ~= 1 */
 		    ans += log(c * (b / apb));
@@ -546,30 +572,30 @@ static double bpser(double a, double b, double x, double eps, int log_p)
 	    } else { /* 	------	a0 < 1 < b0 < 8	 ------ */
 
 		u = gamln1(a0);
-		m = (int)(b0 - 1.0);
+		int m = (int)(b0 - 1.);
 		if (m >= 1) {
-		    c = 1.0;
-		    for (i = 1; i <= m; ++i) {
-			b0 += -1.0;
+		    c = 1.;
+		    for (int i = 1; i <= m; ++i) {
+			b0 += -1.;
 			c *= b0 / (a0 + b0);
 		    }
 		    u += log(c);
 		}
 
 		z = a * log(x) - u;
-		b0 += -1.0; // => b0 in (0, 7)
+		b0 += -1.; // => b0 in (0, 7)
 		apb = a0 + b0;
-		if (apb > 1.0) {
+		if (apb > 1.) {
 		    u = a0 + b0 - 1.;
-		    t = (gam1(u) + 1.0) / apb;
+		    t = (gam1(u) + 1.) / apb;
 		} else {
-		    t = gam1(apb) + 1.0;
+		    t = gam1(apb) + 1.;
 		}
 
 		if(log_p) /* FIXME? potential for improving log(t) */
 		    ans = z + log(a0 / a) + log1p(gam1(b0)) - log(t);
 		else
-		    ans = exp(z) * (a0 / a) * (gam1(b0) + 1.0) / t;
+		    ans = exp(z) * (a0 / a) * (gam1(b0) + 1.) / t;
 	    }
 
 	} else { /* 		------  a0 < 1 < 8 <= b0  ------ */
@@ -583,21 +609,25 @@ static double bpser(double a, double b, double x, double eps, int log_p)
 		ans = a0 / a * exp(z);
 	}
     }
-    R_ifDEBUG_printf(" bpser(a=%g, b=%g, x=%g, log=%d): prelim.ans = %.14g;\n",
-		     a,b,x, log_p, ans);
+    R_ifDEBUG_printf(" bpser(a=%g, b=%g, x=%g, log=%d, eps=%g): %s = %.14g;",
+		     a,b,x, log_p, eps,
+		     log_p ? "log(x^a/(a*B(a,b)))" : "x^a/(a*B(a,b))",  ans);
     if (ans == R_D__0 || (!log_p && a <= eps * 0.1)) {
+	R_ifDEBUG_printf(" = final answer\n");
 	return ans;
     }
+#ifdef DEBUG_bratio
+    else REprintf("\n");
+#endif
 
 /* ----------------------------------------------------------------------- */
 /*		       COMPUTE THE SERIES */
 /* ----------------------------------------------------------------------- */
-    sum = 0.;
-    n = 0.;
+    double tol = eps / a,
+	n = 0.,
+	sum = 0., w;
     c = 1.;
-    tol = eps / a;
-
-    do {
+    do { // sum is alternating as long as n < b (<==> 1 - b/n < 0)
 	n += 1.;
 	c *= (0.5 - b / n + 0.5) * x;
 	w = c / (a + n);
@@ -606,19 +636,27 @@ static double bpser(double a, double b, double x, double eps, int log_p)
     if(fabs(w) > tol) { // the series did not converge (in time)
 	// warn only when the result seems to matter:
 	if(( log_p && !(a*sum > -1. && fabs(log1p(a * sum)) < eps*fabs(ans))) ||
-	   (!log_p && fabs(a*sum + 1) != 1.))
+	   (!log_p && fabs(a*sum + 1.) != 1.))
 	    MATHLIB_WARNING5(
 		" bpser(a=%g, b=%g, x=%g,...) did not converge (n=1e7, |w|/tol=%g > 1; A=%g)",
 		a,b,x, fabs(w)/tol, ans);
     }
-    R_ifDEBUG_printf("  -> n=%.0f iterations, |w|=%g %s %g=tol:=eps/a ==> a*sum=%g\n",
-		     n, fabs(w), (fabs(w) > tol) ? ">!!>" : "<=",
-		     tol, a*sum);
+    R_ifDEBUG_printf("  -> n=%.0f iterations, |w|=%g %s %g=tol:=eps/a ==> a*sum=%g %s -1\n",
+		     n, fabs(w), (fabs(w) > tol) ? ">!!>" : "<=", tol,
+		     a*sum, (a*sum > -1.) ? ">" : "<=");
     if(log_p) {
-	if (a*sum > -1.0) ans += log1p(a * sum);
-	else ans = ML_NEGINF;
-    } else
-	ans *= a * sum + 1.0;
+	if (a*sum > -1.) ans += log1p(a * sum);
+	else {
+	    if(ans > ML_NEGINF)
+		MATHLIB_WARNING3(
+		    "pbeta(*, log.p=TRUE) -> bpser(a=%g, b=%g, x=%g,...) underflow to -Inf",
+		    a,b,x);
+	    ans = ML_NEGINF;
+	}
+    } else if (a*sum > -1.)
+	ans *= (a * sum + 1.);
+    else // underflow to
+	ans = 0.;
     return ans;
 } /* bpser */
 
@@ -630,28 +668,24 @@ static double bup(double a, double b, double x, double y, int n, double eps,
 /*     EPS IS THE TOLERANCE USED. */
 /* ----------------------------------------------------------------------- */
 
-    /* System generated locals */
     double ret_val;
-
-    /* Local variables */
     int i, k, mu;
-    double d, l, r, t;
+    double d, l;
 
 // Obtain the scaling factor exp(-mu) and exp(mu)*(x^a * y^b / beta(a,b))/a
 
     double apb = a + b,
-	ap1 = a + 1.0;
+	ap1 = a + 1.;
     if (n > 1 && a >= 1. && apb >= ap1 * 1.1) {
 	mu = (int)fabs(exparg(1));
 	k = (int) exparg(0);
 	if (mu > k)
 	    mu = k;
-	t = (double) mu;
-	d = exp(-t);
+ 	d = exp(-(double) mu); // = exp(-709) = 1.216780751..e-308  nowadays
     }
     else {
 	mu = 0;
-	d = 1.0;
+	d = 1.;
     }
 
     /* L10: */
@@ -668,42 +702,31 @@ static double bup(double a, double b, double x, double y, int n, double eps,
 /*          LET K BE THE INDEX OF THE MAXIMUM TERM */
 
     k = 0;
-    if (b <= 1.0) {
-	goto L40;
-    }
-    if (y > 1e-4) {
-	r = (b - 1.0) * x / y - a;
-	if (r < 1.0) {
-	    goto L40;
-	}
-	k = nm1;
-	t = (double) nm1;
-	if (r < t) {
-	    k = (int) r;
-	}
-    } else {
-	k = nm1;
-    }
+    if (b > 1.) {
+	if (y > 1e-4) {
+	    double r = (b - 1.) * x / y - a;
+	    if (r >= 1.)
+		k = (r < nm1) ? (int) r : nm1;
+	} else
+	    k = nm1;
 
-/*          ADD THE INCREASING TERMS OF THE SERIES */
-
+//          ADD THE INCREASING TERMS OF THE SERIES - if k > 0
 /* L30: */
-    for (i = 1; i <= k; ++i) {
-	l = (double) (i - 1);
-	d = (apb + l) / (ap1 + l) * x * d;
-	w += d;
-	/* L31: */
-    }
-    if (k != nm1) {
-	/*          ADD THE REMAINING TERMS OF THE SERIES */
-    L40:
-	for (i = k+1; i <= nm1; ++i) {
-	    l = (double) (i - 1);
-	    d = (apb + l) / (ap1 + l) * x * d;
+	for (i = 0; i < k; ++i) {
+	    l = (double) i;
+	    d *= (apb + l) / (ap1 + l) * x;
 	    w += d;
-	    if (d <= eps * w) /* relativ convergence (eps) */
-		break;
 	}
+    }
+
+// L40:     ADD THE REMAINING TERMS OF THE SERIES
+
+    for (i = k; i < nm1; ++i) {
+	l = (double) i;
+	d *= (apb + l) / (ap1 + l) * x;
+	w += d;
+	if (d <= eps * w) /* relativ convergence (eps) */
+	    break;
     }
 
     // L50: TERMINATE THE PROCEDURE
@@ -720,186 +743,210 @@ static double bfrac(double a, double b, double x, double y, double lambda,
 {
 /* -----------------------------------------------------------------------
        Continued fraction expansion for I_x(a,b) when a, b > 1.
-       It is assumed that  lambda = (a + b)*y - b.
+       It is assumed that  lambda = (a + b)*y - b.  (x+y = 1)
    -----------------------------------------------------------------------*/
 
-    double c, e, n, p, r, s, t, w, c0, c1, r0, an, bn, yp1, anp1, bnp1,
-	beta, alpha;
-
+    if(!R_FINITE(lambda)) return ML_NAN;// TODO: can return 0 or 1 (?)
+    R_ifDEBUG_printf(" bfrac(a=%g, b=%g, x=%g, y=%g, lambda=%g, eps=%g, log_p=%d):\n",
+		     a,b,x,y, lambda, eps, log_p);
     double brc = brcomp(a, b, x, y, log_p);
-
-    if (!log_p && brc == 0.) /* already underflowed to 0 */
+    if(ISNAN(brc)) { // till 2025-05, from   L <- 1e308; pnbinom(L, L, mu = 5) -- does this still happen?
+	R_ifDEBUG_printf(" --> brcomp(a,b,x,y) = NaN; ");
+	ML_WARN_return_NAN; // TODO: could we know better?
+    }
+    if (!log_p && brc == 0.) {
+	R_ifDEBUG_printf(" --> brcomp(a,b,x,y) underflowed to 0; ");
 	return 0.;
+    }
+#ifdef DEBUG_bratio
+    else
+	REprintf("brcomp(a,b, x,y) = %g; ", brc);
+#endif
 
-    c = lambda + 1.0;
-    c0 = b / a;
-    c1 = 1.0 / a + 1.0;
-    yp1 = y + 1.0;
-
-    n = 0.0;
-    p = 1.0;
-    s = a + 1.0;
-    an = 0.0;
-    bn = 1.0;
-    anp1 = 1.0;
-    bnp1 = c / c1;
-    r = c1 / c;
+    double
+	c = lambda + 1.,
+	c0 = b / a,
+	c1 = 1. / a + 1.,
+	yp1 = y + 1.,
+	n = 0.,
+	p = 1.,
+	s = a + 1.,
+	an = 0.,
+	bn = 1.,
+	anp1 = 1.,
+	bnp1 = c / c1,
+	r = c1 / c,
+	r0; // := prev r;
 
 /*        CONTINUED FRACTION CALCULATION */
-
+#define bfrac_MAXIT 1000 // was 10000, but have never seen 1000 close to needed
     do {
-	n += 1.0;
-	t = n / a;
-	w = n * (b - n) * x;
-	e = a / s;
-	alpha = p * (p + c0) * e * e * (w * x);
-	e = (t + 1.0) / (c1 + t + t);
-	beta = n + w / s + e * (c + n * yp1);
-	p = t + 1.0;
-	s += 2.0;
+	n += 1.;
+	double w = n * x * (b - n); /* overflows when b is almost DBL_MAX ! */
+	bool rescale = !R_FINITE(w);
+	/* rescale w  <==> rescaled (alpha, beta) with same factor;
+	   alpha (proportional) w  is automatically scaled, and beta needs explicit scaling */
+	if(rescale) w = n * x * ldexp(b - n, -20);
+	double t = n / a,
+	    e = a / s,
+	    alpha = p * (p + c0) * e * e * (w * x), beta;
+#ifdef DEBUG_bfrac_it
+	if(n == 1.) REprintf("\n");
+	R_ifDEBUG_printf(" n=%4.0f, w=%12g, e=%12g, alpha=%g; ", n, w, e, alpha);
+	if(rescale) REprintf("_rescaled_, ");
+#endif
+	e = (t + 1.) / (c1 + t + t);
+	beta = w / s + ((rescale) ? ldexp(n + e * (c + n * yp1), -20)
+			          :       n + e * (c + n * yp1));
+#ifdef DEBUG_bfrac_it
+	R_ifDEBUG_printf("new e=%12g, beta=%12g\n", e, beta);
+#endif
+	p = t + 1.;
+	s += 2.;
 
 	/* update an, bn, anp1, and bnp1 */
 
-	t = alpha * an + beta * anp1;
-	an = anp1;
-	anp1 = t;
-	t = alpha * bn + beta * bnp1;
-	bn = bnp1;
-	bnp1 = t;
+	t = alpha * an + beta * anp1;	an = anp1;	anp1 = t;
+	t = alpha * bn + beta * bnp1;	bn = bnp1;	bnp1 = t;
 
 	r0 = r;
 	r = anp1 / bnp1;
-	if (fabs(r - r0) <= eps * r) {
+#ifdef DEBUG_bfrac_it
+	R_ifDEBUG_printf(
+	"         ==> a_{n,n+1}= (%12g,%12g), b_{n,n+1} = (%12g,%12g) => r0,r = (%.14g,%.14g)\n",
+			 an,anp1, bn,bnp1, r0, r);
+#endif
+	if (fabs(r - r0) <= eps * r)
 	    break;
-	}
 
 	/* rescale an, bn, anp1, and bnp1 */
 
 	an /= bnp1;
 	bn /= bnp1;
 	anp1 = r;
-	bnp1 = 1.0;
-    } while (1);
-
+	bnp1 = 1.;
+    } while (n < bfrac_MAXIT);// arbitrary; had '1' --> infinite loop for  lambda = Inf
+    R_ifDEBUG_printf("  in bfrac(): n=%.0f terms cont.frac.; brc=%g, r=%g\n",
+		     n, brc, r);
+    if(n >= bfrac_MAXIT && fabs(r - r0) > eps * r)
+	MATHLIB_WARNING6(
+	    " bfrac(a=%g, b=%g, x=%g, y=%g, lambda=%g) did *not* converge (in %d steps)\n",
+	    a,b,x,y, lambda, bfrac_MAXIT);
     return (log_p ? brc + log(r) : brc * r);
 } /* bfrac */
+#undef bfrac_MAXIT
 
+// only called once from bfrac()
 static double brcomp(double a, double b, double x, double y, int log_p)
 {
 /* -----------------------------------------------------------------------
  *		 Evaluation of x^a * y^b / Beta(a,b)
  * ----------------------------------------------------------------------- */
 
-    static double const__ = .398942280401433; /* == 1/sqrt(2*pi); */
-    /* R has  M_1_SQRT_2PI , and M_LN_SQRT_2PI = ln(sqrt(2*pi)) = 0.918938.. */
-    int i, n;
-    double c, e, u, v, z, a0, b0, apb;
-
-    if (x == 0.0 || y == 0.0) {
+    if (x == 0. || y == 0.) {
 	return R_D__0;
     }
-    a0 = min(a, b);
-    if (a0 < 8.0) {
+    double a0 = min(a, b);
+    if (a0 < 8.) {
 	double lnx, lny;
 	if (x <= .375) {
 	    lnx = log(x);
 	    lny = alnrel(-x);
 	}
-	else {
-	    if (y > .375) {
-		lnx = log(x);
-		lny = log(y);
-	    } else {
-		lnx = alnrel(-y);
-		lny = log(y);
-	    }
+	else if (y > .375) {
+	    lnx = log(x);
+	    lny = log(y);
+	} else {
+	    lnx = alnrel(-y);
+	    lny = log(y);
 	}
 
-	z = a * lnx + b * lny;
+	double z = a * lnx + b * lny;
 	if (a0 >= 1.) {
 	    z -= betaln(a, b);
 	    return R_D_exp(z);
 	}
-
-/* ----------------------------------------------------------------------- */
-/*		PROCEDURE FOR a < 1 OR b < 1 */
-/* ----------------------------------------------------------------------- */
-
-	b0 = max(a, b);
-	if (b0 >= 8.0) { /* L80: */
-	    u = gamln1(a0) + algdiv(a0, b0);
-
+	// else :
+	/* ----------------------------------------------------------------------- */
+	/*		PROCEDURE FOR a < 1 OR b < 1 */
+	/* ----------------------------------------------------------------------- */
+	double b0 = max(a, b);
+	if (b0 >= 8.) { /* L80: */
+	    double u = gamln1(a0) + algdiv(a0, b0);
 	    return (log_p ? log(a0) + (z - u)  : a0 * exp(z - u));
 	}
 	/* else : */
-
-	if (b0 <= 1.0) { /*		algorithm for max(a,b) = b0 <= 1 */
-
+	if (b0 <= 1.) { /*		algorithm for max(a,b) = b0 <= 1 */
 	    double e_z = R_D_exp(z);
-
-	    if (!log_p && e_z == 0.0) /* exp() underflow */
+	    if (!log_p && e_z == 0.) /* exp() underflow */
 		return 0.;
 
-	    apb = a + b;
-	    if (apb > 1.0) {
-		u = a + b - 1.;
-		z = (gam1(u) + 1.0) / apb;
+	    double apb = a + b;
+	    if (apb > 1.) {
+		z = (gam1(apb - 1.) + 1.) / apb;
 	    } else {
-		z = gam1(apb) + 1.0;
+		z = gam1(apb) + 1.;
 	    }
-
-	    c = (gam1(a) + 1.0) * (gam1(b) + 1.0) / z;
+	    double c = (gam1(a) + 1.) * (gam1(b) + 1.) / z;
+	    R_ifDEBUG_printf(" brcomp(), max(a,b) <= 1: (e_z, z, c) = (%g, %g, %g)\n",
+			     e_z, z, c);
 	    /* FIXME? log(a0*c)= log(a0)+ log(c) and that is improvable */
 	    return (log_p
 		    ? e_z + log(a0 * c) - log1p(a0/b0)
-		    : e_z * (a0 * c) / (a0 / b0 + 1.0));
+		    : e_z *    (a0 * c) / (a0/b0 + 1.));
 	}
 
 	/* else : 		  ALGORITHM FOR 1 < b0 < 8 */
 
-	u = gamln1(a0);
-	n = (int)(b0 - 1.0);
+	double u = gamln1(a0);
+	int n = (int)(b0 - 1.);
 	if (n >= 1) {
-	    c = 1.0;
-	    for (i = 1; i <= n; ++i) {
-		b0 += -1.0;
+	    double c = 1.;
+	    for (int i = 1; i <= n; ++i) {
+		b0 += -1.;
 		c *= b0 / (a0 + b0);
 	    }
 	    u = log(c) + u;
 	}
 	z -= u;
-	b0 += -1.0;
-	apb = a0 + b0;
-	double t;
-	if (apb > 1.0) {
+	b0 += -1.;
+	double apb = a0 + b0, t;
+	if (apb > 1.) {
 	    u = a0 + b0 - 1.;
-	    t = (gam1(u) + 1.0) / apb;
+	    t = (gam1(u) + 1.) / apb;
 	} else {
-	    t = gam1(apb) + 1.0;
+	    t = gam1(apb) + 1.;
 	}
 
+	R_ifDEBUG_printf(" brcomp(), 1 < b0 < 8: (z, t) = (%g, %g)\n", z, t);
 	return (log_p
 		? log(a0) + z + log1p(gam1(b0))  - log(t)
-		: a0 * exp(z) * (gam1(b0) + 1.0) / t);
+		: a0 * exp(z) * (gam1(b0) + 1.) / t);
 
     } else {
 /* ----------------------------------------------------------------------- */
-/*		PROCEDURE FOR A >= 8 AND B >= 8 */
+/*		PROCEDURE FOR a >= 8 AND b >= 8 */
 /* ----------------------------------------------------------------------- */
-	double h, x0, y0, lambda;
+	static double const__ = .398942280401433; /* == 1/sqrt(2*pi); */
+	/* R has  M_1_SQRT_2PI , and M_LN_SQRT_2PI = ln(sqrt(2*pi)) = 0.918938.. */
+	double h, x0, y0, apb = a+b,
+	    lambda = R_FINITE(apb) // be safe
+	      ? ((a <= b) ? a - apb * x
+ 	                  : apb * y - b)
+	      : a*y - b*x;
 	if (a <= b) {
 	    h = a / b;
-	    x0 = h / (h + 1.0);
-	    y0 = 1.0 / (h + 1.0);
-	    lambda = a - (a + b) * x;
+	    x0 = h  / (h + 1.);
+	    y0 = 1. / (h + 1.);
+	    R_ifDEBUG_printf(" brcomp(8 <= a <= b): ");
 	} else {
 	    h = b / a;
-	    x0 = 1.0 / (h + 1.0);
-	    y0 = h / (h + 1.0);
-	    lambda = (a + b) * y - b;
+	    x0 = 1. / (h + 1.);
+	    y0 = h  / (h + 1.);
+	    R_ifDEBUG_printf(" brcomp(8 <= b < a): ");
 	}
 
-	e = -lambda / a;
+	double e = -lambda / a,  u, v, z;
 	if (fabs(e) > .6)
 	    u = e - log(x / x0);
 	else
@@ -912,29 +959,25 @@ static double brcomp(double a, double b, double x, double y, int log_p)
 	    v = e - log(y / y0);
 
 	z = log_p ? -(a * u + b * v) : exp(-(a * u + b * v));
-
+	R_ifDEBUG_printf(" brcomp(): (lambda => u, v => z) = (%g =>  %g, %g  => %g)\n",
+			 lambda,  u, v,  z);
 	return(log_p
 	       ? -M_LN_SQRT_2PI + .5*log(b * x0) + z - bcorr(a,b)
 	       : const__ * sqrt(b * x0) * z * exp(-bcorr(a, b)));
     }
 } /* brcomp */
 
-// called only once from  bup(),  as   r = brcmp1(mu, a, b, x, y, FALSE) / a;
-//                        -----
+/* A version of brcomp() above,
+ *  called only once from  bup(),  as   r = brcmp1(mu, a, b, x, y, FALSE) / a;
+ *                        ----- */
 static double brcmp1(int mu, double a, double b, double x, double y, int give_log)
 {
 /* -----------------------------------------------------------------------
- *          Evaluation of    exp(mu) * x^a * y^b / beta(a,b)
- * ----------------------------------------------------------------------- */
+ *          Evaluation of    exp(mu) * x^a * y^b / Beta(a,b)
+ * --------------------------^^^^^^^^^------------------------------------ */
 
-    static double const__ = .398942280401433; /* == 1/sqrt(2*pi); */
-    /* R has  M_1_SQRT_2PI */
-
-    /* Local variables */
-    double c, t, u, v, z, a0, b0, apb;
-
-    a0 = min(a,b);
-    if (a0 < 8.0) {
+    double a0 = min(a,b);
+    if (a0 < 8.) {
 	double lnx, lny;
 	if (x <= .375) {
 	    lnx = log(x);
@@ -949,56 +992,54 @@ static double brcmp1(int mu, double a, double b, double x, double y, int give_lo
 	}
 
 	// L20:
-	z = a * lnx + b * lny;
-	if (a0 >= 1.0) {
+	double z = a * lnx + b * lny;
+	if (a0 >= 1.) {
 	    z -= betaln(a, b);
 	    return esum(mu, z, give_log);
 	}
 	// else :
 	/* ----------------------------------------------------------------------- */
-	/*              PROCEDURE FOR A < 1 OR B < 1 */
+	/*              PROCEDURE FOR a < 1 OR b < 1 */
 	/* ----------------------------------------------------------------------- */
 	// L30:
-	b0 = max(a,b);
-	if (b0 >= 8.0) {
+	double b0 = max(a,b);
+	if (b0 >= 8.) {
 	/* L80:                  ALGORITHM FOR b0 >= 8 */
-	    u = gamln1(a0) + algdiv(a0, b0);
+	    double u = gamln1(a0) + algdiv(a0, b0);
 	    R_ifDEBUG_printf(" brcmp1(mu,a,b,*): a0 < 1, b0 >= 8;  z=%.15g\n", z);
 	    return give_log
 		? log(a0) + esum(mu, z - u, TRUE)
 		:     a0  * esum(mu, z - u, FALSE);
 
-	} else if (b0 <= 1.0) {
+	} else if (b0 <= 1.) {
 	    //                   a0 < 1, b0 <= 1
 	    double ans = esum(mu, z, give_log);
 	    if (ans == (give_log ? ML_NEGINF : 0.))
 		return ans;
 
-	    apb = a + b;
-	    if (apb > 1.0) {
-		// L40:
-		u = a + b - 1.;
-		z = (gam1(u) + 1.0) / apb;
+	    double apb = a + b, z;
+	    if (apb > 1.) { // L40:
+		z = (gam1(apb - 1.) + 1.) / apb;
 	    } else {
-		z = gam1(apb) + 1.0;
+		z = gam1(apb) + 1.;
 	    }
 	    // L50:
-	    c = give_log
+	    double c = give_log
 		? log1p(gam1(a)) + log1p(gam1(b)) - log(z)
-		: (gam1(a) + 1.0) * (gam1(b) + 1.0) / z;
+		: (gam1(a) + 1.) * (gam1(b) + 1.) / z;
 	    R_ifDEBUG_printf(" brcmp1(mu,a,b,*): a0 < 1, b0 <= 1;  c=%.15g\n", c);
 	    return give_log
 		? ans + log(a0) + c - log1p(a0 / b0)
-		: ans * (a0 * c) / (a0 / b0 + 1.0);
+		: ans * (a0 * c) / (a0 / b0 + 1.);
 	}
 	// else:               algorithm for	a0 < 1 < b0 < 8
 	// L60:
-	u = gamln1(a0);
-	int n = (int)(b0 - 1.0);
+	double u = gamln1(a0);
+	int n = (int)(b0 - 1.); // have n <= 6
 	if (n >= 1) {
-	    c = 1.0;
+	    double c = 1.;
 	    for (int i = 1; i <= n; ++i) {
-		b0 += -1.0;
+		b0 += -1.;
 		c *= b0 / (a0 + b0);
 		/* L61: */
 	    }
@@ -1006,45 +1047,49 @@ static double brcmp1(int mu, double a, double b, double x, double y, int give_lo
 	}
 	// L70:
 	z -= u;
-	b0 += -1.0;
-	apb = a0 + b0;
+	b0 += -1.;
+	double apb = a0 + b0, t;
 	if (apb > 1.) {
 	    // L71:
-	    t = (gam1(apb - 1.) + 1.0) / apb;
+	    t = (gam1(apb - 1.) + 1.) / apb;
 	} else {
-	    t = gam1(apb) + 1.0;
+	    t = gam1(apb) + 1.;
 	}
 	R_ifDEBUG_printf(" brcmp1(mu,a,b,*): a0 < 1 < b0 < 8;  t=%.15g\n", t);
 	// L72:
 	return give_log
 	    ? log(a0)+ esum(mu, z, TRUE) + log1p(gam1(b0)) - log(t) // TODO? log(t) = log1p(..)
-	    :     a0 * esum(mu, z, FALSE) * (gam1(b0) + 1.0) / t;
+	    :     a0 * esum(mu, z, FALSE) * (gam1(b0) + 1.) / t;
 
     } else {
 
 /* ----------------------------------------------------------------------- */
 /*              PROCEDURE FOR A >= 8 AND B >= 8 */
 /* ----------------------------------------------------------------------- */
+	static double const__ = .398942280401433; /* == 1/sqrt(2*pi); */
+	/* R has  M_1_SQRT_2PI , and M_LN_SQRT_2PI = ln(sqrt(2*pi)) = 0.918938.. */
 	// L100:
-	double h, x0, y0, lambda;
+	double h, x0, y0, apb = a+b,
+	    lambda = R_FINITE(apb) // be safe
+	      ? ((a <= b) ? a - apb * x
+ 	                  : apb * y - b)
+	      : a*y - b*x;
 	if (a > b) {
 	    // L101:
 	    h = b / a;
-	    x0 = 1.0 / (h + 1.0);// => lx0 := log(x0) = 0 - log1p(h)
-	    y0 = h / (h + 1.0);
-	    lambda = (a + b) * y - b;
+	    x0 = 1. / (h + 1.);// => lx0 := log(x0) = 0 - log1p(h)
+	    y0 = h  / (h + 1.);
 	} else {
 	    h = a / b;
-	    x0 = h / (h + 1.0);  // => lx0 := log(x0) = - log1p(1/h)
-	    y0 = 1.0 / (h + 1.0);
-	    lambda = a - (a + b) * x;
+	    x0 = h  / (h + 1.);  // => lx0 := log(x0) = - log1p(1/h)
+	    y0 = 1. / (h + 1.);
 	}
 	double lx0 = -log1p(b/a); // in both cases
 
 	R_ifDEBUG_printf(" brcmp1(mu,a,b,*): a,b >= 8;	x0=%.15g, lx0=log(x0)=%.15g\n",
 			 x0, lx0);
 	// L110:
-	double e = -lambda / a;
+	double e = -lambda / a,  u, v, z;
 	if (fabs(e) > 0.6) {
 	    // L111:
 	    u = e - log(x / x0);
@@ -1093,19 +1138,21 @@ static void bgrat(double a, double b, double x, double y, double *w,
 	lnx = (y > 0.375) ? log(x) : alnrel(-y),
 	z = -nu * lnx; // z =: u in (9.1) of D.&M.(1992)
 
-    if (b * z == 0.0) { // should not happen, but does, e.g.,
+    if (b * z == 0.) { // should not happen, but does, e.g.,
 	// for  pbeta(1e-320, 1e-5, 0.5)  i.e., _subnormal_ x,
 	// Warning ... bgrat(a=20.5, b=1e-05, x=1, y=9.99989e-321): ..
-	MATHLIB_WARNING4(
-	    "bgrat(a=%g, b=%g, x=%g, y=%g): b*z == 0 underflow, hence inaccurate pbeta()",
-	    a,b,x,y);
+	MATHLIB_WARNING5(
+	    "bgrat(a=%g, b=%g, x=%g, y=%g): z=%g, b*z == 0 underflow, hence inaccurate pbeta()",
+	    a,b,x,y, z);
 	/* L_Error:    THE EXPANSION CANNOT BE COMPUTED */
-	 *ierr = 1; return;
+	 *ierr = 1;
+	 /* TODO (?):  do not yet return, trying further using log-scale below */
+	 return;
     }
 
 /*                 COMPUTATION OF THE EXPANSION */
     double
-	/* r1 = b * (gam1(b) + 1.0) * exp(b * log(z)),// = b/gamma(b+1) z^b = z^b / gamma(b)
+	/* r1 = b * (gam1(b) + 1.) * exp(b * log(z)),// = b/gamma(b+1) z^b = z^b / gamma(b)
 	 * set r := exp(-z) * z^b / gamma(b) ;
 	 *          gam1(b) = 1/gamma(b+1) - 1 , b in [-1/2, 3/2] */
 	// exp(a*lnx) underflows for large (a * lnx); e.g. large a ==> using log_r := log(r):
@@ -1140,16 +1187,16 @@ static void bgrat(double a, double b, double x, double y, double *w,
 	t2 = lnx * 0.25 * lnx,
 	j = q_r,
 	sum = j,
-	t = 1.0, cn = 1.0, n2 = 0.;
+	t = 1., cn = 1., n2 = 0.;
     for (int n = 1; n <= n_terms_bgrat; ++n) {
 	double bp2n = b + n2;
-	j = (bp2n * (bp2n + 1.0) * j + (z + bp2n + 1.0) * t) * v;
+	j = (bp2n * (bp2n + 1.) * j + (z + bp2n + 1.) * t) * v;
 	n2 += 2.;
 	t *= t2;
 	cn /= n2 * (n2 + 1.);
 	int nm1 = n - 1;
 	c[nm1] = cn;
-	double s = 0.0;
+	double s = 0.;
 	if (n > 1) {
 	    double coef = b - n;
 	    for (int i = 1; i <= nm1; ++i) {
@@ -1160,20 +1207,23 @@ static void bgrat(double a, double b, double x, double y, double *w,
 	d[nm1] = bm1 * cn + s / n;
 	double dj = d[nm1] * j;
 	sum += dj;
-	if (sum <= 0.0) {
+	if (sum <= 0.) {
 	    R_ifDEBUG_printf(" bgrat(*): sum_n(..) <= 0; should not happen (n=%d)\n", n);
 	    /* L_Error:    THE EXPANSION CANNOT BE COMPUTED */ *ierr = 3; return;
 	}
 	if (fabs(dj) <= eps * (sum + l)) {
+	    *ierr = 0;
 	    break;
-	} else if(n == n_terms_bgrat) // never? ; please notify R-core if seen:
+	} else if(n == n_terms_bgrat) { // e.g. from pbeta(..., 0.001, 1e200)
+	    *ierr = 4;
 	    MATHLIB_WARNING5(
-		"bgrat(a=%g, b=%g, x=%g,..): did *not* converge; dj=%g, rel.err=%g\n",
+	"bgrat(a=%g, b=%g, x=%.12g) *no* convergence: NOTIFY R-core!\n dj=%g, rel.err=%g\n",
 		a,b,x, dj, fabs(dj) /(sum + l));
-    }
+	}
+    } // for(n .. n_terms..)
 
 /*                    ADD THE RESULTS TO W */
-    *ierr = 0;
+
     if(log_w) // *w is in log space already:
 	*w = logspace_add(*w, log_u + log(sum));
     else
@@ -1195,7 +1245,7 @@ static double grat_r(double a, double x, double log_r, double eps)
  *     It is assumed that a <= 1.  eps is the tolerance to be used.
  * ----------------------------------------------------------------------- */
 
-    if (a * x == 0.0) { /* L130: */
+    if (a * x == 0.) { /* L130: */
 	if (x <= a) {
 	    /* L100: */ return exp(-log_r);
 	} else {
@@ -1222,8 +1272,8 @@ static double grat_r(double a, double x, double log_r, double eps)
 
 	double an = 3.,
 	    c = x,
-	    sum = x / (a + 3.0),
-	    tol = eps * 0.1 / (a + 1.0), t;
+	    sum = x / (a + 3.),
+	    tol = eps * 0.1 / (a + 1.), t;
 	do {
 	    an += 1.;
 	    c *= -(x / an);
@@ -1236,13 +1286,13 @@ static double grat_r(double a, double x, double log_r, double eps)
 	double j = a * x * ((sum/6. - 0.5/(a + 2.)) * x + 1./(a + 1.)),
 	    z = a * log(x),
 	    h = gam1(a),
-	    g = h + 1.0;
+	    g = h + 1.;
 
 	if ((x >= 0.25 && (a < x / 2.59)) || (z > -0.13394)) {
 	    // L40:
 	    double l = rexpm1(z),
 		q = ((l + 0.5 + 0.5) * j - l) * g - h;
-	    if (q <= 0.0) {
+	    if (q <= 0.) {
 		R_ifDEBUG_printf(" => q_r= 0.\n");
 		/* L110:*/ return 0.;
 	    } else {
@@ -1259,10 +1309,10 @@ static double grat_r(double a, double x, double log_r, double eps)
     } else {
 	/* L50: ----  (x >= 1.1)  ---- Continued Fraction Expansion */
 
-	double a2n_1 = 1.0,
-	    a2n = 1.0,
+	double a2n_1 = 1.,
+	    a2n = 1.,
 	    b2n_1 = x,
-	    b2n = x + (1.0 - a),
+	    b2n = x + (1. - a),
 	    c = 1., am0, an0;
 
 	do {
@@ -1288,9 +1338,9 @@ static double basym(double a, double b, double lambda, double eps, int log_p)
 {
 /* ----------------------------------------------------------------------- */
 /*     ASYMPTOTIC EXPANSION FOR I_x(A,B) FOR LARGE A AND B. */
-/*     LAMBDA = (A + B)*Y - B  AND EPS IS THE TOLERANCE USED. */
-/*     IT IS ASSUMED THAT LAMBDA IS NONNEGATIVE AND THAT */
-/*     A AND B ARE GREATER THAN OR EQUAL TO 15. */
+/*    lambda := a y - b x  = (a + b)y - b  =  a - (a+b)x    {using x + y == 1},
+ *                             and eps is the tolerance used.
+ *     It is assumed that   lambda >= 0 , i.e., x <= a/(a+b), and both  a, b  >= 15   */
 /* ----------------------------------------------------------------------- */
 
 
@@ -1311,7 +1361,7 @@ static double basym(double a, double b, double lambda, double eps, int log_p)
 	t = -f;
     else {
 	t = exp(-f);
-	if (t == 0.0) {
+	if (t == 0.) {
 	    return 0; /* once underflow, always underflow .. */
 	}
     }
@@ -1322,14 +1372,14 @@ static double basym(double a, double b, double lambda, double eps, int log_p)
 
     if (a < b) {
 	h = a / b;
-	r0 = 1.0 / (h + 1.0);
+	r0 = 1. / (h + 1.);
 	r1 = (b - a) / b;
-	w0 = 1.0 / sqrt(a * (h + 1.0));
+	w0 = 1. / sqrt(a * (h + 1.));
     } else {
 	h = b / a;
-	r0 = 1.0 / (h + 1.0);
+	r0 = 1. / (h + 1.);
 	r1 = (b - a) / a;
-	w0 = 1.0 / sqrt(b * (h + 1.0));
+	w0 = 1. / sqrt(b * (h + 1.));
     }
 
     a0[0] = r1 * .66666666666666663;
@@ -1339,40 +1389,40 @@ static double basym(double a, double b, double lambda, double eps, int log_p)
 	j1 = e1,
 	sum = j0 + d[0] * w0 * j1;
 
-    double s = 1.0,
+    double s = 1.,
 	h2 = h * h,
-	hn = 1.0,
+	hn = 1.,
 	w = w0,
 	znm1 = z,
 	zn = z2;
     for (int n = 2; n <= num_IT; n += 2) {
 	hn *= h2;
-	a0[n - 1] = r0 * 2.0 * (h * hn + 1.0) / (n + 2.0);
+	a0[n - 1] = r0 * 2. * (h * hn + 1.) / (n + 2.);
 	int np1 = n + 1;
 	s += hn;
-	a0[np1 - 1] = r1 * 2.0 * s / (n + 3.0);
+	a0[np1 - 1] = r1 * 2. * s / (n + 3.);
 
 	for (int i = n; i <= np1; ++i) {
-	    double r = (i + 1.0) * -0.5;
+	    double r = (i + 1.) * -0.5;
 	    b0[0] = r * a0[0];
 	    for (int m = 2; m <= i; ++m) {
-		double bsum = 0.0;
+		double bsum = 0.;
 		for (int j = 1; j <= m-1; ++j) {
 		    int mmj = m - j;
 		    bsum += (j * r - mmj) * a0[j - 1] * b0[mmj - 1];
 		}
 		b0[m - 1] = r * a0[m - 1] + bsum / m;
 	    }
-	    c[i - 1] = b0[i - 1] / (i + 1.0);
+	    c[i - 1] = b0[i - 1] / (i + 1.);
 
-	    double dsum = 0.0;
+	    double dsum = 0.;
 	    for (int j = 1; j <= i-1; ++j) {
 		dsum += d[i - j - 1] * c[j - 1];
 	    }
 	    d[i - 1] = -(dsum + c[i - 1]);
 	}
 
-	j0 = e1 * znm1 + (n - 1.0) * j0;
+	j0 = e1 * znm1 + (n - 1.) * j0;
 	j1 = e1 * zn + n * j1;
 	znm1 = z2 * znm1;
 	zn = z2 * zn;
@@ -1398,16 +1448,16 @@ static double basym(double a, double b, double lambda, double eps, int log_p)
 
 static double exparg(int l)
 {
-/* -------------------------------------------------------------------- */
-/*     IF L = 0 THEN  EXPARG(L) = THE LARGEST POSITIVE W FOR WHICH
- *     EXP(W) CAN BE COMPUTED.  ==>  exparg(0) = 709.7827  nowadays. */
+/* --------------------------------------------------------------------
+ *     If l = 0 then  exparg(l) = The largest positive W for which
+ *     exp(W) can be computed. With 0.99999 fuzz  ==> exparg(0) =   709.7756  nowadays
 
-/*     IF L IS NONZERO THEN  EXPARG(L) = THE LARGEST NEGATIVE W FOR
- *     WHICH THE COMPUTED VALUE OF EXP(W) IS NONZERO.
- *       ==> exparg(1) = -708.3964   nowadays. */
+ *     if l = 1 (nonzero) then  exparg(l) = the largest negative W for
+ *     which the computed value of exp(W) is nonzero.
+ *     With 0.99999 fuzz			  ==> exparg(1) =  -709.0825  nowadays
 
-/*     Note... only an approximate value for exparg(L) is needed. */
-/* -------------------------------------------------------------------- */
+ *     Note... only an approximate value for exparg(L) is needed.
+ * -------------------------------------------------------------------- */
 
     static double const lnb = .69314718055995;
     int m = (l == 0) ? jags_i1mach(16) : jags_i1mach(15) - 1;
@@ -1426,15 +1476,15 @@ static double esum(int mu, double x, int give_log)
 
     // else :
     double w;
-    if (x > 0.0) { /* L10: */
+    if (x > 0.) { /* L10: */
 	if (mu > 0)  return exp((double) mu) * exp(x);
 	w = mu + x;
-	if (w < 0.0) return exp((double) mu) * exp(x);
+	if (w < 0.) return exp((double) mu) * exp(x);
     }
     else { /* x <= 0 */
 	if (mu < 0)  return exp((double) mu) * exp(x);
 	w = mu + x;
-	if (w > 0.0) return exp((double) mu) * exp(x);
+	if (w > 0.) return exp((double) mu) * exp(x);
     }
     return exp(w);
 
@@ -1454,13 +1504,13 @@ double rexpm1(double x)
     static double q4 = 5.95130811860248e-4;
 
     if (fabs(x) <= 0.15) {
-	return x * (((p2 * x + p1) * x + 1.0) /
-		    ((((q4 * x + q3) * x + q2) * x + q1) * x + 1.0));
+	return x * (((p2 * x + p1) * x + 1.) /
+		    ((((q4 * x + q3) * x + q2) * x + q1) * x + 1.));
     }
     else { /* |x| > 0.15 : */
 	double w = exp(x);
-	if (x > 0.0)
-	    return w * (0.5 - 1.0 / w + 0.5);
+	if (x > 0.)
+	    return w * (0.5 - 1. / w + 0.5);
 	else
 	    return w - 0.5 - 0.5;
     }
@@ -1484,11 +1534,11 @@ static double alnrel(double a)
 	q2 = .747811014037616,
 	q3 = -.0845104217945565;
     double
-	t = a / (a + 2.0),
+	t = a / (a + 2.),
 	t2 = t * t,
 	w = (((p3 * t2 + p2) * t2 + p1) * t2 + 1.) /
 	(((q3 * t2 + q2) * t2 + q1) * t2 + 1.);
-    return t * 2.0 * w;
+    return t * 2. * w;
 
 } /* alnrel */
 
@@ -1496,6 +1546,7 @@ static double rlog1(double x)
 {
 /* -----------------------------------------------------------------------
  *             Evaluation of the function  x - ln(1 + x)
+ *                                        ~=~ - log1pmx(x)  in ./pgamma.c
  * ----------------------------------------------------------------------- */
 
     static double a = .0566749439387324;
@@ -1507,7 +1558,6 @@ static double rlog1(double x)
     static double q2 = .354508718369557;
 
     double h, r, t, w, w1;
-
     if (x < -0.39 || x > 0.57) { /* direct evaluation */
 	w = x + 0.5 + 0.5;
 	return x - log(w);
@@ -1520,19 +1570,19 @@ static double rlog1(double x)
     }
     else if (x > 0.18) { /* L20: */
 	h = x * .75 - .25;
-	w1 = b + h / 3.0;
+	w1 = b + h / 3.;
     }
     else { /*		Argument Reduction */
 	h = x;
-	w1 = 0.0;
+	w1 = 0.;
     }
 
 /* L30:              	Series Expansion */
 
-    r = h / (h + 2.0);
+    r = h / (h + 2.);
     t = r * r;
-    w = ((p2 * t + p1) * t + p0) / ((q2 * t + q1) * t + 1.0);
-    return t * 2.0 * (1.0 / (1.0 - r) - r * w) + w1;
+    w = ((p2 * t + p1) * t + p0) / ((q2 * t + q1) * t + 1.);
+    return t * 2. * (1. / (1. - r) - r * w) + w1;
 
 } /* rlog1 */
 
@@ -1560,51 +1610,43 @@ static double erf__(double x)
     static double s[4] = { 94.153775055546,187.11481179959,
 	    99.0191814623914,18.0124575948747 };
 
-    /* System generated locals */
-    double ret_val;
-
     /* Local variables */
     double t, x2, ax, bot, top;
 
     ax = fabs(x);
     if (ax <= 0.5) {
 	t = x * x;
-	top = (((a[0] * t + a[1]) * t + a[2]) * t + a[3]) * t + a[4] + 1.0;
-	bot = ((b[0] * t + b[1]) * t + b[2]) * t + 1.0;
+	top = (((a[0] * t + a[1]) * t + a[2]) * t + a[3]) * t + a[4] + 1.;
+	bot = ((b[0] * t + b[1]) * t + b[2]) * t + 1.;
 
 	return x * (top / bot);
     }
-    /* else: ax > 0.5 */
 
-    if (ax <= 4.) { /*  ax in (0.5, 4] */
+    // else:  |x| > 0.5
 
+    if (ax <= 4.) { //  |x| in (0.5, 4]
 	top = ((((((p[0] * ax + p[1]) * ax + p[2]) * ax + p[3]) * ax + p[4]) * ax
 		+ p[5]) * ax + p[6]) * ax + p[7];
 	bot = ((((((q[0] * ax + q[1]) * ax + q[2]) * ax + q[3]) * ax + q[4]) * ax
 		+ q[5]) * ax + q[6]) * ax + q[7];
-	ret_val = 0.5 - exp(-x * x) * top / bot + 0.5;
-	if (x < 0.0) {
-	    ret_val = -ret_val;
-	}
-	return ret_val;
+	double R = 0.5 - exp(-x * x) * top / bot + 0.5;
+	return (x < 0) ? -R : R;
     }
 
-    /* else: ax > 4 */
+    // else:  |x| > 4
 
     if (ax >= 5.8) {
 	return x > 0 ? 1 : -1;
     }
-    x2 = x * x;
-    t = 1.0 / x2;
-    top = (((r[0] * t + r[1]) * t + r[2]) * t + r[3]) * t + r[4];
-    bot = (((s[0] * t + s[1]) * t + s[2]) * t + s[3]) * t + 1.0;
-    t = (c - top / (x2 * bot)) / ax;
-    ret_val = 0.5 - exp(-x2) * t + 0.5;
-    if (x < 0.0) {
-	ret_val = -ret_val;
-    }
-    return ret_val;
 
+    // else:  4 < |x| < 5.8
+    x2 = x * x;
+    t = 1. / x2;
+    top = (((r[0] * t + r[1]) * t + r[2]) * t + r[3]) * t + r[4];
+    bot = (((s[0] * t + s[1]) * t + s[2]) * t + s[3]) * t + 1.;
+    t = (c - top / (x2 * bot)) / ax;
+    double R = 0.5 - exp(-x2) * t + 0.5;
+    return (x < 0) ? -R : R;
 } /* erf */
 
 static double erfc1(int ind, double x)
@@ -1612,8 +1654,9 @@ static double erfc1(int ind, double x)
 /* ----------------------------------------------------------------------- */
 /*         EVALUATION OF THE COMPLEMENTARY ERROR FUNCTION */
 
-/*          ERFC1(IND,X) = ERFC(X)            IF IND = 0 */
-/*          ERFC1(IND,X) = EXP(X*X)*ERFC(X)   OTHERWISE */
+/*          ERFC1(ind,X) = ERFC(X)            if ind = 0
+ *          ERFC1(ind,X) = EXP(X*X)*ERFC(X)   otherwise, the *scaled* erfc(),
+ *	    				      (the only one used here)     */
 /* ----------------------------------------------------------------------- */
 
     /* Initialized data */
@@ -1641,8 +1684,8 @@ static double erfc1(int ind, double x)
     //				|X| <= 0.5 */
     if (ax <= 0.5) {
 	double t = x * x,
-	    top = (((a[0] * t + a[1]) * t + a[2]) * t + a[3]) * t + a[4] + 1.0,
-	    bot = ((b[0] * t + b[1]) * t + b[2]) * t + 1.0;
+	    top = (((a[0] * t + a[1]) * t + a[2]) * t + a[3]) * t + a[4] + 1.,
+	    bot = ((b[0] * t + b[1]) * t + b[2]) * t + 1.;
 	ret_val = 0.5 - x * (top / bot) + 0.5;
 	if (ind != 0) {
 	    ret_val = exp(t) * ret_val;
@@ -1650,7 +1693,7 @@ static double erfc1(int ind, double x)
 	return ret_val;
     }
     // else (L10:):		0.5 < |X| <= 4
-    if (ax <= 4.0) {
+    if (ax <= 4.) {
 	top = ((((((p[0] * ax + p[1]) * ax + p[2]) * ax + p[3]) * ax + p[4]) * ax
 		+ p[5]) * ax + p[6]) * ax + p[7];
 	bot = ((((((q[0] * ax + q[1]) * ax + q[2]) * ax + q[3]) * ax + q[4]) * ax
@@ -1661,37 +1704,38 @@ static double erfc1(int ind, double x)
 	// L20:
 	if (x <= -5.6) {
 	    // L50:            	LIMIT VALUE FOR "LARGE" NEGATIVE X
-	    ret_val = 2.0;
+	    ret_val = 2.;
 	    if (ind != 0) {
-		ret_val = exp(x * x) * 2.0;
+		ret_val = exp(x * x) * 2.;
 	    }
 	    return ret_val;
 	}
-	if (ind == 0 && (x > 100.0 || x * x > -exparg(1))) {
-	    // LIMIT VALUE FOR LARGE POSITIVE X   WHEN IND = 0
+	if (ind == 0 && (x > 100. || x * x > -exparg(1))) {
+	    // nowadays: -exparg(1) = 709.0825.. : above <===> |x| > 26.6286
+	    // Underflow to limit for large positive x   when ind = 0
 	    // L60:
-	    return 0.0;
+	    return 0.;
 	}
 
-	// L30:
+	// L30:  -5.6 < x < -4  or  4 < x <= 26.6286..
 	t = 1. / (x * x);
 	top = (((r[0] * t + r[1]) * t + r[2]) * t + r[3]) * t + r[4];
-	bot = (((s[0] * t + s[1]) * t + s[2]) * t + s[3]) * t + 1.0;
+	bot = (((s[0] * t + s[1]) * t + s[2]) * t + s[3]) * t + 1.;
 	ret_val = (c - t * top / bot) / ax;
     }
 
     // L40:                 FINAL ASSEMBLY
     if (ind != 0) {
-	if (x < 0.0)
-	    ret_val = exp(x * x) * 2.0 - ret_val;
+	if (x < 0.)
+	    ret_val = exp(x * x) * 2. - ret_val;
     } else {
 	// L41:  ind == 0 :
 	w = x * x;
 	t = w;
 	e = w - t;
 	ret_val = (0.5 - e + 0.5) * exp(-t) * ret_val;
-	if (x < 0.0)
-	    ret_val = 2.0 - ret_val;
+	if (x < 0.)
+	    ret_val = 2. - ret_val;
     }
     return ret_val;
 
@@ -1703,14 +1747,12 @@ static double gam1(double a)
 /*     COMPUTATION OF 1/GAMMA(A+1) - 1  FOR -0.5 <= A <= 1.5 */
 /*     ------------------------------------------------------------------ */
 
-    double d, t, w, bot, top;
+    double d = a - 0.5;
+    // t := if(a > 1/2)  a-1  else  a  ==>  in [-0.5, 0.5]  <==>  |t| <= 0.5
+    double t = (d > 0.) ? d - 0.5 : a;
 
-    t = a;
-    d = a - 0.5;
-    // t := if(a > 1/2)  a-1  else  a
-    if (d > 0.0)
-	t = d - 0.5;
-    if (t < 0.0) { /* L30: */
+    double w, bot, top;
+    if (t < 0.) { /* L30: */
 	static double
 	    r[9] = { -.422784335098468,-.771330383816272,
 		     -.244757765222226,.118378989872749,9.30357293360349e-4,
@@ -1721,10 +1763,10 @@ static double gam1(double a)
 
 	top = (((((((r[8] * t + r[7]) * t + r[6]) * t + r[5]) * t + r[4]
 		     ) * t + r[3]) * t + r[2]) * t + r[1]) * t + r[0];
-	bot = (s2 * t + s1) * t + 1.0;
+	bot = (s2 * t + s1) * t + 1.;
 	w = top / bot;
 	R_ifDEBUG_printf("  gam1(a = %.15g): t < 0: w=%.15g\n", a, w);
-	if (d > 0.0)
+	if (d > 0.)
 	    return t * w / a;
 	else
 	    return a * (w + 0.5 + 0.5);
@@ -1742,11 +1784,11 @@ static double gam1(double a)
 
 	top = (((((p[6] * t + p[5]) * t + p[4]) * t + p[3]) * t + p[2]
 		   ) * t + p[1]) * t + p[0];
-	bot = (((q[4] * t + q[3]) * t + q[2]) * t + q[1]) * t + 1.0;
+	bot = (((q[4] * t + q[3]) * t + q[2]) * t + q[1]) * t + 1.;
 	w = top / bot;
 	R_ifDEBUG_printf("  gam1(a = %.15g): t > 0: (is a < 1.5 ?)  w=%.15g\n",
 			 a, w);
-	if (d > 0.0) /* L21: */
+	if (d > 0.) /* L21: */
 	    return t / a * (w - 0.5 - 0.5);
 	else
 	    return a * w;
@@ -1792,7 +1834,7 @@ static double gamln1(double a)
 	static double s5 = 1.16165475989616e-4;
 	double x = a - 0.5 - 0.5;
 	w = (((((r5 * x + r4) * x + r3) * x + r2) * x + r1) * x + r0) /
-	    (((((s5 * x + s4) * x + s3) * x + s2) * x + s1) * x + 1.0);
+	    (((((s5 * x + s4) * x + s3) * x + s2) * x + s1) * x + 1.);
 	return x * w;
     }
 } /* gamln1 */
@@ -1824,7 +1866,7 @@ static double psi(double x)
 
 /* --------------------------------------------------------------------- */
 /*     COEFFICIENTS FOR RATIONAL APPROXIMATION OF */
-/*     PSI(X) / (X - X0),  0.5 <= X <= 3.0 */
+/*     PSI(X) / (X - X0),  0.5 <= X <= 3. */
     static double p1[7] = { .0089538502298197,4.77762828042627,
 	    142.441585084029,1186.45200713425,3633.51846806499,
 	    4138.10161269013,1305.60269827897 };
@@ -1836,7 +1878,7 @@ static double psi(double x)
 
 /* --------------------------------------------------------------------- */
 /*     COEFFICIENTS FOR RATIONAL APPROXIMATION OF */
-/*     PSI(X) - LN(X) + 1 / (2*X),  X > 3.0 */
+/*     PSI(X) - LN(X) + 1 / (2*X),  X > 3. */
 
     static double p2[4] = { -2.12940445131011,-7.01677227766759,
 	    -4.48616543918019,-.648157123766197 };
@@ -1870,7 +1912,7 @@ static double psi(double x)
 /*                 MAY BE REPRESENTED BY 1/X. */
     xsmall = 1e-9;
 /* --------------------------------------------------------------------- */
-    aug = 0.0;
+    aug = 0.;
     if (x < 0.5) {
 /* --------------------------------------------------------------------- */
 /*     X < 0.5,  USE REFLECTION FORMULA */
@@ -1878,14 +1920,14 @@ static double psi(double x)
 /* --------------------------------------------------------------------- */
 	if (fabs(x) <= xsmall) {
 
-	    if (x == 0.0) {
+	    if (x == 0.) {
 		goto L_err;
 	    }
 /* --------------------------------------------------------------------- */
 /*     0 < |X| <= XSMALL.  USE 1/X AS A SUBSTITUTE */
 /*     FOR  PI*COTAN(PI*X) */
 /* --------------------------------------------------------------------- */
-	    aug = -1.0 / x;
+	    aug = -1. / x;
 	} else { /* |x| > xsmall */
 /* --------------------------------------------------------------------- */
 /*     REDUCTION OF ARGUMENT FOR COTAN */
@@ -1893,7 +1935,7 @@ static double psi(double x)
 	    /* L100: */
 	    w = -x;
 	    sgn = piov4;
-	    if (w <= 0.0) {
+	    if (w <= 0.) {
 		w = -w;
 		sgn = -sgn;
 	    }
@@ -1905,16 +1947,16 @@ static double psi(double x)
 	    }
 	    nq = (int) w;
 	    w -= (double) nq;
-	    nq = (int) (w * 4.0);
-	    w = (w - (double) nq * 0.25) * 4.0;
+	    nq = (int) (w * 4.);
+	    w = (w - (double) nq * 0.25) * 4.;
 /* --------------------------------------------------------------------- */
-/*     W IS NOW RELATED TO THE FRACTIONAL PART OF  4.0 * X. */
+/*     W IS NOW RELATED TO THE FRACTIONAL PART OF  4. * X. */
 /*     ADJUST ARGUMENT TO CORRESPOND TO VALUES IN FIRST */
 /*     QUADRANT AND DETERMINE SIGN */
 /* --------------------------------------------------------------------- */
 	    n = nq / 2;
 	    if (n + n != nq) {
-		w = 1.0 - w;
+		w = 1. - w;
 	    }
 	    z = piov4 * w;
 	    m = n / 2;
@@ -1931,27 +1973,27 @@ static double psi(double x)
 /* --------------------------------------------------------------------- */
 /*     CHECK FOR SINGULARITY */
 /* --------------------------------------------------------------------- */
-		if (z == 0.0) {
+		if (z == 0.) {
 		    goto L_err;
 		}
 /* --------------------------------------------------------------------- */
 /*     USE COS/SIN AS A SUBSTITUTE FOR COTAN, AND */
 /*     SIN/COS AS A SUBSTITUTE FOR TAN */
 /* --------------------------------------------------------------------- */
-		aug = sgn * (cos(z) / sin(z) * 4.0);
+		aug = sgn * (cos(z) / sin(z) * 4.);
 
 	    } else { /* L140: */
-		aug = sgn * (sin(z) / cos(z) * 4.0);
+		aug = sgn * (sin(z) / cos(z) * 4.);
 	    }
 	}
 
-	x = 1.0 - x;
+	x = 1. - x;
 
     }
     /* L200: */
-    if (x <= 3.0) {
+    if (x <= 3.) {
 /* --------------------------------------------------------------------- */
-/*     0.5 <= X <= 3.0 */
+/*     0.5 <= X <= 3. */
 /* --------------------------------------------------------------------- */
 	den = x;
 	upper = p1[0] * x;
@@ -1971,9 +2013,9 @@ static double psi(double x)
 /* --------------------------------------------------------------------- */
     if (x < xmax1) {
 /* --------------------------------------------------------------------- */
-/*     3.0 < X < XMAX1 */
+/*     3. < X < XMAX1 */
 /* --------------------------------------------------------------------- */
-	w = 1.0 / (x * x);
+	w = 1. / (x * x);
 	den = w;
 	upper = p2[0] * w;
 
@@ -1996,21 +2038,19 @@ L_err:
 static double betaln(double a0, double b0)
 {
 /* -----------------------------------------------------------------------
- *     Evaluation of the logarithm of the beta function  ln(beta(a0,b0))
+ *     Evaluation of the logarithm of the beta function  ln(beta(a0,b0))   -- in R:  lbeta(a0, b0)
  * ----------------------------------------------------------------------- */
-
-    static double e = .918938533204673;/* e == 0.5*LN(2*PI) */
 
     double
 	a = min(a0 ,b0),
 	b = max(a0, b0);
 
-    if (a < 8.0) {
-	if (a < 1.0) {
+    if (a < 8.) {
+	if (a < 1.) {
 /* ----------------------------------------------------------------------- */
 //                    		A < 1
 /* ----------------------------------------------------------------------- */
-	    if (b < 8.0)
+	    if (b < 8.)
 		return gamln(a) + (gamln(b) - gamln(a+b));
 	    else
 		return gamln(a) + algdiv(a, b);
@@ -2020,14 +2060,14 @@ static double betaln(double a0, double b0)
 //				1 <= A < 8
 /* ----------------------------------------------------------------------- */
 	double w;
-	if (a < 2.0) {
-	    if (b <= 2.0) {
+	if (a < 2.) {
+	    if (b <= 2.) {
 		return gamln(a) + gamln(b) - gsumln(a, b);
 	    }
 	    /* else */
 
-	    w = 0.0;
-	    if (b < 8.0) {
+	    if (b < 8.) {
+		w = 0.;
 		goto L40;
 	    }
 	    return gamln(a) + algdiv(a, b);
@@ -2035,35 +2075,35 @@ static double betaln(double a0, double b0)
 	// else L30:    REDUCTION OF A WHEN B <= 1000
 
 	if (b <= 1e3) {
-	    int n = (int)(a - 1.0);
-	    w = 1.0;
+	    int n = (int)(a - 1.);
+	    w = 1.;
 	    for (int i = 1; i <= n; ++i) {
-		a += -1.0;
+		a += -1.;
 		double h = a / b;
-		w *= h / (h + 1.0);
+		w *= h / (h + 1.);
 	    }
 	    w = log(w);
 
-	    if (b >= 8.0)
+	    if (b >= 8.)
 		return w + gamln(a) + algdiv(a, b);
 
 	    // else
 	L40:
-	    // 		reduction of B when  B < 8
-	    n = (int)(b - 1.0);
-	    double z = 1.0;
+	    // 	1 < A <= B < 8 :  reduction of B
+	    n = (int)(b - 1.);
+	    double z = 1.;
 	    for (int i = 1; i <= n; ++i) {
-		b += -1.0;
+		b += -1.;
 		z *= b / (a + b);
 	    }
 	    return w + log(z) + (gamln(a) + (gamln(b) - gsumln(a, b)));
 	}
 	else { // L50:	reduction of A when  B > 1000
-	    int n = (int)(a - 1.0);
-	    w = 1.0;
+	    int n = (int)(a - 1.);
+	    w = 1.;
 	    for (int i = 1; i <= n; ++i) {
-		a += -1.0;
-		w *= a / (a / b + 1.0);
+		a += -1.;
+		w *= a / (a / b + 1.);
 	    }
 	    return log(w) - n * log(b) + (gamln(a) + algdiv(a, b));
 	}
@@ -2072,11 +2112,11 @@ static double betaln(double a0, double b0)
 /* ----------------------------------------------------------------------- */
 	// L60:			A >= 8
 /* ----------------------------------------------------------------------- */
-
+	static double e = .918938533204673;/* e == 0.5*LN(2*PI) */
 	double
 	    w = bcorr(a, b),
 	    h = a / b,
-	    u = -(a - 0.5) * log(h / (h + 1.0)),
+	    u = -(a - 0.5) * log(h / (h + 1.)),
 	    v = b * alnrel(h);
 	if (u > v)
 	    return log(b) * -0.5 + e + w - v - u;
@@ -2096,13 +2136,13 @@ static double gsumln(double a, double b)
     double x = a + b - 2.;/* in [0, 2] */
 
     if (x <= 0.25)
-	return gamln1(x + 1.0);
+	return gamln1(x + 1.);
 
     /* else */
     if (x <= 1.25)
 	return gamln1(x) + alnrel(x);
     /* else x > 1.25 : */
-    return gamln1(x - 1.0) + log(x * (x + 1.0));
+    return gamln1(x - 1.) + log(x * (x + 1.));
 
 } /* gsumln */
 
@@ -2124,9 +2164,6 @@ static double bcorr(double a0, double b0)
     static double c4 = 8.37308034031215e-4;
     static double c5 = -.00165322962780713;
 
-    /* System generated locals */
-    double ret_val, r1;
-
     /* Local variables */
     double a, b, c, h, t, w, x, s3, s5, x2, s7, s9, s11;
 /* ------------------------ */
@@ -2134,35 +2171,27 @@ static double bcorr(double a0, double b0)
     b = max(a0, b0);
 
     h = a / b;
-    c = h / (h + 1.0);
-    x = 1.0 / (h + 1.0);
+    c = h / (h + 1.);
+    x = 1. / (h + 1.);
     x2 = x * x;
 
-/*                SET SN = (1 - X^N)/(1 - X) */
-
-    s3 = x + x2 + 1.0;
-    s5 = x + x2 * s3 + 1.0;
-    s7 = x + x2 * s5 + 1.0;
-    s9 = x + x2 * s7 + 1.0;
-    s11 = x + x2 * s9 + 1.0;
+/*                SET s<n> := (1 - x^n)/(1 - x) */
+    s3 = x + x2 + 1.;
+    s5 = x + x2 * s3 + 1.;
+    s7 = x + x2 * s5 + 1.;
+    s9 = x + x2 * s7 + 1.;
+    s11= x + x2 * s9 + 1.;
 
 /*                SET W = DEL(B) - DEL(A + B) */
 
-/* Computing 2nd power */
-    r1 = 1.0 / b;
-    t = r1 * r1;
+    t = 1. / b; t *= t; // t := 1 / b^2
     w = ((((c5 * s11 * t + c4 * s9) * t + c3 * s7) * t + c2 * s5) * t + c1 *
 	    s3) * t + c0;
     w *= c / b;
 
 /*                   COMPUTE  DEL(A) + W */
-
-/* Computing 2nd power */
-    r1 = 1.0 / a;
-    t = r1 * r1;
-    ret_val = (((((c5 * t + c4) * t + c3) * t + c2) * t + c1) * t + c0) / a +
-	    w;
-    return ret_val;
+    t = 1. / a; t *= t; // t:= 1 / a^2
+    return (((((c5 * t + c4) * t + c3) * t + c2) * t + c1) * t + c0) / a + w;
 } /* bcorr */
 
 static double algdiv(double a, double b)
@@ -2192,25 +2221,25 @@ static double algdiv(double a, double b)
 /* ------------------------ */
     if (a > b) {
 	h = b / a;
-	c = 1.0 / (h + 1.0);
-	x = h / (h + 1.0);
+	c = 1. / (h + 1.);
+	x = h / (h + 1.);
 	d = a + (b - 0.5);
     }
     else {
 	h = a / b;
-	c = h / (h + 1.0);
-	x = 1.0 / (h + 1.0);
+	c = h / (h + 1.);
+	x = 1. / (h + 1.);
 	d = b + (a - 0.5);
     }
 
 /* Set s<n> = (1 - x^n)/(1 - x) : */
 
     x2 = x * x;
-    s3 = x + x2 + 1.0;
-    s5 = x + x2 * s3 + 1.0;
-    s7 = x + x2 * s5 + 1.0;
-    s9 = x + x2 * s7 + 1.0;
-    s11 = x + x2 * s9 + 1.0;
+    s3 = x + x2 + 1.;
+    s5 = x + x2 * s3 + 1.;
+    s7 = x + x2 * s5 + 1.;
+    s9 = x + x2 * s7 + 1.;
+    s11 = x + x2 * s9 + 1.;
 
 /* w := Del(b) - Del(a + b) */
 
@@ -2222,7 +2251,7 @@ static double algdiv(double a, double b)
 /*                    COMBINE THE RESULTS */
 
     u = d * alnrel(a / b);
-    v = a * (log(b) - 1.0);
+    v = a * (log(b) - 1.);
     if (u > v)
 	return w - v - u;
     else
@@ -2253,12 +2282,12 @@ static double gamln(double a)
     else if (a <= 2.25)
 	return gamln1(a - 0.5 - 0.5);
 
-    else if (a < 10.0) {
+    else if (a < 10.) {
 	int i, n = (int)(a - 1.25);
 	double t = a;
-	double w = 1.0;
+	double w = 1.;
 	for (i = 1; i <= n; ++i) {
-	    t += -1.0;
+	    t += -1.;
 	    w *= t;
 	}
 	return gamln1(t - 1.) + log(w);
@@ -2266,6 +2295,6 @@ static double gamln(double a)
     else { /* a >= 10 */
 	double t = 1. / (a * a);
 	double w = (((((c5 * t + c4) * t + c3) * t + c2) * t + c1) * t + c0) / a;
-	return d + w + (a - 0.5) * (log(a) - 1.0);
+	return d + w + (a - 0.5) * (log(a) - 1.);
     }
 } /* gamln */

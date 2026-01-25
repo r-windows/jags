@@ -9,7 +9,7 @@
 
 #include "nmath.h"
 
-double attribute_hidden jags_gamma_cody(double x)
+attribute_hidden double jags_gamma_cody(double x)
 {
 /* ----------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 /*
  *  Mathlib - A Mathematical Function Library
  *  Copyright (C) 1998  Ross Ihaka
- *  Copyright (C) 2000-7 The R Core Team
+ *  Copyright (C) 2000-2024 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #include "nmath.h"
@@ -43,7 +43,7 @@ attribute_hidden int jags_i1mach(int i)
     case 12: return FLT_MIN_EXP;
     case 13: return FLT_MAX_EXP;
 
-    case 14: return DBL_MANT_DIG;
+    case 14: return DBL_MANT_DIG; // 53
     case 15: return DBL_MIN_EXP;
     case 16: return DBL_MAX_EXP;
 

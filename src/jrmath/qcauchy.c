@@ -17,7 +17,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  http://www.gnu.org/copyleft/gpl.html.
+ *  along with this program; if not, a copy is available at
+ *  https://www.R-project.org/Licenses/
  *
  *  DESCRIPTION
  *
@@ -37,7 +38,7 @@ double qcauchy(double p, double location, double scale,
     R_Q_P01_check(p);
     if (scale <= 0 || !R_FINITE(scale)) {
 	if (scale == 0) return location;
-	/* else */ ML_ERR_return_NAN;
+	/* else */ ML_WARN_return_NAN;
     }
 
 #define my_INF location + (lower_tail ? scale : -scale) * ML_POSINF

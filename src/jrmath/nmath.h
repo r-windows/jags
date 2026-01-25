@@ -1,6 +1,6 @@
 /*
  *  Mathlib : A C Library of Special Functions
- *  Copyright (C) 1998-2013  The R Core Team
+ *  Copyright (C) 1998-2025  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,13 +14,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
-
-/* S Like Fortran Interface */
-/* These may not be adequate everywhere. Convex had _ prepending common
-   blocks, and some compilers may need to specify Fortran linkage */
-
 
 
 /* Remap for JAGS */
@@ -43,6 +38,11 @@
 #  define LDOUBLE double
 #endif
 
+/* To ensure atanpi, cospi,  sinpi, tanpi are defined */
+# ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
+#  define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
+# endif
+
 #include <math.h>
 #include <float.h> /* DBL_MIN etc */
 
@@ -52,6 +52,7 @@
 double  jags_d1mach(int);
 double	jags_gamma_cody(double);
 
+ 
 /* Copied from R_ext/RS.h */
 
 #ifdef HAVE_F77_UNDERSCORE
@@ -65,15 +66,15 @@ double	jags_gamma_cody(double);
 #define F77_COMDECL(x) F77_CALL(x)
 
 /* moved from dpq.h */
-#ifdef HAVE_NEARYINT
-# define R_forceint(x)   nearbyint()
+#ifdef HAVE_NEARBYINT
+# define R_forceint(x)   nearbyint(x)
 #else
 # define R_forceint(x)   round(x)
 #endif
-//R >= 3.1.0: # define R_nonint(x) 	  (fabs((x) - R_forceint(x)) > 1e-7)
-# define R_nonint(x) 	  (fabs((x) - R_forceint(x)) > 1e-7*fmax2(1., fabs(x)))
-
-/* Mathlib standalone */
+//R >= 3.1.0; previously: (fabs((x) - R_forceint(x)) > 1e-7)
+//R >= 4.4.0; previously: (fabs((x) - R_forceint(x)) > 1e-7 * fmax2(1., fabs(x)))
+# define R_nonint(x) 	  (fabs((x) - R_forceint(x)) > 1e-9 * fmax2(1., fabs(x)))
+/*						       .... maybe change even to ~ 1e-11 or 12 */
 
 #include <stdio.h>
 #include <stdlib.h> /* for exit */
@@ -83,9 +84,18 @@ double	jags_gamma_cody(double);
 #define MATHLIB_WARNING3(fmt,x,x2,x3)	printf(fmt,x,x2,x3)
 #define MATHLIB_WARNING4(fmt,x,x2,x3,x4) printf(fmt,x,x2,x3,x4)
 #define MATHLIB_WARNING5(fmt,x,x2,x3,x4,x5) printf(fmt,x,x2,x3,x4,x5)
+#define MATHLIB_WARNING6(fmt,x,x2,x3,x4,x5,x6) printf(fmt,x,x2,x3,x4,x5,x6)
 
 #define ISNAN(x) (isnan(x)!=0)
-#define R_FINITE(x)    JR_finite(x)
+// Arith.h defines it
+#ifndef R_FINITE
+#ifdef HAVE_WORKING_ISFINITE
+/* isfinite is defined in <math.h> according to C99 */
+# define R_FINITE(x)    isfinite(x)
+#else
+# define R_FINITE(x)    JR_finite(x)
+#endif
+#endif
 int JR_finite(double);
 
 #define ML_POSINF	(1.0 / 0.0)
@@ -107,15 +117,16 @@ int JR_finite(double);
 #define ME_PRECISION	8
 /*	does not have "full" precision */
 #define ME_UNDERFLOW	16
-/*	and underflow occured (important for IEEE)*/
+/*	and underflow occurred (important for IEEE)*/
 
-#define ML_ERR_return_NAN { ML_ERROR(ME_DOMAIN, ""); return ML_NAN; }
 
-/* For a long time prior to R 2.3.0 ML_ERROR did nothing.
+#define ML_WARN_return_NAN { ML_WARNING(ME_DOMAIN, ""); return ML_NAN; }
+
+/* For a long time prior to R 2.3.0 ML_WARNING did nothing.
    We don't report ME_DOMAIN errors as the callers collect ML_NANs into
    a single warning.
  */
-#define ML_ERROR(x, s) { \
+#define ML_WARNING(x, s) { \
    if(x > ME_DOMAIN) { \
        char *msg = ""; \
        switch(x) { \
@@ -153,42 +164,47 @@ int JR_finite(double);
 
 /* always remap internal functions */
 #define bd0       	jags_bd0
+#define ebd0       	jags_ebd0
 #define chebyshev_eval	jags_chebyshev_eval
 #define chebyshev_init	jags_chebyshev_init
 #define gammalims	jags_gammalims
 #define lfastchoose	jags_lfastchoose
 #define lgammacor	jags_lgammacor
 #define stirlerr       	jags_stirlerr
+#define pnchisq_raw   	jags_pnchisq_raw
+#define pgamma_raw   	jags_pgamma_raw
+#define pnbeta_raw   	jags_pnbeta_raw
+#define pnbeta2       	jags_pnbeta2
+#define bratio       	jags_bratio
 
 	/* Chebyshev Series */
 
-int	attribute_hidden chebyshev_init(double*, int, double);
-double	attribute_hidden chebyshev_eval(double, const double *, const int);
+attribute_hidden int chebyshev_init(double*, int, double);
+attribute_hidden double chebyshev_eval(double, const double *, const int);
 
 	/* Gamma and Related Functions */
 
-void	attribute_hidden gammalims(double*, double*);
-double	attribute_hidden lgammacor(double); /* log(gamma) correction */
-double  attribute_hidden stirlerr(double);  /* Stirling expansion "error" */
+attribute_hidden void gammalims(double*, double*);
+attribute_hidden double lgammacor(double); /* log(gamma) correction */
+attribute_hidden double stirlerr(double);  /* Stirling expansion "error" */
 
-double	attribute_hidden lfastchoose(double, double);
+attribute_hidden double lfastchoose(double, double);
 
-double  attribute_hidden bd0(double, double);
+attribute_hidden double bd0(double, double);
+attribute_hidden void ebd0(double, double, double*, double*);
 
-double	attribute_hidden dbinom_raw(double, double, double, double, int);
-double	attribute_hidden dpois_raw (double, double, int);
-double  attribute_hidden pnchisq_raw(double, double, double, double, double, 
+attribute_hidden double pnchisq_raw(double, double, double, double, double,
 				     int, Rboolean, Rboolean);
-double  attribute_hidden pgamma_raw(double, double, int, int);
-double	attribute_hidden pbeta_raw(double, double, double, int, int);
-double  attribute_hidden qchisq_appr(double, double, double, int, int, double tol);
-LDOUBLE attribute_hidden pnbeta_raw(double, double, double, double, double);
-double	attribute_hidden pnbeta2(double, double, double, double, double, int, int);
+attribute_hidden double pgamma_raw(double, double, int, int);
+attribute_hidden double pbeta_raw(double, double, double, int, int);
+attribute_hidden double qchisq_appr(double, double, double, int, int, double tol);
+attribute_hidden LDOUBLE pnbeta_raw(double, double, double, double, double);
+attribute_hidden double pnbeta2(double, double, double, double, double, int, int);
 
 int	jags_i1mach(int);
 
 /* From toms708.c */
-void attribute_hidden bratio(double a, double b, double x, double y,
+attribute_hidden void bratio(double a, double b, double x, double y,
 	    		     double *w, double *w1, int *ierr, int log_p);
 
 

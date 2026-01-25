@@ -1,7 +1,7 @@
 /*
  *  Mathlib : A C Library of Special Functions
  *  Copyright (C) 1998 Ross Ihaka
- *  Copyright (C) 2000-2002 The R Core Team
+ *  Copyright (C) 2000-2015 The R Core Team
  *  Copyright (C) 2015 Martyn Plummer
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  DESCRIPTION
  *
@@ -34,15 +34,12 @@ double pweibull2(double x, double shape, double rate, int lower_tail, int log_p)
     if (ISNAN(x) || ISNAN(shape) || ISNAN(rate))
 	return x + shape + rate;
 #endif
-    if(shape <= 0 || rate <= 0) ML_ERR_return_NAN;
+    if(shape <= 0 || rate <= 0) ML_WARN_return_NAN;
 
     if (x <= 0)
 	return R_DT_0;
     x = - rate * pow(x, shape);
-    if (lower_tail)
-	return (log_p
-		/* log(1 - exp(x))  for x < 0 : */
-		? R_Log1_Exp(x) : -expm1(x));
-    /* else:  !lower_tail */
-    return R_D_exp(x);
+    return lower_tail
+	? (log_p ? R_Log1_Exp(x) : -expm1(x))
+	: R_D_exp(x);
 }

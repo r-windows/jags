@@ -1,8 +1,8 @@
 /*
  *  Mathlib : A C Library of Special Functions
- *  Copyright (C) 1998	    Ross Ihaka
- *  Copyright (C) 2000-2013 The R Core Team
+ *  Copyright (C) 2000-2024 The R Core Team
  *  Copyright (C) 2003	    The R Foundation
+ *  Copyright (C) 1998	    Ross Ihaka
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  SYNOPSIS
  *
@@ -72,7 +72,7 @@ double pnorm5(double x, double mu, double sigma, int lower_tail, int log_p)
 #endif
     if(!R_FINITE(x) && mu == x) return ML_NAN;/* x-mu is NaN */
     if (sigma <= 0) {
-	if(sigma < 0) ML_ERR_return_NAN;
+	if(sigma < 0) ML_WARN_return_NAN;
 	/* sigma = 0 : */
 	return (x < mu) ? R_DT_0 : R_DT_1;
     }
@@ -86,7 +86,6 @@ double pnorm5(double x, double mu, double sigma, int lower_tail, int log_p)
     return(lower_tail ? p : cp);
 }
 
-#define SIXTEN	16 /* Cutoff allowing exact "*" and "/" */
 
 void pnorm_both(double x, double *cum, double *ccum, int i_tail, int log_p)
 {
@@ -145,9 +144,6 @@ void pnorm_both(double x, double *cum, double *ccum, int i_tail, int log_p)
     };
 
     double xden, xnum, temp, del, eps, xsq, y;
-#ifdef NO_DENORMS
-    double min = DBL_MIN;
-#endif
     int i, lower, upper;
 
 #ifdef IEEE_754
@@ -193,18 +189,20 @@ void pnorm_both(double x, double *cum, double *ccum, int i_tail, int log_p)
 	}
 	temp = (xnum + c[7]) / (xden + d[7]);
 
-#define do_del(X)							\
-	xsq = trunc(X * SIXTEN) / SIXTEN;				\
-	del = (X - xsq) * (X + xsq);					\
-	if(log_p) {							\
-	    *cum = (-xsq * xsq * 0.5) + (-del * 0.5) + log(temp);	\
-	    if((lower && x > 0.) || (upper && x <= 0.))			\
-		  *ccum = log1p(-exp(-xsq * xsq * 0.5) *		\
-				exp(-del * 0.5) * temp);		\
-	}								\
-	else {								\
-	    *cum = exp(-xsq * xsq * 0.5) * exp(-del * 0.5) * temp;	\
-	    *ccum = 1.0 - *cum;						\
+#define d_2(_x_) ldexp(_x_, -1) // == (_x_ / 2 )  "perfectly"
+
+#define do_del(X)						\
+	xsq = ldexp(trunc(ldexp(X, 4)), -4);			\
+	del = (X - xsq) * (X + xsq);				\
+	if(log_p) {						\
+	    *cum = (-xsq * d_2(xsq)) -d_2(del) + log(temp);	\
+	    if((lower && x > 0.) || (upper && x <= 0.))		\
+		  *ccum = log1p(-exp(-xsq * d_2(xsq)) *		\
+				exp(-d_2(del)) * temp);		\
+	}							\
+	else {							\
+	    *cum = exp(-xsq * d_2(xsq)) * exp(-d_2(del)) * temp;\
+	    *ccum = 1.0 - *cum;					\
 	}
 
 #define swap_tail						\
@@ -225,8 +223,10 @@ void pnorm_both(double x, double *cum, double *ccum, int i_tail, int log_p)
  * Note that we do want symmetry(0), lower/upper -> hence use y
  */
     else if((log_p && y < 1e170) /* avoid underflow below */
-	/*  ^^^^^ MM FIXME: can speedup for log_p and much larger |x| !
-	 * Then, make use of  Abramowitz & Stegun, 26.2.13, something like
+	/*  ^^^^^ MM FIXME: could speed up for log_p and  y := |x| >> 5.657 !
+	 * Then, make use of  Abramowitz & Stegun, 26.2.13, p.932,  something like
+
+	 * Even smarter: work with   example(pnormAsymp, package="DPQ")
 
 	 xsq = x*x;
 
@@ -239,11 +239,16 @@ void pnorm_both(double x, double *cum, double *ccum, int i_tail, int log_p)
 
  	 swap_tail;
 
-	 [Yes, but xsq might be infinite.]
+	 Yes, but xsq might be infinite;
+ 	 well, actually  x = -1.34..e154 = -sqrt(DBL_MAX) already overflows x^2
+	 The largest x for which  x/2*x is finite is
+	 x = +/- 1.89615038e154 ~= sqrt(2) * sqrt(.Machine$double.xmax)
 
+	 NB: allowing "DENORMS" ==> boundaries at +/- 38.4674  <--> qnorm(log(2^-1074), log.p=TRUE)
+	 --                               rather than 37.5193 (up to R 4.4.x)
 	*/
-	    || (lower && -37.5193 < x  &&  x < 8.2924)
-	    || (upper && -8.2924  < x  &&  x < 37.5193)
+	    || (lower && -38.4674 < x  &&  x < 8.2924)
+	    || (upper && -8.2924  < x  &&  x < 38.4674)
 	) {
 
 	/* Evaluate pnorm for x in (-37.5, -5.657) union (5.657, 37.5) */
@@ -259,7 +264,7 @@ void pnorm_both(double x, double *cum, double *ccum, int i_tail, int log_p)
 
 	do_del(x);
 	swap_tail;
-    } else { /* large x such that probs are 0 or 1 */
+    } else { /* large |x| such that probs are 0 or 1 */
 	if(x > 0) {	*cum = R_D__1; *ccum = R_D__0;	}
 	else {	        *cum = R_D__0; *ccum = R_D__1;	}
     }
@@ -267,6 +272,7 @@ void pnorm_both(double x, double *cum, double *ccum, int i_tail, int log_p)
 
 #ifdef NO_DENORMS
     /* do not return "denormalized" -- we do in R */
+    double min = DBL_MIN;
     if(log_p) {
 	if(*cum > -min)	 *cum = -0.;
 	if(*ccum > -min)*ccum = -0.;

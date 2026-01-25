@@ -1,8 +1,8 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2000-2008   The R Core Team
+ *  Copyright (C) 2000--2020  The R Core Team
  *  Copyright (C) 2004	      The R Foundation
+ *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 #include "nmath.h"
@@ -36,15 +36,19 @@ double qnchisq(double p, double df, double ncp, int lower_tail, int log_p)
     if (ISNAN(p) || ISNAN(df) || ISNAN(ncp))
 	return p + df + ncp;
 #endif
-    if (!R_FINITE(df)) ML_ERR_return_NAN;
+    if (!R_FINITE(df)) ML_WARN_return_NAN;
 
     /* Was
      * df = floor(df + 0.5);
-     * if (df < 1 || ncp < 0) ML_ERR_return_NAN;
+     * if (df < 1 || ncp < 0) ML_WARN_return_NAN;
      */
-    if (df < 0 || ncp < 0) ML_ERR_return_NAN;
+    if (df < 0 || ncp < 0) ML_WARN_return_NAN;
 
     R_Q_P01_boundaries(p, 0, ML_POSINF);
+
+    pp = R_D_qIv(p); // exp(p) iff log_p
+    if(pp > 1 - DBL_EPSILON)
+	return lower_tail ? ML_POSINF : 0.0; // early under/over flow  iff log_p (FIXME)
 
     /* Invert pnchisq(.) :
      * 1. finding an upper and lower bound */
@@ -56,21 +60,21 @@ double qnchisq(double p, double df, double ncp, int lower_tail, int log_p)
 	c = (df + 3*ncp)/(df + 2*ncp);
 	ff = (df + 2 * ncp)/(c*c);
 	ux = b + c * qchisq(p, ff, lower_tail, log_p);
-	if(ux < 0) ux = 1;
+	if(ux <= 0.) ux = 1;
 	ux0 = ux;
     }
-    p = R_D_qIv(p);
 
     if(!lower_tail && ncp >= 80) {
-	/* pnchisq is only for lower.tail = TRUE */
-	if(p < 1e-10) ML_ERROR(ME_PRECISION, "qnchisq");
-	p = 1. - p;
+	/* in this case, pnchisq() works via lower_tail = TRUE */
+	if(pp < 1e-10) ML_WARNING(ME_PRECISION, "qnchisq");
+	p = /* R_DT_qIv(p)*/ log_p ? -expm1(p) : (0.5 - (p) + 0.5);
 	lower_tail = TRUE;
+    } else {
+	p = pp;
     }
 
+    pp = fmin2(1 - DBL_EPSILON, p * (1 + Eps));
     if(lower_tail) {
-	if(p > 1 - DBL_EPSILON) return ML_POSINF;
-	pp = fmin2(1 - DBL_EPSILON, p * (1 + Eps));
         for(; ux < DBL_MAX &&
 		pnchisq_raw(ux, df, ncp, Eps, rEps, 10000, TRUE, FALSE) < pp;
 	    ux *= 2);
@@ -81,8 +85,6 @@ double qnchisq(double p, double df, double ncp, int lower_tail, int log_p)
 	    lx *= 0.5);
     }
     else {
-	if(p > 1 - DBL_EPSILON) return 0.0;
-	pp = fmin2(1 - DBL_EPSILON, p * (1 + Eps));
         for(; ux < DBL_MAX &&
 		pnchisq_raw(ux, df, ncp, Eps, rEps, 10000, FALSE, FALSE) > pp;
 	    ux *= 2);

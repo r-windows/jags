@@ -16,7 +16,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  DESCRIPTION
  *
@@ -39,10 +39,10 @@ double pcauchy(double x, double location, double scale,
     if (ISNAN(x) || ISNAN(location) || ISNAN(scale))
 	return x + location + scale;
 #endif
-    if (scale <= 0) ML_ERR_return_NAN;
+    if (scale <= 0) ML_WARN_return_NAN;
 
     x = (x - location) / scale;
-    if (ISNAN(x)) ML_ERR_return_NAN;
+    if (ISNAN(x)) ML_WARN_return_NAN;
 #ifdef IEEE_754
     if(!R_FINITE(x)) {
 	if(x < 0) return R_DT_0;

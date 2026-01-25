@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  DESCRIPTION
  *
@@ -30,13 +30,13 @@
 
 double rt(double df, JRNG *rng)
 {
-    if (ISNAN(df) || df <= 0.0)	ML_ERR_return_NAN;
+    if (ISNAN(df) || df <= 0.0)	ML_WARN_return_NAN;
 
     if(!R_FINITE(df))
 	return norm_rand(rng);
     else {
 /* Some compilers (including MW6) evaluated this from right to left
-	return norm_rand(rng) / sqrt(rchisq(df, rng) / df); */
+	return norm_rand() / sqrt(rchisq(df) / df); */
 	double num = norm_rand(rng);
 	return num / sqrt(rchisq(df, rng) / df);
     }

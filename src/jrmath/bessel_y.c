@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /*  DESCRIPTION --> see below */
@@ -49,19 +49,19 @@ double bessel_y(double x, double alpha)
     if (ISNAN(x) || ISNAN(alpha)) return x + alpha;
 #endif
     if (x < 0) {
-	ML_ERROR(ME_RANGE, "bessel_y");
+	ML_WARNING(ME_RANGE, "bessel_y");
 	return ML_NAN;
     }
     na = floor(alpha);
     if (alpha < 0) {
 	/* Using Abramowitz & Stegun  9.1.2
 	 * this may not be quite optimal (CPU and accuracy wise) */
-	return(bessel_y(x, -alpha) * cospi(alpha) -
-	       ((alpha == na) ? 0 :
-		bessel_j(x, -alpha) * sinpi(alpha)));
+	return(((alpha - na == 0.5) ? 0 : bessel_y(x, -alpha) * cospi(alpha)) -
+	       ((alpha      == na ) ? 0 : bessel_j(x, -alpha) * sinpi(alpha)));
     }
-    else if (alpha > 1e7) {
-	MATHLIB_WARNING("besselY(x, nu): nu=%g too large for bessel_y() algorithm", alpha);
+    else if (alpha > 1e7) { // NB: same bound 'besselJY_max_nu' in math_2b() and ./bessel_j.c
+	MATHLIB_WARNING(_("besselY(x, nu): nu=%g too large for bessel_y() algorithm"),
+			alpha);
 	return ML_NAN;
     }
     nb = 1+ (int)na;/* nb-1 <= alpha < nb */
@@ -99,8 +99,8 @@ double bessel_y(double x, double alpha)
     return x;
 }
 
-/* Called from R: modified version of bessel_y(), accepting a work array
- * instead of allocating one. */
+/* Called from R via math_2b() in ../main/arithmetic.c:
+ * modified version of bessel_y(), accepting a work array instead of allocating one. */
 double bessel_y_ex(double x, double alpha, double *by)
 {
     int nb, ncalc;
@@ -111,19 +111,19 @@ double bessel_y_ex(double x, double alpha, double *by)
     if (ISNAN(x) || ISNAN(alpha)) return x + alpha;
 #endif
     if (x < 0) {
-	ML_ERROR(ME_RANGE, "bessel_y");
+	ML_WARNING(ME_RANGE, "bessel_y");
 	return ML_NAN;
     }
     na = floor(alpha);
     if (alpha < 0) {
 	/* Using Abramowitz & Stegun  9.1.2
 	 * this may not be quite optimal (CPU and accuracy wise) */
-	return(bessel_y_ex(x, -alpha, by) * cospi(alpha) -
-	       ((alpha == na) ? 0 :
-		bessel_j_ex(x, -alpha, by) * sinpi(alpha)));
+	return(((alpha - na == 0.5) ? 0 : bessel_y_ex(x, -alpha, by) * cospi(alpha)) -
+	       ((alpha      == na ) ? 0 : bessel_j_ex(x, -alpha, by) * sinpi(alpha)));
     }
-    else if (alpha > 1e7) {
-	MATHLIB_WARNING("besselY(x, nu): nu=%g too large for bessel_y() algorithm", alpha);
+    else if (alpha > 1e7) { // NB: same bound 'besselJY_max_nu' in math_2b() and ./bessel_j.c
+	MATHLIB_WARNING(_("besselY(x, nu): nu=%g too large for bessel_y() algorithm"),
+			alpha);
 	return ML_NAN;
     }
     nb = 1+ (int)na;/* nb-1 <= alpha < nb */
@@ -265,7 +265,7 @@ v for non-negative argument X, and non-negative order N+ALPHA.
 	if(ex < DBL_MIN || ex > xlrg_BESS_Y) {
 	    /* Warning is not really appropriate, give
 	     * proper limit:
-	     * ML_ERROR(ME_RANGE, "Y_bessel"); */
+	     * ML_WARNING(ME_RANGE, "Y_bessel"); */
 	    *ncalc = *nb;
 	    if(ex > xlrg_BESS_Y)  by[0]= 0.; /*was ML_POSINF */
 	    else if(ex < DBL_MIN) by[0]=ML_NEGINF;

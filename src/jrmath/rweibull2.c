@@ -16,7 +16,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  DESCRIPTION
  *
@@ -30,7 +30,7 @@
 double rweibull2(double shape, double rate, JRNG *rng)
 {
     if (!R_FINITE(shape) || !R_FINITE(rate) || shape <= 0. || rate <= 0.) {
-	ML_ERR_return_NAN;
+	ML_WARN_return_NAN;
     }
 
     return pow(-log(unif_rand(rng)) / rate, 1.0 / shape);

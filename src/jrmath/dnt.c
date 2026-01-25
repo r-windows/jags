@@ -1,10 +1,10 @@
 /*
  *  AUTHOR
- *    Claus Ekstrøm, ekstrom@dina.kvl.dk
+ *    Claus EkstrÃ¸m, ekstrom@dina.kvl.dk
  *    July 15, 2003.
  *
  *  Merge in to R:
- *	Copyright (C) 2003 The R Foundation
+ *	Copyright (C) 2003-2015 The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *
  *  NOTE
@@ -32,13 +32,14 @@
  *
  * DESCRIPTION
  *
- *    The non-central t density is
+ *    From Johnson, Kotz and Balakrishnan (1995) [2nd ed.; formula (31.15), p.516],
+ *    the non-central t density is
  *
- *	   f(x, df, ncp) =
- *		df^(df/2) * exp(-.5*ncp^2) /
- *		(sqrt(pi)*gamma(df/2)*(df+x^2)^((df+1)/2)) *
- *		sum_{k=0}^Inf  gamma((df + k + df)/2)*ncp^k /
- *				prod(1:k)*(2*x^2/(df+x^2))^(k/2)
+ *      f(x, df, ncp) =
+ *
+ *        exp(-.5*ncp^2) * gamma((df+1)/2) / (sqrt(pi*df)* gamma(df/2)) * (df/(df+x^2))^((df+1)/2) *
+ *          sum_{j=0}^Inf  gamma((df+j+1)/2)/(factorial(j)* gamma((df+1)/2)) * (x*ncp*sqrt(2)/sqrt(df+x^2))^ j
+ *
  *
  *    The functional relationship
  *
@@ -54,6 +55,8 @@
  *
  *    All calculations are done on log-scale to increase stability.
  *
+ * FIXME: pnt() is known to be inaccurate in the (very) left tail and for ncp > 38
+ *       ==> use a direct log-space summation formula in that case
  */
 
 #include "nmath.h"
@@ -68,7 +71,7 @@ double dnt(double x, double df, double ncp, int give_log)
 #endif
 
     /* If non-positive df then error */
-    if (df <= 0.0) ML_ERR_return_NAN;
+    if (df <= 0.0) ML_WARN_return_NAN;
 
     if(ncp == 0.0) return dt(x, df, give_log);
 
@@ -78,15 +81,15 @@ double dnt(double x, double df, double ncp, int give_log)
 
     /* If infinite df then the density is identical to a
        normal distribution with mean = ncp.  However, the formula
-       loses a lot of accuracy around df=1e9
+       loses a lot of accuracy around df=1e9 // FIXME?
     */
-    if(!R_FINITE(df) || df > 1e8)
+    if(!R_FINITE(df) || df > 1e8) 
 	return dnorm(x, ncp, 1., give_log);
 
     /* Do calculations on log scale to stabilize */
 
     /* Consider two cases: x ~= 0 or not */
-    if (fabs(x) > sqrt(df * DBL_EPSILON)) {
+    if (fabs(x) > sqrt(df * DBL_EPSILON)) { // |x| > eps * sqrt(df)
 	u = log(df) - log(fabs(x)) +
 	    log(fabs(pnt(x*sqrt((df+2)/df), df+2, ncp, 1, 0) -
 		     pnt(x, df, ncp, 1, 0)));

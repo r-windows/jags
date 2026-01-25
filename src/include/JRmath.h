@@ -1,8 +1,6 @@
-/* This is MODIFIED version of R's Mathlib */
-
 /* -*- C -*-
  *  Mathlib : A C Library of Special Functions
- *  Copyright (C) 1998-2013  The R Core Team
+ *  Copyright (C) 1998-2025  The R Core Team
  *  Copyright (C) 2004       The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -17,7 +15,7 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
 
  * Rmath.h  should contain ALL headers from R's C code in `src/nmath'
@@ -28,34 +26,42 @@
    and nothing else.
 
    It is part of the API and supports 'standalone Rmath'.
+   Some entries possibly are not yet documented in 'Writing R Extensions'.
 
 */
 #ifndef RMATH_H
 #define RMATH_H
 
-/* Note that on some systems we need to include math.h before the
-   defines below. */
-#ifndef NO_C_HEADERS
-# define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
+/* needed for cospi etc */
+#ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
+# define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
+#endif
+
+#if defined(__cplusplus) && !defined(DO_NOT_USE_CXX_HEADERS)
+# include <cmath>
+#else
 # include <math.h>
 #endif
 
-#define R_VERSION_STRING "3.1.1"
-
-	/* Undo SGI Madness */
-
-#ifdef __sgi
-# ifdef ftrunc
-#  undef ftrunc
-# endif
-# ifdef qexp
-#  undef qexp
-# endif
-# ifdef qgamma
-#  undef qgamma
-# endif
+#ifdef NO_C_HEADERS
+# warning "use of NO_C_HEADERS is defunct and will be ignored"
 #endif
 
+/*-- Mathlib as part of R --  define this for standalone : */
+/* #undef MATHLIB_STANDALONE */
+
+#define R_VERSION_STRING "4.6.0"
+
+// Legacy defines -- C99 functions which R >= 3.5.0 requires
+#ifndef HAVE_EXPM1
+# define HAVE_EXPM1 1
+#endif
+#ifndef HAVE_HYPOT
+# define HAVE_HYPOT 1
+#endif
+#ifndef HAVE_LOG1P
+# define HAVE_LOG1P 1
+#endif
 
 /* ----- The following constants and entry points are part of the R API ---- */
 
@@ -169,12 +175,21 @@
 
 
 # ifndef R_EXT_BOOLEAN_H_
-/* "copy-paste" R_ext/Boolean.h if not already included: */
+/* "copy-paste" R_ext/Boolean.h if not already included: 
+   This is standalone, so we do not worry about the size
+*/
  #define R_EXT_BOOLEAN_H_
  #undef FALSE
  #undef TRUE
  typedef enum { FALSE = 0, TRUE } Rboolean;
-# endif
+ // stdbool.h is obsolescent but we could pro tem just use it.
+ // But to future-proof copy from Boolean.h
+ #if defined __STDC_VERSION__ && __STDC_VERSION__ > 202000L
+ #elif defined __cplusplus
+ #else
+  # include <stdbool.h>
+ #endif
+#endif
 
 #define bessel_i	jags_bessel_i
 #define bessel_j	jags_bessel_j
@@ -340,6 +355,7 @@ double JR_pow_di(double, int);
 
 double	norm_rand(JRNG*);
 double	unif_rand(JRNG*);
+double  JR_unif_index(double);
 double	exp_rand(JRNG*);
 
 	/* Normal Distribution */
@@ -364,11 +380,23 @@ double	pgamma(double, double, double, int, int);
 double	qgamma(double, double, double, int, int);
 double	rgamma(double, double, JRNG*);
 
-double  log1pmx(double);
+double  log1pmx(double); /* Accurate log(1+x) - x, {care for small x} */
 double  log1pexp(double); // <-- ../nmath/plogis.c
-double  lgamma1p(double);
-double  logspace_add(double, double);
-double  logspace_sub(double, double);
+double  log1mexp(double);
+double  lgamma1p(double);/* accurate log(gamma(x+1)), small x (0 < x < 0.5) */
+
+double  pow1p(double, double); /* pow1p(x, y) := (1+x)^y  accurately also for |x| << 1 */
+
+/* Compute the log of a sum or difference from logs of terms, i.e.,
+ *
+ *     log (exp (logx) + exp (logy))
+ * or  log (exp (logx) - exp (logy))
+ *
+ * without causing overflows or throwing away too much accuracy:
+ */
+double  logspace_add(double logx, double logy);
+double  logspace_sub(double logx, double logy);
+double  logspace_sum(const double *, int);
 
 	/* Beta Distribution */
 
@@ -398,14 +426,14 @@ double	pnchisq(double, double, double, int, int);
 double	qnchisq(double, double, double, int, int);
 double	rnchisq(double, double, JRNG*);
 
-	/* F Distibution */
+	/* F Distribution */
 
 double	dF(double, double, double, int);
 double	pF(double, double, double, int, int);
 double	qF(double, double, double, int, int);
 double	rF(double, double, JRNG*);
 
-	/* Student t Distibution */
+	/* Student t Distribution */
 
 double	dt(double, double, int);
 double	pt(double, double, int, int);
@@ -414,12 +442,13 @@ double	rt(double, JRNG*);
 
 	/* Binomial Distribution */
 
+double  dbinom_raw(double x, double n, double p, double q, int give_log);
 double	dbinom(double, double, double, int);
 double	pbinom(double, double, double, int, int);
 double	qbinom(double, double, double, int, int);
 double	rbinom(double, double, JRNG*);
 
-	/* Multnomial Distribution */
+	/* Multinomial Distribution */
 
 void	rmultinom(int, double*, int, int*, JRNG*);
 
@@ -444,7 +473,7 @@ double	pgeom(double, double, int, int);
 double	qgeom(double, double, int, int);
 double	rgeom(double, JRNG*);
 
-	/* Hypergeometric Distibution */
+	/* Hypergeometric Distribution */
 
 double	dhyper(double, double, double, double, int);
 double	phyper(double, double, double, double, int, int);
@@ -465,6 +494,7 @@ double	rnbinom_mu(double, double, JRNG*);
 
 	/* Poisson Distribution */
 
+double	dpois_raw (double, double, int);
 double	dpois(double, double, int);
 double	ppois(double, double, int, int);
 double	qpois(double, double, int, int);
@@ -477,11 +507,11 @@ double	pweibull(double, double, double, int, int);
 double	qweibull(double, double, double, int, int);
 double	rweibull(double, double, JRNG*);
 
-    	/* Weibull Distribution with shape-rate parameterization */
+       /* Weibull Distribution with shape-rate parameterization */
 
 double	dweibull2(double, double, double, int);
 double	pweibull2(double, double, double, int, int);
-double	qweibull2(double, double, double, int, int);
+double	qweibull2 (double, double, double, int, int);
 double	rweibull2(double, double, JRNG*);
 
 	/* Logistic Distribution */
@@ -496,7 +526,7 @@ double	rlogis(double, double, JRNG*);
 double	dnbeta(double, double, double, double, int);
 double	pnbeta(double, double, double, double, int, int);
 double	qnbeta(double, double, double, double, int, int);
-double	rnbeta(double, double, double, JRNG*);
+double  rnbeta(double, double, double, JRNG*);
 
 	/* Non-central F Distribution */
 
@@ -521,13 +551,14 @@ double dwilcox(double, double, double, int);
 double pwilcox(double, double, double, int, int);
 double qwilcox(double, double, double, int, int);
 double rwilcox(double, double, JRNG*);
-
+void wilcox_free(void); // not remapped
 	/* Wilcoxon Signed Rank Distribution */
 
 double dsignrank(double, double, int);
 double psignrank(double, double, int, int);
 double qsignrank(double, double, int, int);
 double rsignrank(double, JRNG*);
+void signrank_free(void); // not remapped
 
 	/* Gamma and Related Functions */
 double	gammafn(double);
@@ -560,7 +591,6 @@ double	bessel_y_ex(double, double, double *);
 
 	/* General Support Functions */
 
-//double 	pythag(double, double);
 int	imax2(int, int);
 int	imin2(int, int);
 double	fmax2(double, double);
@@ -571,45 +601,27 @@ double	fround(double, double);
 double	fsign(double, double);
 double	ftrunc(double);
 
-double  log1pmx(double); /* Accurate log(1+x) - x, {care for small x} */
-double  lgamma1p(double);/* accurate log(gamma(x+1)), small x (0 < x < 0.5) */
-
 /* More accurate cos(pi*x), sin(pi*x), tan(pi*x)
 
-   In future these declarations could clash with system headers if
-   someone had already included math.h with
-   __STDC_WANT_IEC_60559_TYPES_EXT__ defined.
-   We can add a check for that via the value of
-   __STDC_IEC_60559_FUNCS__ (>= 201ymmL, exact value not yet known).
+   These declarations might clash with system headers if someone had
+   already included math.h with __STDC_WANT_IEC_60559_FUNCS_EXT__
+   defined (and we try, above).
+   We check for that via the value of __STDC_IEC_60559_FUNCS__
 */
+#if !(defined(__STDC_IEC_60559_FUNCS__) && __STDC_IEC_60559_FUNCS__ >= 201506L)
 double cospi(double);
 double sinpi(double);
 double tanpi(double);
-
-/* Compute the log of a sum or difference from logs of terms, i.e.,
- *
- *     log (exp (logx) + exp (logy))
- * or  log (exp (logx) - exp (logy))
- *
- * without causing overflows or throwing away too much accuracy:
- */
-double  logspace_add(double logx, double logy);
-double  logspace_sub(double logx, double logy);
+#endif
+double Rtanpi(double); /* our own in any case */
 
 
 /* ----------------- Private part of the header file ------------------- */
 
-	/* old-R Compatibility */
-
-#ifdef OLD_RMATH_COMPAT
-# define snorm	norm_rand
-# define sunif	unif_rand
-# define sexp	exp_rand
-#endif
-
 #if !defined(MATHLIB_PRIVATE_H) /* defined by nmath.h */
+    
 /* If isnan is a macro, as C99 specifies, the C++
-   math header will undefine it. This happens on OS X */
+   math header will undefine it. This happens on macOS */
 # ifdef __cplusplus
   int JR_isnancpp(double); /* in mlutils.c */
 #  define ISNAN(x)     JR_isnancpp(x)
@@ -636,7 +648,7 @@ extern int N01_kind;
 # endif
 
 #endif /* MATHLIB_PRIVATE_H */
-
+    
 #ifdef  __cplusplus
 }
 #endif

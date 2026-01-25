@@ -16,7 +16,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  SYNOPSIS
  *
@@ -62,12 +62,12 @@ double rbinom(double nin, double pp, JRNG *rng)
     double p, q, np, g, r, al, alv, amaxp, ffm, ynorm;
     int i, ix, k, n;
 
-    if (!R_FINITE(nin)) ML_ERR_return_NAN;
+    if (!R_FINITE(nin)) ML_WARN_return_NAN;
     r = R_forceint(nin);
-    if (r != nin) ML_ERR_return_NAN;
+    if (r != nin) ML_WARN_return_NAN;
     if (!R_FINITE(pp) ||
 	/* n=0, p=0, p=1 are not errors <TSL>*/
-	r < 0 || pp < 0. || pp > 1.)	ML_ERR_return_NAN;
+	r < 0 || pp < 0. || pp > 1.)	ML_WARN_return_NAN;
 
     if (r == 0 || pp == 0.) return 0;
     if (pp == 1.) return r;

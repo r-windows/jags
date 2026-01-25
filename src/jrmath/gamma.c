@@ -1,8 +1,8 @@
 /*
  *  Mathlib : A C Library of Special Functions
+ *  Copyright (C) 2000-2024 The R Core Team
+ *  Copyright (C) 2002-2024 The R Foundation
  *  Copyright (C) 1998 Ross Ihaka
- *  Copyright (C) 2000-2013 The R Core Team
- *  Copyright (C) 2002-2004 The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  SYNOPSIS
  *
@@ -89,16 +89,10 @@ double gammafn(double x)
 	-.5793070335782135784625493333333e-31
     };
 
-    int i, n;
-    double y;
-    double sinpiy, value;
-
 #ifdef NOMORE_FOR_THREADS
     static int ngam = 0;
     static double xmin = 0, xmax = 0., xsml = 0., dxrel = 0.;
 
-    #pragma omp threadprivate(ngam, xmin, xmax, xsml, dxrel)
-    
     /* Initialize machine dependent constants, the first time gamma() is called.
 	FIXME for threads ! */
     if (ngam == 0) {
@@ -126,11 +120,12 @@ double gammafn(double x)
     /* If the argument is exactly zero or a negative integer
      * then return NaN. */
     if (x == 0 || (x < 0 && x == round(x))) {
-	ML_ERROR(ME_DOMAIN, "gammafn");
+	ML_WARNING(ME_DOMAIN, "gammafn");
 	return ML_NAN;
     }
 
-    y = fabs(x);
+    int i;
+    double y = fabs(x), value;
 
     if (y <= 10) {
 
@@ -138,7 +133,7 @@ double gammafn(double x)
 	 * Reduce the interval and find gamma(1 + y) for 0 <= y < 1
 	 * first of all. */
 
-	n = (int) x;
+	int n = (int) x;
 	if(x < 0) --n;
 	y = x - n;/* n = floor(x)  ==>	y in [ 0, 1 ) */
 	--n;
@@ -154,12 +149,12 @@ double gammafn(double x)
 	    /* The answer is less than half precision */
 	    /* because x too near a negative integer. */
 	    if (x < -0.5 && fabs(x - (int)(x - 0.5) / x) < dxrel) {
-		ML_ERROR(ME_PRECISION, "gammafn");
+		ML_WARNING(ME_PRECISION, "gammafn");
 	    }
 
 	    /* The argument is so close to 0 that the result would overflow. */
 	    if (y < xsml) {
-		ML_ERROR(ME_RANGE, "gammafn");
+		ML_WARNING(ME_RANGE, "gammafn");
 		if(x > 0) return ML_POSINF;
 		else return ML_NEGINF;
 	    }
@@ -184,12 +179,12 @@ double gammafn(double x)
 	/* gamma(x) for	 y = |x| > 10. */
 
 	if (x > xmax) {			/* Overflow */
-	    ML_ERROR(ME_RANGE, "gammafn");
+	    // No warning: +Inf is the best answer
 	    return ML_POSINF;
 	}
 
 	if (x < xmin) {			/* Underflow */
-	    ML_ERROR(ME_UNDERFLOW, "gammafn");
+	    // No warning: 0 is the best answer
 	    return 0.;
 	}
 
@@ -199,22 +194,23 @@ double gammafn(double x)
 	}
 	else { /* normal case */
 	    value = exp((y - 0.5) * log(y) - y + M_LN_SQRT_2PI +
-			((2*y == (int)2*y)? stirlerr(y) : lgammacor(y)));
+			((2*y == (int)2*y) ? stirlerr(y) : lgammacor(y)));
 	}
+
 	if (x > 0)
 	    return value;
+	// else:  x < 0, not an integer :
 
-	if (fabs((x - (int)(x - 0.5))/x) < dxrel){
-
+	if (fabs((x - (int)(x - 0.5))/x) < dxrel) {
 	    /* The answer is less than half precision because */
 	    /* the argument is too near a negative integer. */
 
-	    ML_ERROR(ME_PRECISION, "gammafn");
+	    ML_WARNING(ME_PRECISION, "gammafn");
 	}
 
-	sinpiy = sinpi(y);
+	double sinpiy = sinpi(y);
 	if (sinpiy == 0) {		/* Negative integer arg - overflow */
-	    ML_ERROR(ME_RANGE, "gammafn");
+	    ML_WARNING(ME_RANGE, "gammafn");
 	    return ML_POSINF;
 	}
 

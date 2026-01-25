@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  SYNOPSIS
  *
@@ -67,13 +67,19 @@ double rpois(double mu, JRNG *rng)
     static double big_l;/* integer "w/o overflow" */
     static double muprev = 0., muprev2 = 0.;/*, muold	 = 0.*/
 
+    #pragma omp threadprivate(l,m)
+    #pragma omp threadprivate(b1, b2, c, c0, c1, c2, c3)
+    #pragma omp threadprivate(pp, p0, p, q, s, d, omega)
+    #pragma omp threadprivate(big_l)
+    #pragma omp threadprivate(muprev, muprev2)
+
     /* Local Vars  [initialize some for -Wall]: */
     double del, difmuk= 0., E= 0., fk= 0., fx, fy, g, px, py, t, u= 0., v, x;
     double pois = -1.;
     int k, kflag, big_mu, new_big_mu = FALSE;
 
     if (!R_FINITE(mu) || mu < 0)
-	ML_ERR_return_NAN;
+	ML_WARN_return_NAN;
 
     if (mu <= 0.)
 	return 0.;

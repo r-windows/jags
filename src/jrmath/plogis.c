@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
+ *  Copyright (C) 2000--2020	The R Core Team
  *  Copyright (C) 1995, 1996	Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2000		The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,13 +15,13 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 #include "nmath.h"
 #include "dpq.h"
 
 /* Compute  log(1 + exp(x))  without overflow (and fast for x > 18)
-   For the two cutoffs, consider
+   For the two cutoffs, consider in R
    curve(log1p(exp(x)) - x,       33.1, 33.5, n=2^10)
    curve(x+exp(-x) - log1p(exp(x)), 15, 25,   n=2^11)
 */
@@ -32,6 +32,9 @@ double log1pexp(double x) {
     return x + exp(-x);
 }
 
+// API.  For now, continue using macro R_Log1_Exp() in our own code.
+double log1mexp(double x) { return R_Log1_Exp(-x); }
+
 double plogis(double x, double location, double scale,
 	      int lower_tail, int log_p)
 {
@@ -39,10 +42,10 @@ double plogis(double x, double location, double scale,
     if (ISNAN(x) || ISNAN(location) || ISNAN(scale))
 	return x + location + scale;
 #endif
-    if (scale <= 0.0)	ML_ERR_return_NAN;
+    if (scale <= 0.0)	ML_WARN_return_NAN;
 
     x = (x - location) / scale;
-    if (ISNAN(x))	ML_ERR_return_NAN;
+    if (ISNAN(x))	ML_WARN_return_NAN;
     R_P_bounds_Inf_01(x);
 
     if(log_p) {

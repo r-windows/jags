@@ -2,7 +2,7 @@
  *  Mathlib : A C Library of Special Functions
  *  Copyright (C) 1998 Ross Ihaka
  *  Copyright (C) 2000-6 The R Core Team
- *  Copyright (C) 2015 Martyn Plummer
+ *  Copyright (C) 2015-2025 Martyn Plummer
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  DESCRIPTION
  *
@@ -35,7 +35,7 @@ double dweibull2(double x, double shape, double rate, int give_log)
     if (ISNAN(x) || ISNAN(shape) || ISNAN(rate))
 	return x + shape + rate;
 #endif
-    if (shape <= 0 || rate <= 0) ML_ERR_return_NAN;
+    if (shape <= 0 || rate <= 0) ML_WARN_return_NAN;
 
     if (x < 0) return R_D__0;
     if (!R_FINITE(x)) return R_D__0;

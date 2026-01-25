@@ -8,7 +8,9 @@ The file callbacks.cc is a C++ source file that translates the
 functions unif_rand, norm_rand and exp_rand into member function calls
 for the struct JRNG.
 
-The current version is based on R 3.1.2 patched (revision r67885).
+The current version is based on the development version of R on 25 January 2026
+(revision r89326), which at the time of writing, is the future R 4.6.0.
+
 The original intention was to make as few changes as possible in order
 to make it easier to synchronise the library with R. Nevertheless, a
 number of other changes have been made:
@@ -21,7 +23,7 @@ We assume that the C library provides both expm1 and log1p, and that
 log1p is working correctly, rather than testing during configuration
 and providing drop-in replacements as the R math library does. This is
 mainly done to simplify the configuration (e.g. no need to derive
-JRmath.h from JRmath.h.in). If a C library in 2015 does not conform to
+JRmath.h from JRmath.h.in). If a C library in 2026 does not conform to
 the C99 standard then there is not much hope for that platform.
 
 All functions are remapped with prefix "jags_". This is unlike the
@@ -35,5 +37,12 @@ renamed pF, qF, rF respectively.
 In the private header file "nmath.h" we defined F77_CALL, which is
 defined in the file R_exts/RS.h in the R sources.
 
-The source file toms708.c must be compiled with the flat -std=c99.
+Many of the random number generator functions use static variables
+which are not safe. We protect these with #pragma omp theadprivate.
+
+The source file toms708.c must be compiled with the flag -std=c99.
 This is added to the Makefile variable libjrmath_la_CFLAGS.
+
+Code for the standardn normal and exponential in the files snorm.c
+and sexp.c, respectively, is not included here but is incorporated
+into the RmathRNG class in the JAGS library.

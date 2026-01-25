@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  SYNOPSIS
  *
@@ -45,7 +45,7 @@
 /* NaNs propagated correctly */
 
 
-int attribute_hidden chebyshev_init(double *dos, int nos, double eta)
+attribute_hidden int chebyshev_init(double *dos, int nos, double eta)
 {
     int i, ii;
     double err;
@@ -66,14 +66,14 @@ int attribute_hidden chebyshev_init(double *dos, int nos, double eta)
 }
 
 
-double attribute_hidden chebyshev_eval(double x, const double *a, const int n)
+attribute_hidden double chebyshev_eval(double x, const double *a, const int n)
 {
     double b0, b1, b2, twox;
     int i;
 
-    if (n < 1 || n > 1000) ML_ERR_return_NAN;
+    if (n < 1 || n > 1000) ML_WARN_return_NAN;
 
-    if (x < -1.1 || x > 1.1) ML_ERR_return_NAN;
+    if (x < -1.1 || x > 1.1) ML_WARN_return_NAN;
 
     twox = x * 2;
     b2 = b1 = 0;

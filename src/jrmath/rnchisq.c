@@ -1,6 +1,6 @@
 /*
  *  Mathlib : A C Library of Special Functions
- *  Copyright (C) 2003 The R Foundation
+ *  Copyright (C) 2003--2016 The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  SYNOPSIS
  *
@@ -35,7 +35,7 @@
   mixture of central chisquares with integer degrees of freedom),
   see Formula (29.5b-c) in Johnson, Kotz, Balakrishnan (1995).
 
-  The noncentral chisquare with arbitary degrees of freedom is of interest
+  The noncentral chisquare with arbitrary degrees of freedom is of interest
   for simulating the Cox-Ingersoll-Ross model for interest rates in
   finance.
 
@@ -58,12 +58,11 @@
 
 double rnchisq(double df, double lambda, JRNG *rng)
 {
-    if (!R_FINITE(df) || !R_FINITE(lambda) || df < 0. || lambda < 0.)
-	ML_ERR_return_NAN;
+    if (ISNAN(df) || !R_FINITE(lambda) || df < 0. || lambda < 0.)
+	ML_WARN_return_NAN;
 
     if(lambda == 0.) {
-	if (df == 0.) ML_ERR_return_NAN;
-	return rgamma(df / 2., 2., rng);
+	return (df == 0.) ? 0. : rgamma(df / 2., 2., rng);
     }
     else {
 	double r = rpois( lambda / 2., rng);

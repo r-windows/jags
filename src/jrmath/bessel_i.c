@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  */
 
 /*  DESCRIPTION --> see below */
@@ -49,7 +49,7 @@ double bessel_i(double x, double alpha, double expo)
     if (ISNAN(x) || ISNAN(alpha)) return x + alpha;
 #endif
     if (x < 0) {
-	ML_ERROR(ME_RANGE, "bessel_i");
+	ML_WARNING(ME_RANGE, "bessel_i");
 	return ML_NAN;
     }
     ize = (int)expo;
@@ -101,7 +101,7 @@ double bessel_i_ex(double x, double alpha, double expo, double *bi)
     if (ISNAN(x) || ISNAN(alpha)) return x + alpha;
 #endif
     if (x < 0) {
-	ML_ERROR(ME_RANGE, "bessel_i");
+	ML_WARNING(ME_RANGE, "bessel_i");
 	return ML_NAN;
     }
     ize = (int)expo;
@@ -231,12 +231,12 @@ static void I_bessel(double *x, double *alpha, int *nb,
     /* Local variables */
     int nend, intx, nbmx, k, l, n, nstart;
     double pold, test,	p, em, en, empal, emp2al, halfx,
-	aa, bb, cc, psave, plast, tover, psavel, sum, nu, twonu;
+	aa, bb, cc, psave, plast, tover, psavel, sum,
 
-    /*Parameter adjustments */
-    --bi;
-    nu = *alpha;
-    twonu = nu + nu;
+	nu = *alpha,
+	twonu = ldexp(nu, 1); // = 2*nu
+
+    --bi; // use 1-indexing below
 
     /*-------------------------------------------------------------------
       Check for X, NB, OR IZE out of range.
@@ -245,7 +245,7 @@ static void I_bessel(double *x, double *alpha, int *nb,
 	(1 <= *ize && *ize <= 2) ) {
 
 	*ncalc = *nb;
-	if(*ize == 1 && *x > exparg_BESS) {
+	if(*ize == 1 && *x > exparg_BESS) { // x > 709
 	    for(k=1; k <= *nb; k++)
 		bi[k]=ML_POSINF; /* the limit *is* = Inf */
 	    return;
@@ -486,7 +486,7 @@ L230:
 	    empal = 1. + nu;
 #ifdef IEEE_754
 	    /* No need to check for underflow */
-	    halfx = .5 * *x;
+	    halfx = ldexp(*x, -1); // = *x / 2 = .5 * *x
 #else
 	    if (*x > enmten_BESS) */
 		halfx = .5 * *x;

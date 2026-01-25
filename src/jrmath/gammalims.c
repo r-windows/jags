@@ -1,7 +1,7 @@
 /*
  *  Mathlib : A C Library of Special Functions
  *  Copyright (C) 1998 Ross Ihaka
- *  Copyright (C) 1999-2000  The R Core Team
+ *  Copyright (C) 1999-2025  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  SYNOPSIS
  *
@@ -36,7 +36,7 @@
 
 #include "nmath.h"
 
-void attribute_hidden gammalims(double *xmin, double *xmax)
+attribute_hidden void gammalims(double *xmin, double *xmax)
 {
 /* FIXME: Even better: If IEEE, #define these in nmath.h
 	  and don't call gammalims() at all
@@ -63,7 +63,7 @@ void attribute_hidden gammalims(double *xmin, double *xmax)
 
     /* unable to find xmin */
 
-    ML_ERROR(ME_NOCONV, "gammalims");
+    ML_WARNING(ME_NOCONV, "gammalims");
     *xmin = *xmax = ML_NAN;
 
 find_xmax:
@@ -83,7 +83,7 @@ find_xmax:
 
     /* unable to find xmax */
 
-    ML_ERROR(ME_NOCONV, "gammalims");
+    ML_WARNING(ME_NOCONV, "gammalims");
     *xmin = *xmax = ML_NAN;
 
 done:

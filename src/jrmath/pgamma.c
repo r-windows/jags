@@ -1,8 +1,8 @@
 /*
  *  Mathlib : A C Library of Special Functions
+ *  Copyright (C) 2006-2019 The R Core Team
  *  Copyright (C) 2005-6 Morten Welinder <terra@gnome.org>
  *  Copyright (C) 2005-10 The R Foundation
- *  Copyright (C) 2006-10 The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  https://www.R-project.org/Licenses/
  *
  *  SYNOPSIS
  *
@@ -30,6 +30,7 @@
  *
  *	double logspace_add (double logx, double logy)
  *	double logspace_sub (double logx, double logy)
+ *	double logspace_sum (double* logx, int n)
  *
  *
  *  DESCRIPTION
@@ -51,8 +52,8 @@
 #include "nmath.h"
 #include "dpq.h"
 /*----------- DEBUGGING -------------
- *	make CFLAGS='-DDEBUG_p -g -I/usr/local/include -I../include'
- * (cd ~/R/D/r-devel/Linux-inst/src/nmath; gcc -std=gnu99 -I. -I../../src/include -I../../../R/src/include -I/usr/local/include -DDEBUG_p -g -O2 -c ../../../R/src/nmath/pgamma.c -o pgamma.o)
+ * make CFLAGS='-DDEBUG_p -g'
+ * (cd `R-devel RHOME`/src/nmath; gcc -I. -I../../src/include -I../../../R/src/include  -DHAVE_CONFIG_H -fopenmp -DDEBUG_p -g -c ../../../R/src/nmath/pgamma.c -o pgamma.o)
  */
 
 /* Scalefactor:= (2^32)^8 = 2^256 = 1.157921e+77 */
@@ -66,7 +67,7 @@ static const double M_cutoff = M_LN2 * DBL_MAX_EXP / DBL_EPSILON;/*=3.196577e18*
 /* Continued fraction for calculation of
  *    1/i + x/(i+d) + x^2/(i+2*d) + x^3/(i+3*d) + ... = sum_{k=0}^Inf x^k/(i+k*d)
  *
- * auxilary in log1pmx() and lgamma1p()
+ * auxiliary in log1pmx() and lgamma1p()
  */
 static double
 logcf (double x, double i, double d,
@@ -144,6 +145,9 @@ double log1pmx (double x)
 /* Compute  log(gamma(a+1))  accurately also for small a (0 < a < 0.5). */
 double lgamma1p (double a)
 {
+    if (fabs (a) >= 0.5)
+	return lgammafn (a + 1);
+
     const double eulers_const =	 0.5772156649015328606065120900824024;
 
     /* coeffs[i] holds (zeta(i+2)-1)/(i+2) , i = 0:(N-1), N = 40 : */
@@ -193,11 +197,6 @@ double lgamma1p (double a)
 
     const double c = 0.2273736845824652515226821577978691e-12;/* zeta(N+2)-1 */
     const double tol_logcf = 1e-14;
-    double lgam;
-    int i;
-
-    if (fabs (a) >= 0.5)
-	return lgammafn (a + 1);
 
     /* Abramowitz & Stegun 6.1.33 : for |x| < 2,
      * <==> log(gamma(1+x)) = -(log(1+x) - x) - gamma*x + x^2 * \sum_{n=0}^\infty c_n (-x)^n
@@ -206,8 +205,8 @@ double lgamma1p (double a)
      * Here, another convergence acceleration trick is used to compute
      * lgam(x) :=  sum_{n=0..Inf} c_n (-x)^n
      */
-    lgam = c * logcf(-a / 2, N + 2, 1, tol_logcf);
-    for (i = N - 1; i >= 0; i--)
+    double lgam = c * logcf(-a / 2, N + 2, 1, tol_logcf);
+    for (int i = N - 1; i >= 0; i--)
 	lgam = coeffs[i] - a * lgam;
 
     return (a * lgam - eulers_const) * a - log1pmx (a);
@@ -242,9 +241,43 @@ double logspace_sub (double logx, double logy)
     return logx + R_Log1_Exp(logy - logx);
 }
 
+/*
+ * Compute the log of a sum from logs of terms, i.e.,
+ *
+ *     log (sum_i  exp (logx[i]) ) =
+ *     log (e^M * sum_i  e^(logx[i] - M) ) =
+ *     M + log( sum_i  e^(logx[i] - M)
+ *
+ * without causing overflows or throwing much accuracy.
+ */
+#ifdef HAVE_LONG_DOUBLE
+# define EXP expl
+# define LOG logl
+#else
+# define EXP exp
+# define LOG log
+#endif
+double logspace_sum (const double* logx, int n)
+{
+    if(n == 0) return ML_NEGINF; // = log( sum(<empty>) )
+    if(n == 1) return logx[0];
+    if(n == 2) return logspace_add(logx[0], logx[1]);
+    // else (n >= 3) :
+    int i;
+    // Mx := max_i log(x_i)
+    double Mx = logx[0];
+    for(i = 1; i < n; i++) if(Mx < logx[i]) Mx = logx[i];
+    LDOUBLE s = (LDOUBLE) 0.;
+    for(i = 0; i < n; i++) s += EXP(logx[i] - Mx);
+    return Mx + (double) LOG(s);
+}
 
-/* dpois_wrap (x_P_1,  lambda, g_log) ==
- *   dpois (x_P_1 - 1, lambda, g_log) :=  exp(-L)  L^k / gamma(k+1) ,  k := x_P_1 - 1
+
+
+/* dpois_wrap (x__1, lambda) := dpois(x__1 - 1, lambda);  where
+ * dpois(k, L) := exp(-L) L^k / gamma(k+1)  {the usual Poisson probabilities}
+ *
+ * and  dpois*(.., give_log = TRUE) :=  log( dpois*(..) )
 */
 static double
 dpois_wrap (double x_plus_1, double lambda, int give_log)
@@ -408,7 +441,7 @@ pd_lower_cf (double y, double d)
 
 	if (b2 != 0) {
 	    f = a2 / b2;
- 	    /* convergence check: relative; "absolute" for very small f : */
+	    /* convergence check: relative; "absolute" for very small f : */
 	    if (fabs (f - of) <= DBL_EPSILON * fmax2(f0, fabs(f))) {
 #ifdef DEBUG_p
 		REprintf(" %g iter.\n", i);
@@ -692,7 +725,7 @@ double pgamma(double x, double alph, double scale, int lower_tail, int log_p)
 	return x + alph + scale;
 #endif
     if(alph < 0. || scale <= 0.)
-	ML_ERR_return_NAN;
+	ML_WARN_return_NAN;
     x /= scale;
 #ifdef IEEE_754
     if (ISNAN(x)) /* eg. original x = scale = +Inf */
