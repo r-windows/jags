@@ -3,6 +3,7 @@
 #include <util/dim.h>
 #include <util/integer.h>
 #include <matrix/matrix.h>
+#include <module/ModuleError.h>
 
 #include "Inverse.h"
 
@@ -24,7 +25,10 @@ namespace bugs {
     void Inverse::evaluate (double *value, vector<double const *> const &args,
 			    vector<vector<unsigned long> > const &dims) const
     {
-	inverse_chol (value, args[0], dims[0][0]);
+	bool can_invert = inverse_chol (value, args[0], dims[0][0]);
+	if (!can_invert) {
+	    throwFuncError(this, "Cannot invert matrix. It may not be positive definite");
+	}
     }
 
     bool 

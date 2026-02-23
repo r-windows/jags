@@ -5,6 +5,7 @@
 #include <util/dim.h>
 #include <util/integer.h>
 #include <matrix/matrix.h>
+#include <module/ModuleError.h>
 
 #include <cmath>
 
@@ -44,7 +45,10 @@ namespace bugs {
 	//FIXME Needs testing
 	unsigned long nrow = dims[0][0];
 	vector<double> work(nrow * nrow);
-	inverse_chol (work.data(), args[0], nrow);
+	bool can_invert = inverse_chol (work.data(), args[0], nrow);
+	if (!can_invert) {
+	    throwFuncError(this, "Cannot calculate gradient. Matrix may not be positive definite.");
+	}
 	for (unsigned long j = 0; j < nrow; ++j) {
 	    grad[j*nrow + j] += work[j*nrow + j];
 	    for (unsigned long k = 0; k < j; ++k) {

@@ -6,6 +6,7 @@
 #include <util/nainf.h>
 #include <matrix/lapack.h>
 #include <matrix/matrix.h>
+#include <module/ModuleError.h>
 
 #include <cmath>
 #include <vector>
@@ -32,8 +33,9 @@ namespace jags {
 	    unsigned long m = dims[0][0];
 	    
 	    vector<double> T(m * m);
-	    inverse_chol (&T[0], V, m);
-
+	    bool can_invert = inverse_chol (T.data(), V, m);
+	    if (!can_invert) return JAGS_NEGINF;
+	    
 	    double loglik = 0;
 	    vector<double> delta(m);
 	    for (unsigned long i = 0; i < m; ++i) {
@@ -184,7 +186,7 @@ namespace jags {
 	{
 	    return true;
 	}
-	
+
 	void DMNormVC::score(double *s, double const *x,
 			     std::vector<double const *> const &parameters,
 			     std::vector<std::vector<unsigned long>> const &dims, 
@@ -205,8 +207,11 @@ namespace jags {
 	    
 	    // Precision matrix
 	    vector<double> T(N);
-	    inverse_chol (T.data(), V, m);
-
+	    bool can_invert = inverse_chol (T.data(), V, m);
+	    if (!can_invert) {
+		throwDistError(this, "Cannot calculate score. Variance matrix may not be positive definite");
+	    }
+	    
 	    vector<double> eta(m, 0);
 	    for (unsigned long j = 0; j < m; ++j) {
 		for (unsigned long k = 0; k < m; ++k) {
@@ -227,7 +232,6 @@ namespace jags {
 		}
 	    }
 	}
-	    
 	
     } //namespace bugs
 } //namespace jags

@@ -9,6 +9,7 @@
 #include <matrix/lapack.h>
 #include <matrix/matrix.h>
 #include <rng/RNG.h>
+#include <module/ModuleError.h>
 
 #include <cmath>
 #include <vector>
@@ -329,7 +330,10 @@ void DMNorm::score(double *s, double const *x,
 	}
     }
     else if (i == 1) {
-	inverse_chol(s, T, m);
+	bool can_invert = inverse_chol(s, T, m);
+	if (!can_invert) {
+	    throwDistError(this, "Cannot calculate gradient. Precision matrix may not be positive definite.") ;
+	}
 	for (unsigned long j = 0; j < m; ++j) {
 	    for (unsigned long k = 0; k < m; ++k) {
 		s[j + m * k] -= delta[j] * delta[k];
