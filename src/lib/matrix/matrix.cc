@@ -138,7 +138,6 @@ double det(double const *a, int n)
 bool inverse_chol (double *X, double const *A, unsigned long n)
 {
     /* invert n x n symmetric positive definite matrix A. Put result in X*/
-    //FIXME: This needs testing after being rewritten
     
     unsigned long N = n*n;
     copy(A, A + N, X);
@@ -146,16 +145,10 @@ bool inverse_chol (double *X, double const *A, unsigned long n)
     int info = 0;
     int ni = asInteger(n);
     jags_dpotrf ("L", &ni, X, &ni, &info);
-    if (info < 0) {
-	throwLogicError("Illegal argument in inverse_chol");
-    }
-    else if (info > 0) {
-	throwRuntimeError("Cannot invert matrix: not positive definite");
-    }
+    if (info != 0) return false;
+
     jags_dpotri ("L", &ni, X, &ni, &info); 
-    if (info != 0) {
-	throwRuntimeError("Cannot invert symmetric positive definite matrix");
-    }
+    if (info != 0) return false;
 
     //Copy lower to upper triangle
     for (unsigned long i = 0; i < n; ++i) {
