@@ -41,7 +41,7 @@ private:
   bool _is_initialized;
   bool _adapt;
   bool _data_gen;
-  void initializeNodes();
+  void initializeNodes(unsigned int nrep_root, unsigned int nrep_internal);
   void chooseRNGs();
   void chooseSamplers();
   void setSampledExtra();
@@ -69,9 +69,21 @@ public:
    * redundant updates.  If true, then all nodes in the graph will be
    * updated in each iteration.
    *
+   * @param nrep_root Number of replicates to use at initialization
+   * for root parameters (i.e. unobserved stochastic nodes with
+   * stochastic depth of 1). If an initial value is not provided, it
+   * will be generated from the mean of nrep_root samples from the
+   * prior distribution.
+   *
+   * @param nrep_internal Number of replicates to use at
+   * initialization for internal parameters (i.e. unobserved
+   * stochastic nodes with stochastic depth greater than 1). If an
+   * initial value is not provided, it will be generated from the mean
+   * of nrep_internal samples from the prior distribution.
+   *
    * @see Node#initialize, Model#rngFactories
    */
-  void initialize(bool datagen);
+  void initialize(bool datagen, unsigned int nrep_root=10000U, unsigned int nrep_internal=10000U);
   /** Returns true if the model has been initialized */
   bool isInitialized();
   /**

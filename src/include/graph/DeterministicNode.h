@@ -72,6 +72,10 @@ public:
      */
     void randomSample(RNG*, unsigned int nchain) override;
     /**
+     * Initializes a node by calculating its value from the parent values;
+     */
+    void initialize(RNG *, unsigned int, unsigned int chain) override;
+    /**
      * Deterministic nodes are not random variables. 
      */
     bool isRandomVariable() const override;

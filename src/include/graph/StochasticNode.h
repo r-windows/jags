@@ -139,6 +139,20 @@ public:
     
     Node const *lowerBound() const;
     Node const *upperBound() const;
+
+    /**
+     * Initializes a stochastic node by drawing nsample samples from
+     * the prior distribution. For discrete-valued nodes and bounded
+     * nodes, the sample with the largest log density is used as an
+     * initial value. For continuous, unbounded nodes, the sample mean
+     * is used as an initial value.
+     *
+     * If nsample=1 then this is always equivalent to drawing a sample
+     * from the prior.  For large values of nsample, the initial value
+     * tends to the prior mean (for continuous unbounded nodes) or the
+     * prior mode (for discrete or bounded nodes).
+     */
+    void initialize(RNG *rng, unsigned int nsample, unsigned int chain) override;
     /*
      * Creates a copy of the stochastic node.  Supplying the parents
      * of this node as the argument creates an identical copy.

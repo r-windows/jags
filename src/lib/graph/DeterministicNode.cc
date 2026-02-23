@@ -76,6 +76,10 @@ void DeterministicNode::randomSample(RNG*, unsigned int chain) {
     deterministicSample(chain);
 }
 
+    void DeterministicNode::initialize(RNG *, unsigned int, unsigned int chain) {
+	deterministicSample(chain);
+    }
+    
     bool DeterministicNode::isRandomVariable() const
     {
 	return false;

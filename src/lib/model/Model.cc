@@ -162,7 +162,7 @@ void Model::chooseRNGs()
     }
 }
 
-void Model::initialize(bool datagen)
+void Model::initialize(bool datagen, unsigned int nrep_root, unsigned int nrep_internal)
 {
     if (_is_initialized)
 	throw logic_error("Model already initialized");
@@ -174,7 +174,7 @@ void Model::initialize(bool datagen)
     chooseRNGs();
 
     //Initialize nodes
-    initializeNodes();
+    initializeNodes(nrep_root, nrep_internal);
     
     // Choose Samplers
     chooseSamplers();
@@ -182,7 +182,6 @@ void Model::initialize(bool datagen)
     if (datagen) {
 	//All extra nodes are sampled
 	_sampled_extra = _extra_nodes;
-	_data_gen = true;
     }
 
     // Switch to adaptive mode if we find an adaptive sampler
@@ -197,37 +196,65 @@ void Model::initialize(bool datagen)
 }
 
 
-void Model::initializeNodes() {
+  void Model::initializeNodes(unsigned int nrep_root, unsigned int nrep_internal) {
 
-    for (auto i = _nodes.begin(); i != _nodes.end(); ++i) {
-	Node * const node = *i;
-	const unsigned long length = node->length();
+      /* Skip initialization of non-informative nodes (i.e. those
+       * without an observed descendant. This preserves compatibility
+       * with JAGS 4 for models with no informative nodes so that such
+       * models simulate the same data in JAGS 4 and JAGS 5 See CRAN
+       * package sims, which relies on this. */
 
-	for (unsigned int n = 0; n < _nchain; ++n) {
+      Graph graph;
+      for (auto p = _nodes.begin(); p != _nodes.end(); ++p) {
+	  graph.insert(*p);
+      }
 
-	    double const *value = node->value(n);
-	    bool initialized = true;
-	    for (unsigned long i = 0; i < length; ++i) {		
-		if (jags_isna(value[i])) {
-		    initialized = false;
-		}
-		else if (node->isDiscreteValued()) {
-		    if (isfinite(value[i]) && value[i] != floor(value[i])) {
-			throw NodeError(node, "Discrete-valued node has non-integer value at model initialization");
-		    }
-		}
-	    }
+      vector<Node const*> observations;
+      for (auto p = _stochastic_nodes.begin(); p != _stochastic_nodes.end(); ++p) {
+	  if (isObserved(*p)) {
+	      observations.push_back(*p);
+	  }
+      }
+      GraphMarks informative(graph);
+      informative.markAncestors(observations, 1);
+         
+      for (auto i = _nodes.begin(); i != _nodes.end(); ++i) {
 
-	    if (!initialized) {
-		//Check parent values
-		if (!node->checkParentValues(n)) {
-		    throw NodeError(node, "Invalid parent values at model initialization");
-		}
-		node->randomSample(_rng[n], n);
-	    }
-	}
-    }
-}
+	  Node * const node = *i;
+	  if (informative.mark(*i) == 0) continue; // Not informative
+	  
+	  for (unsigned int n = 0; n < _nchain; ++n) {
+
+	      double const *value = node->value(n);
+	      bool initialized = true;
+	      for (unsigned long i = 0; i < node->length(); ++i) {		
+		  if (jags_isna(value[i])) {
+		      initialized = false;
+		  }
+		  else if (node->isDiscreteValued()) {
+		      if (isfinite(value[i]) && value[i] != floor(value[i])) {
+			  throw NodeError(node, "Discrete-valued node has non-integer value at model initialization");
+		      }
+		  }
+	      }
+
+	      if (!initialized) {
+
+		  if (!node->checkParentValues(n)) {
+		      throw NodeError(node, "Invalid parent values at model initialization");
+		  }
+
+		  if (node->isStochastic()) {
+		      unsigned int nrep = (node->depth()[0] <= 1) ? nrep_root : nrep_internal;
+		      node->initialize(_rng[n], nrep, n);
+		  }
+		  else {
+		      node->initialize(_rng[n], 1U, n);
+		  }
+	      }
+	  }
+      }
+  }
 
 struct less_sampler {  
     /* 
@@ -287,7 +314,7 @@ void Model::chooseSamplers()
 	    slist.push_back(*p); 
 	}
     }
-
+    
     for (vector<Node*>::const_iterator j = _nodes.begin();
 	 j != _nodes.end(); ++j) 
     {

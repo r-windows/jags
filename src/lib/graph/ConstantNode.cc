@@ -58,6 +58,8 @@ namespace jags {
 
     void ConstantNode::randomSample(RNG*, unsigned int) {}
 
+    void ConstantNode::initialize(RNG*, unsigned int, unsigned int) {}
+
     string ConstantNode::deparse(vector<string> const &) const
     {
 	ostringstream os;

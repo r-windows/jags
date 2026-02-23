@@ -73,10 +73,19 @@ public:
     virtual std::array<int, 2> const &depth() const = 0;
     /**
      * Draws a random sample from the node's prior distribution.
+     *
      * @param rng Pointer to random number generator
      * @param chain Number of chain from which to draw sample
      */
     virtual void randomSample(RNG *rng, unsigned int chain) = 0;
+    /**
+     * Initialize a node by drawing samples from its prior distribution.
+     * 
+     * @param rng Pointer to random number generator. Only used for StochasticNode.
+     * @param nsample Number of samples to draw from prior. Only used for StochasticNode.
+     * @param chain Number of chain from which to draw sample
+     */
+    virtual void initialize(RNG *rng, unsigned int nsample, unsigned int chain) = 0;
     /**
      * Checks whether the parents of the Node have valid values.
      */

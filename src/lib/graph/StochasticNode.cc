@@ -322,5 +322,46 @@ bool StochasticNode::fullRank() const
 {
     return _dist->fullRank() && allFalse(*_observed);
 }
+
+    void StochasticNode::initialize(RNG *rng, unsigned int nrep, unsigned int chain)
+    {
+	this->randomSample(rng, chain);
+	
+	if (nrep == 1) {
+	    return;
+	}
+
+	vector<double> buf(_length);
+	double const *val = this->value(chain);
+	copy(val, val + _length, buf.begin());
+	
+	if (_discrete || _lower || _upper) {
+	    // For discrete or bounded stochastic nodes, take the empirical mode
+	    double ld0 = this->logDensity(chain, PDF_PRIOR);
+	    for (unsigned int i = 1; i < nrep; ++i) {
+		this->randomSample(rng, chain);
+		double ld1 = this->logDensity(chain, PDF_PRIOR);
+		if (ld1 > ld0) {
+		    copy(val, val + _length, buf.begin());
+		    ld0 = ld1;
+		}
+	    }
+	}
+	else {
+	    // For continuous, unbounded notes, take the empirical mean
+	    for (unsigned int i = 1; i < nrep; ++i) {
+		this->randomSample(rng, chain);
+		for (unsigned long j = 0; j < _length; ++j) {
+		    buf[j] += val[j];
+		}
+	    }
+	    for (unsigned long j = 0; j < _length; ++j) {
+		buf[j] /= nrep;
+	    }
+	}
+
+	this->setValue(buf.data(), _length, chain);
+    }
+    
     
 } //namespace jags

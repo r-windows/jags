@@ -51,6 +51,11 @@ public:
      */
     void randomSample(RNG*, unsigned int) override;
     /**
+     * This function does nothing. Constant nodes are already initialized
+     * when they are created.
+     */
+    void initialize(RNG*, unsigned int, unsigned int) override;
+    /**
      * Constant nodes have no parents. This function always returns true.
      */
     bool checkParentValues(unsigned int) const override;
