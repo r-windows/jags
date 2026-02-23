@@ -9,6 +9,7 @@
 
 using std::vector;
 using std::max;
+using std::isfinite;
 
 #define LAMBDA(par) (*par[0])
 #define R_D_nonint(x)     (fabs((x) - floor((x)+0.5)) > 1e-7)
