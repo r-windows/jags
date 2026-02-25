@@ -165,6 +165,7 @@
 %token <intval> ENDDATA
 %token <intval> ASINTEGER
 %token <intval> DOTDATA
+%token <intval> NREP
 
 %token <intval> DIRECTORY
 %token <intval> CD
@@ -377,7 +378,17 @@ compile: COMPILE {
 ;
 
 initialize: INITIALIZE {
-    if (!console->initialize()) {
+    if (!console->initialize(10000U, 10000U)) {
+	errordump();
+    }
+}
+| INITIALIZE ',' NREP '(' INT ')' {
+    if (!console->initialize($5, $5)) {
+	errordump();
+    }
+}
+| INITIALIZE ',' NREP '(' INT ',' INT ')' {
+    if (!console->initialize($5, $7)) {
 	errordump();
     }
 }

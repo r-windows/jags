@@ -716,20 +716,104 @@ A suitable set of initial values (for a single chain) would be
 list(alpha = 0, beta = c(NA, 1.03, -2.03, 0.52))
 \end{verbatim}
 This allows parameter values to be supplied for the stochastic
-elements of \verb+beta+ but not the constant first element.
+elements of \verb+beta+ but not the first element, which is a
+constant set to zero in the model.
 
 If initial values are not supplied by the user, then each parameter
-chooses its own initial value based on the values of its parents.  The
-initial value is chosen to be a ``typical value'' from the prior
-distribution. The exact meaning of ``typical value'' depends on the
-distribution of the stochastic node, but is usually the mean, median,
-or mode.
+chooses its own initial value based on the values of its
+parents. Prior to version 5.0.0, JAGS used deterministic starting
+values based on a ``typical value'' from the prior distribution. The
+exact meaning of typical value depended on the distribution of the
+stochastic node, but was usually the mean, median, or mode. This
+allowed the user to specify very diffuse prior distributions but still
+gave useful starting values. For example
+\begin{verbatim}
+  theta ~ dnorm(0, 0.0001)
+\end{verbatim}
+Here \texttt{theta} has a prior standard deviation of 100 but was
+always initialized to zero.
 
-If you rely on automatic initial value generation and are running
-multiple parallel chains, then the initial values will be the same in
-all chains.\footnote{This is undesirable behaviour and it will be changed in a
-future release of \JAGS.} You are advised to set the starting values
-manually.
+A downside of setting deterministic starting values is that all
+parallel chains are initialized to the same value. Ideally, initial
+values should be a random sample from the prior distribution so that
+different chains start in different parts of the parameter
+space. Diverse starting values are important for for diagnosing
+convergence problems, particularly if the posterior distribution is
+multimodal.
+
+JAGS 5.0.0 introduces a new way of choosing initial values. For each
+parameter the initial value is a summary of $N$ samples from the prior
+distribution.
+\begin{itemize}
+\item For continuous unbounded distributions, the intial value is the
+  sample mean. For large $N$, this is an estimate of the prior mean.
+\item For discrete and bounded distributions, the initial value is
+  the sample with the highest prior density. For large $N$ this is
+  an estimate of the prior mode.
+\end{itemize}
+In either case $N=1$ gives a sample from the prior distribution.
+
+JAGS 5.0.0 uses a default value of $N=10000$ for the initial sample
+size. Although this number may appear large, sampling from the prior
+is much more efficient than MCMC sampling from the posterior so you
+should not notice a delay in model initialization.
+
+The value $N=10000$ was chosen to maximize back-compatibility with
+existing BUGS code. Many people have written models that rely on the
+ability of JAGS to automatically generate good initial values for
+diffuse priors. In general, $N=10000$ will generate starting values
+similar to the previous ``typical'' values. However, the new algorithm
+will not work with very diffuse normal and gamma priors. If you want
+to use diffuse normal or gamma priors then we recommend these
+hyper-parameters:
+
+\begin{verbatim}
+theta ~ dnorm(0, 1.0E-3)
+tau ~ dgamma(1.0E-3, 1.0E-3)
+\end{verbatim}
+
+The actual distributions that will be used to draw the initial values are
+
+\begin{verbatim}
+theta ~ dnorm(0, 10)
+tau ~ dgamma(10, 10)
+\end{verbatim}
+which generate initial values close to $0$ for \texttt{theta} and
+close to $1$ for \texttt{tau} with high probability.
+
+To modify the number of prior samples used for initialization, use the
+\texttt{initrep} argument to the \texttt{jags.model} function in the
+\textsf{rjags} package, or the \texttt{nrep} modifier to the
+\texttt{initialize} command. In both cases it is possible to set
+either a single value $n$ to be used for all stochastic nodes or two
+values $(n_1, n_2)$.
+
+\begin{itemize}
+\item $n_1$ is used for {\em root parameters}. These are
+  unobserved stochastic nodes with no stochastic parents.
+\item  $n_2$ is used for {\em internal parameters}. These
+  are unobserved stochastic nodes with a stochastic parent.
+\end{itemize}
+
+To illustrate the difference between root and internal parameters,
+consider the following code fragment where \texttt{eps[1:M]} and
+\texttt{tau} are unobserved:
+
+\begin{verbatim}
+for(i in 1:M) {
+   eps[i] ~ dnorm(0, tau)
+}
+tau ~ dgamma(1.0E-3, 1.0E-3)
+\end{verbatim}
+
+Here \texttt{tau} is a root parameter. Its parent nodes are constant.
+The random effects \texttt{eps[1]} to \texttt{eps[M]} are internal
+parameters because the unobserved node \texttt{tau} is a stochastic
+parent. For this model, specifying initial sample size values $n_1 =
+1000, n_2 = 1$ sets the initial value of the precision parameter
+\texttt{tau} close to the prior mean of 1, but draws the random
+effects from a normal distribution with mean 0 and variance
+\texttt{tau}.
 
 \subsection{Random Number Generators}
 \label{section:rngs}
@@ -737,8 +821,21 @@ manually.
 Each chain in \JAGS\ has its own random number generator (RNG). RNGs
 are more correctly referred to as {\em pseudo}-random number
 generators. They generate a sequence of numbers that merely looks
-random but is, in fact, entirely determined by the initial state.  You
-may optionally set the name of the RNG and its initial state with the
+random but is, in fact, entirely determined by the initial state.
+
+By default, \JAGS\ bases the initial RNG state on the time stamp. This
+means that, when a model is re-run, it generates different set of
+samples. If you want your model run to be reproducible, you must
+explicitly set the RNG seed.
+
+From JAGS 5.0.0 there is a simplified way to make JAGS runs
+reproducible by setting a global seed. In the \textsf{rjags} package,
+this is done with the \texttt{jags.seed()} function and in the command
+line interface with the command \texttt{set seed}. This must be done
+before compiling and initializing the model.
+
+You may optionally set the RNG state for an individual chain by
+supplyin both the name of the RNG and its initial state with the
 initial values for the parameters.
 
 There are four RNGs supplied by the \texttt{base} module in \JAGS\
@@ -750,9 +847,10 @@ with the following names:
 "base::Mersenne-Twister"
 \end{verbatim}
 
-There are two ways to set the starting state of the RNG. The simplest
-is to supply the name of the RNG and its seed (a single integer value)
-with the initial values, {\em e.g.} using the \R\ interface to \JAGS:
+There are two ways to set the starting state of the RNG with the
+initial values.  The simplest is to supply the name of the RNG and its
+seed (a single integer value), {\em e.g.} using the \R\ interface to
+\JAGS:
 \begin{verbatim}
 list(".RNG.name" = "base::Wichmann-Hill",
      ".RNG.seed" = 314159,
@@ -782,11 +880,6 @@ exact behaviour depends on which modules are loaded. The \texttt{base}
 module uses the four generators listed above for the first four
 chains, then recycles them with different seeds for the next four
 chains, and so on.  
-
-By default, \JAGS\ bases the initial state on the time stamp. This
-means that, when a model is re-run, it generates an independent set of
-samples. If you want your model run to be reproducible, you must
-explicitly set the \texttt{.RNG.seed} for each chain.
 
 \subsection{Samplers}
 
@@ -898,8 +991,14 @@ line_inits <- list(list("alpha" = 3, "beta"= 0, "tau" = 1.5),
 \section{rjags}
 \label{section:R:rjags}
 
-To run a model with the \texttt{rjags} package, we first create a model
-object with the \texttt{jags.model()} function.
+To make a JAGS model run reproducible with the \texttt{rjags} package,
+set the global RNG seed with the \texttt{jags.seed} function.
+\begin{verbatim}
+jags.seed(5123)
+\end{verbatim}
+
+To run a model with \textsf{rjags}, we first create a model object
+with the \texttt{jags.model()} function.
 \begin{verbatim}
 library(rjags)
 model <- jags.model("line.bug", data=line_data, inits=line_inits, n.chains=2)
@@ -1206,6 +1305,7 @@ jags <script file>
 The linear regression model from chapter~\ref{chapter:bugslang} can
 be run with the following commands
 \begin{verbatim}
+set seed 8257            # Set global RNG seed to make simulations reproducible
 model in "line.bug"      # Read model file
 data in "line-data.R"    # Read data in from file
 compile, nchains(2)      # Compile a model with two parallel chains
@@ -1248,6 +1348,22 @@ inside them, represents a parameter that should be replaced with the
 correct value by you.  Anything inside square brackets \verb+[]+ is
 optional. Do not type the square brackets if you wish to use an
 option.
+
+\subsubsection{SET SEED}
+
+\begin{verbatim}
+. set seed <n>
+\end{verbatim}
+
+Sets a global RNG seed to make JAGS simulations reproducible. See
+section~\ref{section:rngs}.
+
+Note that we can only guarantee reproducibility of simulations within
+the same version of JAGS. When a new JAGS version is released it may
+produce different output.
+
+The behaviour of \texttt{set seed} will also depend on which RNG
+factories are loaded and which are active.
 
 \subsubsection{MODEL IN}
 
@@ -1315,10 +1431,29 @@ See also: PARAMETERS TO (page \pageref{parameters:to})
 \subsubsection{INITIALIZE}
 
 \begin{verbatim}
-. initialize
+. initialize [, nrep(<n1>[,<n2>]) ]
 \end{verbatim}
 Initializes the model using the previously supplied data and parameter
-values supplied for each chain.
+values supplied for each chain. Parameter values without an explicit
+initial value will be sampled from the prior.
+
+By default, the initial value for unobserved stochastic nodes will be
+based on a sample of size $n=10000$. For continuous parameters, the
+initial value is the sample mean (which is an estimate of the prior
+mean); for discrete or bounded distributions, the initial value is the
+sample with the highest prior density (which is an estimate of the prior
+mode).
+
+Use the \texttt{nrep} option to control the initialization.  Using
+\texttt{nrep(1)} draws a single sample from the prior. The \texttt{nrep}
+option can take two arguments. With \texttt{nrep(n1, n2)}, the first
+argument $n1$ will be used for root parameters ({\em i.e} stochastic
+nodes of depth 1) and the second argument $n2$ for all other parameters.
+For example, in a mixed-effects model with normal BUGS parameterization,
+the fixed effects will be root parameters and you will often want to
+initialize them to their prior means. Conversely, the random effects
+are not root parameters (because they have an unknown variance) and you
+may not wish to initialize them all to their prior mean of zero.
 
 \subsubsection{UPDATE}
 

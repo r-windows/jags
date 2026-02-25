@@ -37,6 +37,7 @@ compile			zzlval.intval=COMPILE; return COMPILE;
 nchains                 zzlval.intval=NCHAINS; return NCHAINS;
 nthreads                zzlval.intval=NTHREADS; return NTHREADS;
 initialize              zzlval.intval=INITIALIZE; return INITIALIZE;
+nrep                    zzlval.intval=NREP; return NREP;
 chain                   zzlval.intval=CHAIN; return CHAIN;
 
 update			zzlval.intval=UPDATE; return UPDATE;

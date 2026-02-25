@@ -225,7 +225,7 @@ bool Console::compile(map<string, SArray> &data_table, unsigned int nchain,
 		}
 	    }
 	    _out << "   Initializing" << endl;
-	    _model->initialize(true);
+	    _model->initialize(true, 1U, 1U);
 	    // Do a single update (by forward sampling)
 	    _model->update(1);
 	    //Save data generating RNG for later use. It is owned by the
@@ -303,7 +303,7 @@ bool Console::compile(map<string, SArray> &data_table, unsigned int nchain,
     return true;
 }
 
-bool Console::initialize()
+bool Console::initialize(unsigned nrep_root, unsigned int nrep_internal)
 {
     if (_model == nullptr) {
 	_err << "Can't initialize. No model!" << endl;
@@ -321,7 +321,7 @@ bool Console::initialize()
     
     try {
 	_out << "Initializing model" << endl;
-	_model->initialize(false);
+	_model->initialize(false, nrep_root, nrep_internal);
     }
     catch(...) {
 	handle();

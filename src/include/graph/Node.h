@@ -84,6 +84,8 @@ public:
      * @param rng Pointer to random number generator. Only used for StochasticNode.
      * @param nsample Number of samples to draw from prior. Only used for StochasticNode.
      * @param chain Number of chain from which to draw sample
+     *
+     * @see StochasticNode#initialize, DeterministicNode#initialize
      */
     virtual void initialize(RNG *rng, unsigned int nsample, unsigned int chain) = 0;
     /**

@@ -72,8 +72,8 @@ public:
    * @param nrep_root Number of replicates to use at initialization
    * for root parameters (i.e. unobserved stochastic nodes with
    * stochastic depth of 1). If an initial value is not provided, it
-   * will be generated from the mean of nrep_root samples from the
-   * prior distribution.
+   * will be generated from nrep_root samples from the prior
+   * distribution.
    *
    * @param nrep_internal Number of replicates to use at
    * initialization for internal parameters (i.e. unobserved
@@ -83,7 +83,7 @@ public:
    *
    * @see Node#initialize, Model#rngFactories
    */
-  void initialize(bool datagen, unsigned int nrep_root=10000U, unsigned int nrep_internal=10000U);
+  void initialize(bool datagen, unsigned int nrep_root, unsigned int nrep_internal);
   /** Returns true if the model has been initialized */
   bool isInitialized();
   /**
