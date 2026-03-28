@@ -8,28 +8,42 @@ namespace jags {
 /**
  * @short Step size for Random Walk Metropolis-Hastings
  *
- * Uses a noisy gradient algorithm to adapt the step size of a random
- * walk Metropolis-Hastings algorithm to reach the target acceptance
- * probability.
+ * Uses a stochastic gradient algorithm to adapt the step size of a
+ * random walk Metropolis-Hastings algorithm to reach the target
+ * acceptance probability. 
  */
 class StepAdapter 
 {
-    const double _prob;
-    double _lstep;
-    bool  _p_over_target;
-    unsigned int _n;
+    const double _a;
+    const double _delta; 
+    double _theta0;
+    double _theta;
+    const double _min_step;
+    unsigned long _n;
+    const double _nstart0;
+    double _nstart;
+
 public:
     /**
      * Constructor. 
      *
      * @param step Initial step size for the random walk updates.
-     * @param prob Target acceptance probability. The default seems to
-     *              be a fairly robust optimal value.
+     *
+     * @param accept Target acceptance probability
+     *
+     * @param delta Step size for the stochastic gradient algorithm is delta/n where n is the iteration
+     *              number starting from nstart
+     *
+     * @param nstart Initial value of n, the denominator that determines the step size of the stochastic
+     *               gradient algorithm
+     *
+     * @param min_step Minimal step size for random walk updates
      */
-    StepAdapter(double step, double prob = 0.234);
+    StepAdapter(double step, double accept=0.234, double delta = 2.17, double nstart = 28, double min_step=0);
     /**
      * Recalculates the step size.
-     * @param p acceptance probability
+     *
+     * @param p acceptance probability of current proposal
      */
     void rescale(double p);
     /**

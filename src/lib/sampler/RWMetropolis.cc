@@ -9,13 +9,16 @@ using std::log;
 using std::exp;
 using std::fabs;
 using std::isfinite;
+using std::min;
 
 namespace jags {
 
-RWMetropolis::RWMetropolis(vector<double> const &value,
-			   double step, double prob)
-    : Metropolis(value), _step_adapter(step, prob), _pmean(0), _niter(2)
+RWMetropolis::RWMetropolis(vector<double> const &value, double step,
+			   double a, double delta, double nstart, double min_step)
+    : Metropolis(value), _step_adapter(step, a, delta, nstart, min_step), _niter(0)
 {
+    _psum[0] = 0.0;
+    _psum[1] = 0.0;
 }
 
 RWMetropolis::~RWMetropolis()
@@ -24,11 +27,20 @@ RWMetropolis::~RWMetropolis()
 
 void RWMetropolis::rescale(double p)
 {
+    p = min(p, 1.0);
     _step_adapter.rescale(p);
 
-    // We keep a weighted mean estimate of the mean acceptance probability
-    //  with the weights in favour of more recent iterations
-    _pmean += 2 * (p - _pmean) / _niter;
+    /* The array _psum[2] holds a running total of the acceptance
+       probabilities for the last 100-200 iterations. Every 100
+       iterations we put the sum of the last 100 iterations in
+       _psum[1] and start the sum again in _psum[0].
+    */
+    if (_niter / 100 > 0 && _niter % 100 == 0) {
+	_psum[1] = _psum[0];
+	_psum[0] = 0.0;
+
+    }
+    _psum[0] += p;
     _niter++;
 }
 
@@ -49,11 +61,12 @@ void RWMetropolis::update(RNG *rng)
 
 bool RWMetropolis::checkAdaptation() const
 {
-    if (_pmean <= 0 || _pmean >= 1) {
-	return false;
-    }
+    if (_niter < 100) return false;
 
-    return fabs(_step_adapter.logitDeviation(_pmean)) < 0.5;
+    /* Average acceptance probability over the last 100-200 iterations */
+    double pmean = (_psum[0] + _psum[1])/(100 + (_niter % 100));
+    
+    return fabs(_step_adapter.logitDeviation(pmean)) < 0.5;
 }
 
 void RWMetropolis::step(vector<double> &value, double s, RNG *rng) const

@@ -16,7 +16,7 @@ namespace jags {
 class RWMetropolis : public Metropolis
 {
     StepAdapter _step_adapter;
-    double _pmean;
+    double _psum[2];
     unsigned int _niter;
 public:
     /**
@@ -24,11 +24,13 @@ public:
      *
      * @param value Initial value vector.
      * @param step Initial step size for the random walk updates.
-     * @param prob Target acceptance probability. The default seems to
-     *              be a fairly robust optimal value.
+     * @param accept See StepAdapter
+     * @param delta See StepAdapter
+     * @param nstart See StepAdapter
+     * @param min_step See StepAdapter
      */
-    RWMetropolis(std::vector<double> const &value, double step, 
-                 double prob = 0.234);
+    RWMetropolis(std::vector<double> const &value, double step,
+		 double accept = 0.234, double delta = 2.17, double nstart = 28, double min_step = 0);
     ~RWMetropolis() override;
     /**
      * Updates the current value by adding a random increment.

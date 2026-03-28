@@ -1,59 +1,62 @@
 #include <config.h>
 #include <sampler/StepAdapter.h>
+#include <JRmath.h>
 
 #include <stdexcept>
 #include <algorithm>
 #include <cmath>
 #include <string>
 
-using std::min;
-using std::log;
 using std::exp;
+using std::log;
 using std::logic_error;
-
-/* 
-   The value _n controls the reduction in the step size when rescale is
-   called. There is no reason to give it an initial value of zero. In
-   fact this is a poor choice since the  step size would be immediately
-   halved. We start with a value of 10 so the first change in step size
-   is 10%.
-*/
-#define INITIAL_N 10
+using std::max;
+using std::min;
 
 namespace jags {
 
-StepAdapter::StepAdapter(double step, double prob)
-    : _prob(prob), _lstep(log(step)), _p_over_target(false), _n(INITIAL_N)
-{
-    if (prob < 0 || prob > 1 || step < 0)
-	throw logic_error("Invalid initial values in StepAdapter");
-}
+    StepAdapter::StepAdapter(double step, double a, double delta, double nstart, double min_step)
+	: _a(a), _delta(delta), _theta0(log(step)), _theta(_theta0), _min_step(min_step),
+	  _n(0), _nstart0(nstart), _nstart(nstart)
+    {
+	if (step <= 0 || a <= 0 || a >= 1 || delta <= 0 || nstart <= 0)
+	    throw logic_error("Invalid initial values in StepAdapter");
+    }
+    
+    void StepAdapter::rescale(double p)
+    {
+	/* Rescale step size using Robbins-Munro (1951) stochastic search algorithm to
+	   reach optimal acceptance probability */
+	
+	p = min(p, 1.0);
 
-void StepAdapter::rescale(double p)
-{
-    p = min(p, 1.0);
-    _lstep +=  (p - _prob) / _n; 
+	_theta += _delta * (p - _a)/(_n + _nstart);
+	if (_min_step > 0) {
+	    // If a minimum step size is specified, ensure we do not go below it (Spencer 2021)
+	    _theta = max(_theta, log(_min_step));
+	}
+	
+	if (abs(_theta0 - _theta) > log(3.0)) {
+	    /* If we move too far away from the initial step size then restart the Robbins-Munro
+	       algorithm (Garthwaite, Fan & Sisson 2016) */
+	    _theta0 = _theta;
+	    _nstart = _nstart0 - _n;
+	}
 
-    if ((p > _prob) != _p_over_target) {
-	//   Reduce the step size only when the acceptance probability
-	//  crosses the target value. This allows us to adapt quickly
-	// to a poor initial choice of scale.
-	_p_over_target = !_p_over_target;
 	_n++;
     }
-}
 
-double StepAdapter::stepSize() const
-{
-    return exp(_lstep);
-}
+    double StepAdapter::stepSize() const
+    {
+	return exp(_theta);
+    }
 
-double StepAdapter::logitDeviation(double p) const
-{
-    double logit_target = log(_prob/(1 - _prob));
-    double logit_p = log(p/(1 - p));
-
-    return logit_target - logit_p;
-}
+    double StepAdapter::logitDeviation(double p) const
+    {
+	double logit_a = log(_a/(1 - _a));
+	double logit_p = log(p/(1 - p));
+	
+	return logit_a - logit_p;
+    }
 
 } //namespace jags
