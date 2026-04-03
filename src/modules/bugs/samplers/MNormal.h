@@ -1,7 +1,9 @@
 #ifndef MNORM_METROPOLIS_H_
 #define MNORM_METROPOLIS_H_
 
-#include <sampler/Metropolis.h>
+#include <sampler/MutableSampleMethod.h>
+
+#include <vector>
 
 namespace jags {
 
@@ -9,19 +11,26 @@ namespace jags {
 
     namespace bugs {
 
-	class MNormMetropolis : public Metropolis
+	/**
+	 * Adaptive random walk Metropolis-Hastings sampler for the
+	 * multivariate normal distribution, based largely on the work
+	 * Spencer (2021).
+	 */
+	class MNormMetropolis : public MutableSampleMethod
 	{
 	    SingletonGraphView const *_gv;
 	    unsigned int _chain;
 	    std::vector<double> _mu;
 	    std::vector<double> _Sigma;
+	    std::vector<double> _Sigma_chol;
 	    double _b;
 	    unsigned int _n0;
 	    double _ptarget;
 	    unsigned long _t;
-	    double _theta, _lstep;
+	    double _lstep, _lstep_bar;
 	    double _pmean;
 	    double _delta;
+	    bool _adapt;
 	public:
 	    /**
 	     *
@@ -50,11 +59,11 @@ namespace jags {
 	    MNormMetropolis(SingletonGraphView const *gv, unsigned int chain,
 			    double prior_scale = 1.0, unsigned int n0 = 30,
 			    double ess_fraction = 0.5, double target_p = 0.234);
-	    void rescale(double p) override;
+	    void rescale(double p);
 	    void update(RNG *rng) override;
 	    bool checkAdaptation() const override;
-	    void getValue(std::vector<double> &value) const override;
-	    void setValue(std::vector<double> const &value) override;
+	    void adaptOff() override;
+	    bool isAdaptive() const override;
 	};
 
     }
