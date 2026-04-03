@@ -16,6 +16,20 @@ namespace jags {
 bool inverse_lu (double *X, double const *A, unsigned long n);
 
 /**
+ * Calculates the Cholesky decomposition of a symmetric positive definite
+ * matrix using the LAPACK routine DPOTRF
+ * 
+ * @param X Pointer to an array of length n squared, which will contain
+ * the Cholesky decomposition on exit.
+ *
+ * @param A pointer to array containing the values of the matrix. Only
+ * the lower triangle of the matrix (in column-major order) is used.
+ *
+ * @param n number or rows or columns in the matrix
+ */
+void cholesky (double *X, double const *A, unsigned long n);
+
+/**
  * Inverts a symmetrix positive definite matrix by Cholesky
  * decomposition using the LAPACK routines DPOTRF and DPOTRI.
  * 
