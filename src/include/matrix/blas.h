@@ -22,6 +22,8 @@ extern "C" {
 
     void jags_dtrsv (const char *uplo, const char *trans, const char *diag, const int *n, const double *a, const int *lda, double *x, const int *incx);
 
+    void jags_dtrmv (const char *uplo, const char *trans, const char *diag, const int *n, const double *a, const int *lda, double *x, const int *incx);
+
     void jags_dcopy (const int* n, double const *X, const int* incx, double *Y, const int *incy);
     
     void jags_dscal (const int* n, double const *alpha, double *X, const int *incx);
