@@ -343,7 +343,7 @@ once, and then the node values are read back into the data table.
 
 \subsection{Modelling simulated data}
 
-The data block is not limited to logical relations, but may also
+The data block is not limited to deterministic relations, but may also
 include stochastic relations. You may therefore use it in simulations,
 generating data from a stochastic model that is different from the one
 used to analyse the data in the \texttt{model} statement.
@@ -685,7 +685,7 @@ steps in the initialization of a model:
 
 The user may supply initial value files -- one for each chain --
 containing initial values for the model parameters. Initial values may
-not be supplied for logical or constant nodes.
+not be supplied for deterministic or constant nodes.
 
 The format for initial values is the same as the one used for data
 (i.e. a list using the \R\ interface or a separate file when using the
@@ -1423,7 +1423,7 @@ the same value.
 
 The PARAMETERS IN statement must be used after the COMPILE statement
 and before the INITIALIZE statement.  You may only supply the values of
-unobserved stochastic nodes in the parameters file, not logical or
+unobserved stochastic nodes in the parameters file, not deterministic or
 constant nodes.
 
 See also: PARAMETERS TO (page \pageref{parameters:to})
@@ -2093,10 +2093,10 @@ sampling from the prior distribution?
 \section{Observable Functions}
 \label{section:obfun}
 
-Logical nodes in the \BUGS\ language are a convenient way of
+Deterministic nodes in the \BUGS\ language are a convenient way of
 describing the relationships between observables (constant and
 stochastic nodes), but are not themselves observable. You cannot
-supply data values for a logical node.  This restriction can
+supply data values for a deterministic node.  This restriction can
 occasionally be inconvenient, as there are important cases where the
 data are a deterministic function of unobserved variables.  Three
 important examples are
