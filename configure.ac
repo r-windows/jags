@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.71])
+AC_PREREQ([2.72])
 
 AC_INIT([JAGS],[5.0.0-beta],[martyn_plummer@users.sourceforge.net],[JAGS])
 
@@ -93,6 +93,8 @@ AC_LANG_POP([C])
 if test "${win}" = "true"; then
 FCFLAGS="$FCFLAGS -fopenmp"
 fi
+
+JAGS_GCD
 
 ## Mixed C++ and Fortran libraries must be linked with C++, but
 ## the C++ compiler knows nothing about the runtime Fortran
