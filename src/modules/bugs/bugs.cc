@@ -107,6 +107,7 @@
 #include <samplers/SumFactory.h>
 #include <samplers/RW1Factory.h>
 #include <samplers/BinomSliceFactory.h>
+#include <samplers/EllipticalSliceFactory.h>
 
 using std::vector;
 
@@ -218,6 +219,9 @@ namespace bugs {
 	insert(new DLogLik);
 	
 	//Load sampler factories
+	/* FIXME Needs more testing
+	insert(new EllipticalSliceFactory);
+	*/
 	insert(new MNormalFactory);
 	insert(new DirichletFactory);
 	insert(new BinomSliceFactory);
