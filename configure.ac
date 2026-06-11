@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.72])
+AC_PREREQ([2.71])
 
 AC_INIT([JAGS],[5.0.0-beta],[martyn_plummer@users.sourceforge.net],[JAGS])
 
