@@ -1,3 +1,5 @@
+/*Copyright (C) 2026 Marcel Jonker */
+
 #ifndef ELLIPTICAL_SLICE_FACTORY_H_
 #define ELLIPTICAL_SLICE_FACTORY_H_
 

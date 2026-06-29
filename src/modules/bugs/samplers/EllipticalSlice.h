@@ -1,3 +1,5 @@
+/* Copyright (C) 2026 Marcel Jonker */
+
 #ifndef ELLIPTICAL_SLICE_H_
 #define ELLIPTICAL_SLICE_H_
 

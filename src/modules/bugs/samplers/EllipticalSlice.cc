@@ -1,3 +1,5 @@
+/* Copyright (C) 2026 Marcel Jonker */
+
 #include <config.h>
 
 #include "EllipticalSlice.h"

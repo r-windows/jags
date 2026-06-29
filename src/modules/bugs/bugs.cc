@@ -219,10 +219,8 @@ namespace bugs {
 	insert(new DLogLik);
 	
 	//Load sampler factories
-	/* FIXME Needs more testing
-	insert(new EllipticalSliceFactory);
-	*/
 	insert(new MNormalFactory);
+	insert(new EllipticalSliceFactory);
 	insert(new DirichletFactory);
 	insert(new BinomSliceFactory);
 	insert(new ConjugateFactory);
