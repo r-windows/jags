@@ -40,11 +40,13 @@ using std::FILE;
 // so that we can then dump parameter values from parser.cc
 #define CATCH_ERRORS_DUMP						\
     catch (ParentError const &except) {					\
-        except.printMessage(_err, _model->symtab());			\
+        except.printMessage(_err.buffer(), _model->symtab());		\
+	_err.drain();							\
 	return false;							\
     }									\
     catch (NodeError const &except) {					\
-        except.printMessage(_err, _model->symtab());			\
+        except.printMessage(_err.buffer(), _model->symtab());		\
+	_err.drain();							\
 	return false;							\
     }									\
     catch (std::runtime_error const &except) {				\
@@ -61,12 +63,14 @@ using std::FILE;
 
 #define CATCH_ERRORS							\
     catch (ParentError const &except) {					\
-        except.printMessage(_err, _model->symtab());			\
+        except.printMessage(_err.buffer(), _model->symtab());		\
+	_err.drain();							\
 	clearModel();							\
 	return false;							\
     }									\
     catch (NodeError const &except) {					\
-        except.printMessage(_err, _model->symtab());			\
+        except.printMessage(_err.buffer(), _model->symtab());		\
+	_err.drain();							\
 	clearModel();							\
 	return false;							\
     }									\

@@ -5,6 +5,7 @@
 
  #include <vector>
  #include <iostream>
+ #include <sstream>
  #include <string>
  #include <map>
  #include <cstdio>
@@ -16,6 +17,65 @@
  class ParseTree;
  struct RNG;
  class Module;
+
+ /**
+  * @short Formatting proxy for output streams supplied by the caller
+  *
+  * The output streams passed to the Console constructor belong to the
+  * calling program or shared library, which may have been linked
+  * against its own copy of the C++ standard library. This is the norm
+  * on Windows, where libjags and the calling module (e.g. the rjags
+  * DLL) each link the runtime statically. Formatted output on a
+  * stream that belongs to another module can then crash inside the
+  * locale machinery of the standard library, because locale facets
+  * are looked up through static objects that are duplicated in each
+  * module (this is fatal with libc++ on Windows/aarch64).
+  *
+  * The ConsoleStream class does all formatting locally, inside the
+  * module that contains the JAGS library, and passes only raw bytes
+  * to the target stream. Unformatted output does not use the locale
+  * and is safe across module boundaries.
+  */
+ class ConsoleStream {
+     std::ostream &_target;
+     std::ostringstream _buffer;
+   public:
+     ConsoleStream(std::ostream &target) : _target(target) {}
+     /**
+      * Move locally formatted bytes to the target stream
+      */
+     ConsoleStream &drain() {
+	 std::string s = _buffer.str();
+	 if (!s.empty()) {
+	     _target.write(s.data(),
+			   static_cast<std::streamsize>(s.size()));
+	     _buffer.str(std::string());
+	 }
+	 return *this;
+     }
+     /**
+      * Format locally, then forward raw bytes to the target stream
+      */
+     template<class T>
+     ConsoleStream &operator<<(T const &value) {
+	 _buffer << value;
+	 return drain();
+     }
+     /**
+      * Support for std::endl and other ostream manipulators
+      */
+     ConsoleStream &operator<<(std::ostream &(*manip)(std::ostream &)) {
+	 manip(_buffer);
+	 drain();
+	 _target.flush();
+	 return *this;
+     }
+     /**
+      * A module-local stream for functions that format output to a
+      * std::ostream. Pass this to the function, then call drain().
+      */
+     std::ostream &buffer() { return _buffer; }
+ };
 
  /**
   * @short Flags for the function Console#dumpState
@@ -31,8 +91,8 @@
   */
  class Console
  {
-   std::ostream &_out;
-   std::ostream &_err;
+   ConsoleStream _out;
+   ConsoleStream _err;
    BUGSModel *_model;
    ParseTree *_pdata;
    ParseTree *_prelations;
