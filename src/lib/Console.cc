@@ -65,7 +65,8 @@ void Console::handle(bool clear) {
 	throw;
     }
     catch (NodeError const &except) {
-	except.printMessage(_err, _model->symtab());
+	except.printMessage(_err.buffer(), _model->symtab());
+	_err.drain();
     }
     catch (std::runtime_error const &except) {
 	_err << "RUNTIME ERROR:\n";
