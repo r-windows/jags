@@ -34,6 +34,18 @@ Var SM_FOLDER
 !define APP_REG_KEY "Software\${PUBLISHER}\${JAGS_KEYNAME}"
 !define PUB_REG_KEY "Software\${PUBLISHER}"
 
+;Install the binaries under x64 on x86_64, but directly into the
+;installation directory on other architectures (aarch64): R for
+;aarch64 has an empty R_ARCH, so rjags expects a flat layout there.
+!ifndef WINARCH
+  !define WINARCH x86_64
+!endif
+!if "${WINARCH}" == "x86_64"
+  !define ARCHDIR "$INSTDIR\x64"
+!else
+  !define ARCHDIR "$INSTDIR"
+!endif
+
 ;Start Menu Folder Page Configuration
 !define MUI_STARTMENUPAGE_DEFAULTFOLDER "${APP_NAME}"
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT "${INSTDIR_REG_ROOT}" 
@@ -91,42 +103,42 @@ SectionEnd
 
 Section "64-bit installation" Sec64
 
-   SetOutPath "$INSTDIR\x64"
+   SetOutPath "${ARCHDIR}"
    !insertmacro UNINSTALL.LOG_OPEN_INSTALL
    File /r inst64\bin
    !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
 
-   SetOutPath "$INSTDIR\x64\bin"
+   SetOutPath "${ARCHDIR}\bin"
    !insertmacro UNINSTALL.LOG_OPEN_INSTALL
    File inst64\libexec\jags-terminal.exe
    !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
 
-   SetOutPath "$INSTDIR\x64\lib"
+   SetOutPath "${ARCHDIR}\lib"
    !insertmacro UNINSTALL.LOG_OPEN_INSTALL
    File inst64\lib\*.dll.a
    File inst64\lib\*.la
    !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
 
-   SetOutPath "$INSTDIR\x64\modules"
+   SetOutPath "${ARCHDIR}\modules"
    !insertmacro UNINSTALL.LOG_OPEN_INSTALL
    File /r inst64\lib\JAGS\modules-${MAJOR}\*
    !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
 
    Push @JAGS_HOME@               #text to be replaced
-   Push $INSTDIR\x64              #replace with
+   Push ${ARCHDIR}                #replace with
    Push all                       #replace all occurrences
    Push all                       #replace all occurrences
-   Push $INSTDIR\x64\bin\jags.bat     #file to replace in
+   Push ${ARCHDIR}\bin\jags.bat       #file to replace in
    Call AdvReplaceInFile
 
-   AccessControl::GrantOnFile "$INSTDIR\x64\bin\jags.bat" "BUILTIN\USERS" "GenericRead + GenericExecute"
+   AccessControl::GrantOnFile "${ARCHDIR}\bin\jags.bat" "BUILTIN\USERS" "GenericRead + GenericExecute"
 
    !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
    # The CreateShortCut function takes the current output path to be
    # the working directory for the shortcut
    SetOutPath "%USERPROFILE%"
    
-   CreateShortCut "$SMPROGRAMS\$SM_FOLDER\${JAGS_VISIBLE_NAME}.lnk" "$INSTDIR\x64\bin\jags.bat"
+   CreateShortCut "$SMPROGRAMS\$SM_FOLDER\${JAGS_VISIBLE_NAME}.lnk" "${ARCHDIR}\bin\jags.bat"
    SetOutPath ""
    !insertmacro MUI_STARTMENU_WRITE_END
 
@@ -161,10 +173,12 @@ Section "Uninstall"
 
    ;uninstall from path, must be repeated for every install logged path individually
    !insertmacro UNINSTALL.LOG_UNINSTALL "$INSTDIR\include"
-   !insertmacro UNINSTALL.LOG_UNINSTALL "$INSTDIR\x64\bin"
-   !insertmacro UNINSTALL.LOG_UNINSTALL "$INSTDIR\x64\lib"
-   !insertmacro UNINSTALL.LOG_UNINSTALL "$INSTDIR\x64\modules"
-   !insertmacro UNINSTALL.LOG_UNINSTALL "$INSTDIR\x64"
+   !insertmacro UNINSTALL.LOG_UNINSTALL "${ARCHDIR}\bin"
+   !insertmacro UNINSTALL.LOG_UNINSTALL "${ARCHDIR}\lib"
+   !insertmacro UNINSTALL.LOG_UNINSTALL "${ARCHDIR}\modules"
+!if "${WINARCH}" == "x86_64"
+   !insertmacro UNINSTALL.LOG_UNINSTALL "${ARCHDIR}"
+!endif
    !insertmacro UNINSTALL.LOG_UNINSTALL "$INSTDIR"
    !insertmacro UNINSTALL.LOG_END_UNINSTALL
 
