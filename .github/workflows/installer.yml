@@ -1,0 +1,111 @@
+name: Build JAGS installer
+run-name: JAGS ${{ github.ref_name }} for Windows
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake libtool libltdl-dev bison flex gfortran liblapack-dev libblas-dev
+
+      - name: Create source tarball
+        run: |
+          autoreconf -fi
+          ./configure
+          make dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-tarball
+          path: JAGS-*.tar.gz
+
+  installer:
+    needs: source
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: windows-latest
+            root: C:\rtools45
+            triple: x86_64-w64-mingw32.static.posix
+          - arch: aarch64
+            runner: windows-11-arm
+            root: C:\rtools45-aarch64
+            triple: aarch64-w64-mingw32.static.posix
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: source-tarball
+
+      - name: Install Rtools45
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Install NSIS with AccessControl plugin
+        shell: pwsh
+        run: |
+          $nsis = 'C:\Program Files (x86)\NSIS'
+          if (-not (Test-Path "$nsis\makensis.exe")) {
+            curl.exe -fsSL -o nsis-setup.exe 'https://downloads.sourceforge.net/project/nsis/NSIS%203/3.11/nsis-3.11-setup.exe'
+            Start-Process -FilePath .\nsis-setup.exe -ArgumentList '/S' -Wait
+            Remove-Item nsis-setup.exe
+          }
+          curl.exe -fsSL -o AccessControl.zip 'https://nsis.sourceforge.io/mediawiki/images/4/4a/AccessControl.zip'
+          Expand-Archive AccessControl.zip -DestinationPath accesscontrol
+          Get-ChildItem -Recurse accesscontrol -Filter AccessControl.dll | ForEach-Object {
+            if ($_.FullName -match 'unicode') { Copy-Item $_.FullName "$nsis\Plugins\x86-unicode\" }
+            elseif ($_.FullName -match 'ansi') { Copy-Item $_.FullName "$nsis\Plugins\x86-ansi\" }
+          }
+          Remove-Item -Recurse AccessControl.zip, accesscontrol
+
+      - name: Build JAGS
+        shell: bash
+        run: |
+          tar xf JAGS-*.tar.gz
+          cd JAGS-*/
+          ./configure --host=${{ matrix.triple }}
+          make -j"$(nproc)" prefix="$PWD/win/inst64"
+          make install prefix="$PWD/win/inst64"
+
+      - name: Build installer
+        shell: bash
+        run: |
+          export PATH="$PATH:/c/Program Files (x86)/NSIS"
+          cd JAGS-*/
+          # The clang toolchain for aarch64 has no static libomp, so bundle
+          # the DLL. The installer target ships everything in win/runtime64.
+          cp -f "$(cygpath -u ${{ matrix.root }})/${{ matrix.triple }}/bin/libomp.dll" win/runtime64/ 2>/dev/null || true
+          make installer
+          for f in win/JAGS-*.exe; do
+            mv "$f" "$GITHUB_WORKSPACE/$(basename "${f%.exe}")-${{ matrix.arch }}.exe"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JAGS-installer-${{ matrix.arch }}
+          path: JAGS-*.exe
+
+      - name: Test installer
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem JAGS-*.exe | Select-Object -First 1
+          Write-Host "Installing $($exe.Name)"
+          Start-Process -FilePath $exe.FullName -ArgumentList '/S','/AllUsers' -Wait
+          $jags = Get-ChildItem 'C:\Program Files\JAGS\JAGS-*' | Select-Object -First 1
+          if (-not $jags) { throw 'JAGS was not installed into C:\Program Files\JAGS' }
+          Write-Host "Installed in $($jags.FullName)"
+
+      - name: Release artifacts
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: installers
+          files: JAGS-*.exe
