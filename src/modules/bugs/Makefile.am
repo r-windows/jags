@@ -12,7 +12,7 @@ bugs_la_LIBADD = distributions/libbugsdist.la           \
         matrix/libbugsmatrix.la                         \
 	$(top_builddir)/src/jrmath/libjrmath.la		\
         $(top_builddir)/src/lib/libjags.la 		\
-        @LAPACK_LIBS@ @BLAS_LIBS@ 
+        @LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@ 
 
 bugs_la_LDFLAGS = -module -avoid-version
 
@@ -37,7 +37,7 @@ libbugstest_la_LIBADD = functions/libbugsfuntest.la		\
 	$(top_builddir)/src/lib/libtest.la			\
 	$(top_builddir)/src/lib/libjags.la 			\
 	$(top_builddir)/src/jrmath/libjrmath.la 		\
-	@LAPACK_LIBS@ @BLAS_LIBS@
+	@LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
 
 if WINDOWS
 libbugstest_la_LDFLAGS += -no-undefined

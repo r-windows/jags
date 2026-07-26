@@ -12,7 +12,7 @@ glm_la_LIBADD = samplers/libglmsampler.la SSparse/ssparse.la	\
         distributions/libglmdist.la                     	\
 	$(top_builddir)/src/lib/libjags.la			\
 	$(top_builddir)/src/jrmath/libjrmath.la			\
-	@LAPACK_LIBS@ @BLAS_LIBS@
+	@LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
 
 glm_la_LDFLAGS = -module -avoid-version
 if WINDOWS
@@ -35,7 +35,7 @@ libglmtest_la_LIBADD = samplers/libglmsamptest.la \
 	$(top_builddir)/src/lib/libjags.la \
 	$(top_builddir)/src/jrmath/libjrmath.la \
         $(top_builddir)/src/modules/base/rngs/libbaserngs.la    \
-	@LAPACK_LIBS@ @BLAS_LIBS@
+	@LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
 
 if WINDOWS
 libglmtest_la_LDFLAGS += -no-undefined

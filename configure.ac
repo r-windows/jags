@@ -40,6 +40,17 @@ AS_IF([test -n "$PKG_CONFIG"],[
 ])   
 AM_CONDITIONAL([CANCHECK], [test x$cancheck = xyes])
 
+dnl Toolchain detection defaults for MinGW-w64 (JAGS is never built
+dnl with MSVC on Windows). These can be overridden on the command line.
+case "${host_os}" in
+  mingw*)
+    : "${ac_cv_f77_compiler_gnu=yes}"
+    : "${ac_cv_fc_compiler_gnu=yes}"
+    : "${lt_cv_deplibs_check_method=pass_all}"
+    AC_CHECK_TOOL([LD], [ld])
+    ;;
+esac
+
 dnl libtool and ltdl configuration
 LT_PREREQ(2.2.6)
 LT_CONFIG_LTDL_DIR([libltdl])
@@ -51,6 +62,17 @@ AC_PROG_CXX
 AC_PROG_F77
 AM_PROG_LEX
 AC_PROG_YACC
+
+dnl Keep the compiler runtime library (libgcc or libclang_rt.builtins)
+dnl in LIBS, because libtool drops it when linking DLLs with -nostdlib.
+case "${host_os}" in
+  mingw*)
+    jags_libgcc_file=`${CC} -print-libgcc-file-name 2>/dev/null`
+    if test -f "${jags_libgcc_file}"; then
+      LIBS="${LIBS} ${jags_libgcc_file}"
+    fi
+    ;;
+esac
 
 dnl IEEE 754 arithmetic
 AC_CHECK_HEADERS(ieeefp.h)

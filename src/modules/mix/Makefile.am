@@ -30,7 +30,7 @@ libmixtest_la_LIBADD = 	distributions/libmixdisttest.la		\
 	$(top_builddir)/src/lib/libtest.la			\
 	$(top_builddir)/src/lib/libjags.la 			\
 	$(top_builddir)/src/jrmath/libjrmath.la 		\
-	@LAPACK_LIBS@ @BLAS_LIBS@
+	@LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
 
 if WINDOWS
 libmixtest_la_LDFLAGS += -no-undefined
